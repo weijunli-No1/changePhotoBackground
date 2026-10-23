@@ -1,65 +1,115 @@
-<view class="page-wrap">
-  <navigation-bar title="证件照制作" />
-  <view class="main-canvas">
-
-    <!-- Slogan + 功能亮点 -->
-    <view class="hero-block">
-      <view class="hero-subtitle">智能抠图 · 一键换背景 · 多种尺寸</view>
-      <view class="feature-chips">
-        <view class="chip">
-          <t-icon name="lightning-bolt" size="28rpx" />
-          <text>极速 AI</text>
-        </view>
-        <view class="chip">
-          <t-icon name="image" size="28rpx" />
-          <text>一键换底色</text>
-        </view>
-        <view class="chip">
-          <t-icon name="print" size="28rpx" />
-          <text>多规格排版</text>
-        </view>
+<view class="page-wrap home-page">
+  <navigation-bar title="拾光小相" />
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
+    <view class="home-body">
+      <view class="home-title">今天想处理什么？</view>
+      <view
+        class="home-search"
+        bindtap="openLibrary"
+        data-search="1"
+        aria-role="button"
+        aria-label="搜索全部工具"
+        hover-class="pressed"
+        ><t-icon name="search" size="40rpx" /><text
+          >搜索工具，例如：压缩</text
+        ></view
+      >
+      <view wx:if="{{featuredTool}}" class="feature">
+        <view class="feature-copy"
+          ><view class="feature-title">{{featuredTool.featured.title}}</view
+          ><view class="feature-note"
+            >{{featuredTool.featured.description}}</view
+          ><view
+            class="feature-button"
+            bindtap="openToolEntry"
+            data-id="{{featuredTool.id}}"
+            hover-class="pressed"
+            aria-role="button"
+            >{{featuredTool.featured.action}}</view
+          ></view
+        >
+        <image
+          wx:if="{{featuredTool.featured.image}}"
+          src="{{featuredTool.featured.image}}"
+          class="feature-photo"
+          mode="aspectFill"
+          aria-hidden="{{true}}"
+        />
       </view>
-    </view>
-
-    <!-- 上传操作台 -->
-    <!-- hover-class 替代 :active，兼容 Skyline -->
-    <view class="upload-island" hover-class="island-pressed" hover-stay-time="100" bindtap="chooseImage">
-      <!-- 虚线描边边框：真实 view 替代 ::after 伪元素 -->
-      <view class="island-border"></view>
-
-      <view class="upload-icon-wrap">
-        <!-- 脉冲圆圈：真实 view 替代 ::before 伪元素 -->
-        <view class="pulse-ring"></view>
-        <view class="upload-icon">
-          <t-icon name="camera" size="80rpx" />
-        </view>
+      <view
+        wx:if="{{entryError}}"
+        class="error-inline home-error"
+        aria-role="alert"
+        >{{entryError}}</view
+      >
+      <view class="section-head"
+        ><view class="section-title">常用工具</view
+        ><view
+          class="section-action"
+          bindtap="openLibrary"
+          hover-class="pressed"
+          aria-role="button"
+          >全部工具<t-icon name="chevron-right" size="28rpx" /></view
+      ></view>
+      <view class="quick-tools">
+        <view
+          wx:for="{{quickTools}}"
+          wx:key="id"
+          class="quick-item"
+          data-id="{{item.id}}"
+          bindtap="openToolEntry"
+          hover-class="pressed"
+          aria-role="button"
+          aria-label="{{item.name}}"
+          ><tool-glyph name="{{item.icon}}" size="{{48}}" /><text
+            >{{item.name}}</text
+          ></view
+        >
       </view>
-      <view class="u-text">上传 / 拍摄照片</view>
-      <view class="u-tip">请确保正面光线充足、面部清晰</view>
-
-      <!-- 步骤引导 -->
-      <view class="steps-row">
-        <view class="step-item">
-          <view class="step-num">1</view>
-          <text class="step-label">选照片</text>
-        </view>
-        <view class="step-arrow">→</view>
-        <view class="step-item">
-          <view class="step-num">2</view>
-          <text class="step-label">AI 处理</text>
-        </view>
-        <view class="step-arrow">→</view>
-        <view class="step-item">
-          <view class="step-num">3</view>
-          <text class="step-label">保存</text>
-        </view>
+      <view class="section-head continue-head"
+        ><view class="section-title">继续编辑</view
+        ><view
+          class="section-action"
+          bindtap="showWorks"
+          hover-class="pressed"
+          aria-role="button"
+          >查看作品<t-icon name="chevron-right" size="28rpx" /></view
+      ></view>
+      <view
+        wx:if="{{draft}}"
+        class="draft-row"
+        bindtap="resumeDraft"
+        hover-class="pressed"
+        aria-role="button"
+        aria-label="{{'继续编辑' + draft.title}}"
+      >
+        <image
+          src="{{draft.resultPath || draft.sourcePath}}"
+          class="draft-thumb"
+          mode="aspectFill"
+        /><view class="draft-copy"
+          ><view class="draft-title">{{draft.title}}</view
+          ><view class="draft-note">{{draft.sizeName || '保存在当前设备'}}</view
+          ><view class="draft-note">{{draft.updatedLabel}}</view></view
+        ><t-icon name="chevron-right" size="32rpx" />
       </view>
+      <view wx:else class="draft-empty"
+        ><view class="empty-draft-icon"
+          ><t-icon name="folder-open" size="42rpx" /></view
+        ><view
+          ><view class="empty-draft-title">还没有未完成的作品</view
+          ><view class="draft-note">开始处理后，会自动保留草稿</view></view
+        ></view
+      >
     </view>
-
-    <!-- 安全提示 -->
-    <view class="privacy-tag">
-      <t-icon name="cloud" size="28rpx" class="privacy-icon"/>
-      <text>云端 AI 处理，极速生成不留痕</text>
-    </view>
-  </view>
+  </scroll-view>
+  <spec-picker
+    visible="{{specVisible}}"
+    title="{{specTitle}}"
+    description="照片将上传至云端，请选择清晰的正面照。"
+    current-width="{{size.width}}"
+    current-height="{{size.height}}"
+    bind:select="selectSpec"
+    bind:close="closeSpecs"
+  />
 </view>

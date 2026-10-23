@@ -1,6 +1,10 @@
-# 📸 智能证件照 — AI 证件照制作微信小程序
+# 📸 拾光小相 — Skyline 照片工具箱
 
 一款基于 **AI 人像抠图** 的微信小程序，支持一键生成证件照、更换背景色、多规格尺寸裁切、六寸排版照生成等功能。
+
+当前本地版本采用「首页 / 作品 / 我的」，首页提供常用入口，全部工具页支持搜索和分类；新增功能统一注册，后续可接入文档等实用工具。已实现独立编辑与导出工作台、原图对比、自定义尺寸、本地压缩、裁剪旋转和可恢复草稿。所有页面采用 **Skyline + glass-easel**，证件照处理继续复用原 Java / Python 接口。
+
+开发与验收记录见 [开发验收说明](docs/开发验收说明.md)，最新设计与新工具接入方式见 [界面升级与功能扩展方案](docs/界面升级与功能扩展方案.md)。
 
 > 前端使用微信小程序原生开发 + TDesign 组件库，后端使用 Spring Boot + MyBatis-Plus，AI 图像处理基于 [HivisionIDPhotos](https://github.com/Zeyi-Lin/HivisionIDPhotos)。
 
@@ -27,11 +31,16 @@
 ```
 ├── mini-program/          # 微信小程序前端
 │   ├── pages/
-│   │   ├── index/         # 首页 - 上传/拍摄照片
-│   │   ├── edit/          # 编辑页 - 选尺寸、换背景色、保存
-│   │   ├── history/       # 历史页 - 查看历史作品
-│   │   ├── profile/       # 我的页 - 登录、设置
-│   │   └── document/      # 协议文档页
+│   │   ├── index/         # 首页 - 常用工具、继续编辑
+│   │   ├── library/       # 全部工具 - 搜索、分类与入口
+│   │   ├── edit/          # 证件照编辑 - 规格、底色与构图
+│   │   ├── export/        # 预览保存 - 登录、额度与广告
+│   │   ├── tools/         # 本地压缩、裁剪旋转
+│   │   ├── history/       # 作品 - 本地草稿、云端证件照
+│   │   ├── profile/       # 我的 - 资料、额度、帮助与退出
+│   │   ├── account/       # 头像昵称编辑
+│   │   ├── support/       # 帮助与客服
+│   │   └── document/      # 隐私及协议（不是文件处理工具）
 │   └── components/        # 自定义组件
 ├── backend/               # Java 后端服务 (Spring Boot)
 │   └── src/main/
@@ -98,7 +107,7 @@ wx:
   miniapp:
     appid: your_wechat_appid             # ← 修改为你的小程序 AppID
     secret: your_wechat_secret           # ← 修改为你的小程序 Secret
-    rewarded-ad-unit-id: your_ad_unit_id # ← 修改为你的激励广告单元 ID（可选）
+    rewarded-ad-unit-id: ${WX_REWARDED_AD_UNIT_ID:adunit-8643a04d0caed362} # 可通过环境变量覆盖
 
 python-api:
   base-url: http://127.0.0.1:7860       # HivisionIDPhotos 服务地址
@@ -126,6 +135,15 @@ mvn spring-boot:run
 5. 编译运行
 
 ## 📖 API 文档
+
+激励视频已配置广告位 `adunit-8643a04d0caed362`。当前版本在 `mini-program/app.js` 中显式指定该广告位，优先于线上旧广告配置。清空 `rewardedVideoAdUnitIdOverride` 后，可使用后端 `/api/app/config` 下发的广告位。广告实例仅在导出页面内使用；完整观看并记录奖励成功后，继续原先的单图或排版保存操作。实际投放仍需微信真机验证。
+
+前端逻辑回归测试（Node.js 18+）：
+
+```bash
+cd mini-program
+npm test
+```
 
 详见：
 - [中文文档](api_CN.md)

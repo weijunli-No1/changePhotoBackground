@@ -1,0 +1,7 @@
+<view
+  wx:if="{{name === 'crop'}}"
+  class="crop-glyph"
+  style="width:{{size}}rpx;height:{{size}}rpx"
+  aria-hidden="{{true}}"
+  ><view class="crop-stroke-a"></view><view class="crop-stroke-b"></view></view
+><t-icon wx:else name="{{name}}" size="{{size}}rpx" />

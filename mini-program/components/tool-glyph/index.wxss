@@ -1,0 +1,26 @@
+.crop-glyph {
+  position: relative;
+  color: var(--sg-brand);
+}
+.crop-stroke-a {
+  position: absolute;
+  left: 27%;
+  top: 0;
+  width: 64%;
+  height: 73%;
+  border-left: 3rpx solid currentColor;
+  border-bottom: 3rpx solid currentColor;
+  border-radius: 0 0 0 3rpx;
+  box-sizing: border-box;
+}
+.crop-stroke-b {
+  position: absolute;
+  left: 0;
+  top: 27%;
+  width: 73%;
+  height: 64%;
+  border-top: 3rpx solid currentColor;
+  border-right: 3rpx solid currentColor;
+  border-radius: 0 3rpx 0 0;
+  box-sizing: border-box;
+}

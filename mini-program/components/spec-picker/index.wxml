@@ -1,0 +1,116 @@
+<view
+  wx:if="{{rendered}}"
+  class="spec-overlay {{motionFallback ? 'motion-fallback' : ''}} {{motionOpen ? 'is-open' : ''}}"
+  style="bottom:{{keyboardHeight}}px"
+>
+  <view class="spec-scrim" bindtap="close"></view>
+  <view
+    class="spec-sheet {{compactLayout ? 'compact-layout' : ''}} {{keyboardHeight ? 'keyboard-layout' : ''}}"
+    style="max-height:{{availableHeight}}px"
+    catchtap="stop"
+    aria-role="dialog"
+    aria-modal="{{true}}"
+    aria-label="{{title}}"
+  >
+    <view class="spec-head">
+      <text>{{title}}</text>
+      <view
+        class="spec-close"
+        aria-role="button"
+        bindtap="close"
+        aria-label="关闭规格选择"
+        aria-disabled="{{closing}}"
+        ><t-icon name="close" size="40rpx"
+      /></view>
+    </view>
+    <block wx:if="{{!keyboardHeight}}">
+      <view wx:if="{{description}}" class="spec-description"
+        >{{description}}</view
+      >
+      <view
+        class="spec-options"
+        aria-role="radiogroup"
+        aria-label="常用照片规格"
+      >
+        <view
+          wx:for="{{sizes}}"
+          wx:key="name"
+          class="spec-option {{selectedIndex === index ? 'selected' : ''}} {{index % 2 === 0 ? 'left-option' : ''}}"
+          aria-role="radio"
+          aria-checked="{{selectedIndex === index}}"
+          aria-disabled="{{closing}}"
+          aria-label="{{item.name}}，{{item.width}}乘{{item.height}}像素"
+          data-index="{{index}}"
+          bindtap="select"
+          hover-class="pressed"
+        >
+          <view class="option-copy"
+            ><view class="spec-name">{{item.name}}</view
+            ><view class="spec-note"
+              >{{item.width}} × {{item.height}} px</view
+            ></view
+          >
+          <t-icon
+            name="{{selectedIndex === index ? 'check-circle-filled' : 'circle'}}"
+            size="36rpx"
+          />
+        </view>
+      </view>
+    </block>
+    <view id="custom-fields" class="custom-fields">
+      <view class="custom-heading"
+        ><text class="custom-label">自定义像素尺寸</text
+        ><text class="custom-hint">100—3000 px</text></view
+      >
+      <view class="custom-row">
+        <view class="dimension-field {{invalidWidth ? 'invalid-input' : ''}}"
+          ><text class="dimension-label">宽</text
+          ><input
+            adjust-position="{{false}}"
+            bindkeyboardheightchange="keyboardChange"
+            bindfocus="focusCustom"
+            bindblur="inputBlur"
+            type="number"
+            aria-label="宽度，100到3000像素"
+            aria-invalid="{{invalidWidth}}"
+            value="{{width}}"
+            bindinput="inputWidth"
+            maxlength="4"
+            confirm-type="next"
+          /><text class="dimension-unit">px</text></view
+        >
+        <text class="dimension-times">×</text>
+        <view class="dimension-field {{invalidHeight ? 'invalid-input' : ''}}"
+          ><text class="dimension-label">高</text
+          ><input
+            adjust-position="{{false}}"
+            bindkeyboardheightchange="keyboardChange"
+            bindfocus="focusCustom"
+            bindblur="inputBlur"
+            type="number"
+            aria-label="高度，100到3000像素"
+            aria-invalid="{{invalidHeight}}"
+            value="{{height}}"
+            bindinput="inputHeight"
+            maxlength="4"
+            confirm-type="done"
+          /><text class="dimension-unit">px</text></view
+        >
+      </view>
+      <view wx:if="{{error}}" class="spec-error" aria-role="alert"
+        >{{error}}</view
+      >
+    </view>
+    <view class="spec-footer">
+      <view
+        class="custom-confirm {{closing ? 'confirm-disabled' : ''}}"
+        bindtap="confirm"
+        hover-class="pressed"
+        aria-role="button"
+        aria-disabled="{{closing}}"
+        >{{selectedIndex >= 0 ? '使用' + selectedName + '规格' :
+        '使用自定义尺寸'}}</view
+      >
+    </view>
+  </view>
+</view>

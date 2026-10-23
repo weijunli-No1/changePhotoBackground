@@ -1,0 +1,105 @@
+<view class="page-wrap library-page">
+  <navigation-bar title="全部工具" show-back="{{true}}" />
+  <view class="library-header">
+    <view class="catalog-search"
+      ><t-icon name="search" size="40rpx" /><input
+        value="{{query}}"
+        focus="{{searchFocused}}"
+        bindinput="search"
+        bindblur="searchBlur"
+        placeholder="搜索工具名称或用途"
+        confirm-type="search"
+        maxlength="50"
+        aria-label="搜索工具名称或用途" /><view
+        wx:if="{{query}}"
+        class="search-clear"
+        bindtap="clearSearch"
+        aria-label="清空搜索"
+        aria-role="button"
+        ><t-icon name="close-circle-filled" size="32rpx" /></view
+    ></view>
+    <scroll-view class="catalog-tabs" scroll-x show-scrollbar="{{false}}"
+      ><view class="category-row" aria-role="tablist"
+        ><view
+          class="category-tab {{category === 'all' ? 'selected' : ''}}"
+          data-id="all"
+          bindtap="selectCategory"
+          aria-role="tab"
+          aria-selected="{{category === 'all'}}"
+          >全部</view
+        ><view
+          wx:for="{{categories}}"
+          wx:key="id"
+          class="category-tab {{category === item.id ? 'selected' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="selectCategory"
+          aria-role="tab"
+          aria-selected="{{category === item.id}}"
+          >{{item.name}}</view
+        ></view
+      ></scroll-view
+    >
+  </view>
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
+    <view class="catalog-body">
+      <view
+        wx:if="{{entryError}}"
+        class="error-inline catalog-error"
+        aria-role="alert"
+        >{{entryError}}</view
+      >
+      <view
+        wx:for="{{groups}}"
+        wx:for-item="group"
+        wx:key="id"
+        class="catalog-group"
+        ><view class="catalog-heading">{{group.name}}</view>
+        <view
+          wx:for="{{group.tools}}"
+          wx:key="id"
+          class="catalog-tool"
+          data-id="{{item.id}}"
+          bindtap="openToolEntry"
+          hover-class="pressed"
+          aria-role="button"
+          aria-label="{{item.name + '，' + item.description}}"
+        >
+          <view class="catalog-icon"
+            ><image
+              wx:if="{{item.thumbnail}}"
+              src="{{item.thumbnail}}"
+              class="catalog-portrait"
+              mode="aspectFill" /><tool-glyph
+              wx:else
+              name="{{item.icon}}"
+              size="{{50}}"
+          /></view>
+          <view class="catalog-copy"
+            ><view class="catalog-name">{{item.name}}</view
+            ><view class="catalog-description">{{item.description}}</view
+            ><view wx:if="{{item.local}}" class="catalog-local"
+              >本机处理</view
+            ></view
+          ><t-icon name="chevron-right" size="32rpx" color="var(--sg-muted)" />
+        </view>
+      </view>
+      <view wx:if="{{!groups.length}}" class="catalog-empty"
+        ><t-icon name="search" size="64rpx" /><view class="empty-title"
+          >没有找到相关工具</view
+        ><view class="empty-desc">试试“压缩”“旋转”或其他用途关键词。</view
+        ><view class="secondary" bindtap="resetSearch" aria-role="button"
+          >查看全部工具</view
+        ></view
+      >
+    </view>
+  </scroll-view>
+  <spec-picker
+    visible="{{specVisible}}"
+    title="{{specTitle}}"
+    description="照片将上传至云端，请选择清晰的正面照。"
+    current-width="{{size.width}}"
+    current-height="{{size.height}}"
+    bind:select="selectSpec"
+    bind:close="closeSpecs"
+  />
+</view>

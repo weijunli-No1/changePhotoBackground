@@ -2,21 +2,25 @@
   "pages": [
     "pages/index/index",
     "pages/edit/edit",
+    "pages/export/export",
+    "pages/tools/tools",
     "pages/history/history",
     "pages/profile/profile",
-    "pages/document/document"
+    "pages/document/document",
+    "pages/account/account",
+    "pages/support/support",
+    "pages/library/library"
   ],
   "subpackages": [],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "@navBgColor",
-    "navigationBarTitleText": "证件照底色更换",
+    "navigationBarTitleText": "拾光小相",
     "navigationBarTextStyle": "@navTextStyle",
     "backgroundColor": "@pageBgColor",
     "navigationStyle": "custom"
   },
   "tabBar": {
-    "custom": true,
     "color": "@tabBarColor",
     "selectedColor": "@tabBarSelectedColor",
     "backgroundColor": "@tabBarBgColor",
@@ -25,20 +29,20 @@
       {
         "pagePath": "pages/index/index",
         "text": "首页",
-        "iconPath": "assets/icons/home.png",
-        "selectedIconPath": "assets/icons/home-active.png"
+        "iconPath": "@homeIcon",
+        "selectedIconPath": "@homeActiveIcon"
       },
       {
         "pagePath": "pages/history/history",
-        "text": "历史记录",
-        "iconPath": "assets/icons/history.png",
-        "selectedIconPath": "assets/icons/history-active.png"
+        "text": "作品",
+        "iconPath": "@historyIcon",
+        "selectedIconPath": "@historyActiveIcon"
       },
       {
         "pagePath": "pages/profile/profile",
         "text": "我的",
-        "iconPath": "assets/icons/user.png",
-        "selectedIconPath": "assets/icons/user-active.png"
+        "iconPath": "@userIcon",
+        "selectedIconPath": "@userActiveIcon"
       }
     ]
   },
@@ -53,9 +57,7 @@
       "disableABTest": true
     }
   },
-  "usingComponents": {
-    "navigation-bar": "/components/navigation-bar/index"
-  },
+  "usingComponents": {},
   "componentFramework": "glass-easel",
   "darkmode": true,
   "themeLocation": "theme.json"

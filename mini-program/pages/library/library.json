@@ -1,0 +1,11 @@
+{
+  "navigationStyle": "custom",
+  "renderer": "skyline",
+  "componentFramework": "glass-easel",
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "spec-picker": "/components/spec-picker/index",
+    "tool-glyph": "/components/tool-glyph/index"
+  }
+}

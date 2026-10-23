@@ -1,0 +1,68 @@
+<form bindsubmit="submit">
+  <view class="page-wrap">
+    <navigation-bar title="个人资料" show-back="{{true}}" />
+    <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
+      <view class="account-body">
+        <view class="account-title">设置头像与昵称</view>
+        <view class="account-note">选择头像，使用微信昵称快捷完善资料。</view>
+        <button
+          class="avatar-picker"
+          open-type="chooseAvatar"
+          bindchooseavatar="onChooseAvatar"
+          disabled="{{saving || !ownerValid}}"
+          hover-class="pressed"
+          aria-label="选择头像"
+        >
+          <image
+            wx:if="{{avatarUrl}}"
+            src="{{avatarUrl}}"
+            class="account-avatar"
+            mode="aspectFill"
+            binderror="avatarError"
+          />
+          <view wx:else class="account-avatar avatar-placeholder"
+            ><t-icon name="user" size="72rpx"
+          /></view>
+          <view class="avatar-action"
+            >更换头像 <t-icon name="chevron-right" size="26rpx"
+          /></view>
+        </button>
+        <view class="nickname-label">微信昵称</view>
+        <input
+          class="nickname-input"
+          name="nickname"
+          type="nickname"
+          value="{{nickname}}"
+          maxlength="20"
+          placeholder="点击使用微信昵称"
+          disabled="{{saving || reviewPending || !ownerValid}}"
+          bindinput="nicknameInput"
+          bindblur="nicknameBlur"
+          bindnicknamereview="nicknameReview"
+          cursor-spacing="32"
+          confirm-type="done"
+          aria-label="微信昵称快捷填写"
+        />
+        <view class="account-note input-note"
+          >点击输入框，在键盘上方选择你的微信昵称。</view
+        >
+        <view wx:if="{{reviewPending}}" class="review-note">正在检测昵称…</view>
+        <view wx:if="{{error}}" class="error-inline">{{error}}</view>
+        <view class="account-privacy"
+          >头像和昵称仅用于“我的”页面展示，保存在当前设备。</view
+        >
+      </view>
+    </scroll-view>
+    <view class="footer-actions">
+      <button
+        class="primary"
+        form-type="submit"
+        disabled="{{saving || !ownerValid}}"
+        loading="{{saving}}"
+        hover-class="pressed"
+      >
+        {{saving ? '正在保存…' : reviewPending ? '检测中，请稍候' : '保存资料'}}
+      </button>
+    </view>
+  </view>
+</form>

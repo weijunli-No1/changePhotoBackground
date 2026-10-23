@@ -1,5 +1,11 @@
-<t-tab-bar wx:if="{{refresh}}" value="{{value}}" bindchange="onChange" theme="tag" split="{{false}}" data-theme="{{themeInfo}}">
-  <t-tab-bar-item wx:for="{{list}}" wx:key="index" value="{{item.value}}" icon="{{item.icon}}">
-    {{item.label}}
-  </t-tab-bar-item>
-</t-tab-bar>
+<view wx:if="{{visible}}" class="tab-bar"
+  ><view
+    class="tab-item {{value === item.value ? 'active' : ''}}"
+    wx:for="{{list}}"
+    wx:key="value"
+    data-value="{{item.value}}"
+    bindtap="onChange"
+    hover-class="tab-pressed"
+    ><t-icon name="{{item.icon}}" size="44rpx" /><text>{{item.label}}</text></view
+  ></view
+>

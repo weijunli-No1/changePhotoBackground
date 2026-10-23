@@ -1,14 +1,11 @@
 {
-  "navigationBarTitleText": "证件照制作",
   "navigationStyle": "custom",
   "renderer": "skyline",
   "componentFramework": "glass-easel",
   "usingComponents": {
-    "t-button": "tdesign-miniprogram/button/button",
-    "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-loading": "tdesign-miniprogram/loading/loading",
     "t-color-picker": "tdesign-miniprogram/color-picker/color-picker",
-    "t-popup": "tdesign-miniprogram/popup/popup",
-    "navigation-bar": "/components/navigation-bar/index"
+    "navigation-bar": "/components/navigation-bar/index",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "spec-picker": "/components/spec-picker/index"
   }
 }

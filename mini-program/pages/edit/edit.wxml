@@ -1,65 +1,174 @@
-<view class="page-wrap">
-  <navigation-bar title="证件照制作" showBack="{{true}}" />
-  <view class="main-canvas">
-    <view class="image-stage">
-      <image class="preview-img" mode="aspectFit" src="{{coloredBase64 ? 'data:image/jpeg;base64,' + coloredBase64 : (transparentBase64 ? 'data:image/png;base64,' + transparentBase64 : selectedImage)}}" />
-    </view>
-
-    <!-- 悬浮控制台 -->
-    <view class="control-panel" wx:if="{{showColorPicker}}">
-      <view class="panel-handle"></view>
-      <scroll-view class="panel-scroll" scroll-y show-scrollbar="{{false}}" enhanced="{{true}}">
-        <view style="padding: 10rpx 40rpx 20rpx 40rpx;">
-          <!-- 尺寸选择区 -->
-          <view class="panel-title">选择尺寸</view>
-          <view class="size-track">
-            <view class="size-node-wrap" hover-class="node-pressed" hover-stay-time="100" wx:for="{{presetSizes}}" wx:key="name" bindtap="onSizeSelect" data-index="{{index}}">
-              <view class="size-node {{currentSizeIndex === index ? 'size-active' : ''}}">
-                {{item.name}}
-              </view>
-            </view>
-          </view>
-
-          <view class="panel-title" style="margin-top: 32rpx;">选择质感背景</view>
-          <view class="color-track">
-            <view class="color-node-wrap" hover-class="node-pressed" hover-stay-time="100" wx:for="{{presetColors}}" wx:key="value" bindtap="onColorSelect" data-color="{{item.value}}">
-              <view class="color-node {{currentBgColor === item.value && !isCustomColor ? 'node-active' : ''}}" style="background-color: {{item.value}}">
-                <t-icon wx:if="{{currentBgColor === item.value && !isCustomColor}}" name="check" size="40rpx" color="{{item.value === '#FFFFFF' ? '#000' : '#FFF'}}" />
-              </view>
-              <view class="color-name {{currentBgColor === item.value && !isCustomColor ? 'name-active' : ''}}">{{item.name}}</view>
-            </view>
-            
-            <!-- 自定义颜色选项 -->
-            <view class="color-node-wrap" hover-class="node-pressed" hover-stay-time="100" bindtap="showColorPickerPopup">
-              <view class="color-node custom-color-node {{isCustomColor ? 'node-active' : ''}}">
-                <t-icon wx:if="{{isCustomColor}}" name="check" size="40rpx" color="#FFF" />
-              </view>
-              <view class="color-name {{isCustomColor ? 'name-active' : ''}}">自定义</view>
-            </view>
-          </view>
-          
-          <view class="action-dock" style="flex-wrap: wrap; margin-top: 32rpx;">
-            <view class="btn-ghost hover-scale" hover-class="hover-scale-pressed" hover-stay-time="100" bindtap="reselect">重选图片</view>
-            <view class="btn-prime hover-scale" hover-class="hover-scale-pressed" hover-stay-time="100" bindtap="savePhoto">保存单图</view>
-          </view>
-          <view class="action-dock" style="margin-top: 24rpx; padding-bottom: 24rpx;">
-            <view class="btn-prime hover-scale" hover-class="hover-scale-pressed" hover-stay-time="100" style="background: rgba(120,120,128,0.12); color: var(--spatial-text-main);" bindtap="savePrintLayout">生成排版照并保存</view>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
-    <!-- 颜色选择器弹窗 -->
-    <t-color-picker
-      visible="{{colorPickerVisible}}"
-      use-popup="{{true}}"
-      type="multiple"
-      popup-props="{{colorPickerPopupProps}}"
-      format="HEX"
-      value="{{currentBgColor}}"
-      bind:change="onCustomColorChange"
-      bind:close="onColorPickerClose"
+<view class="page-wrap editor-page">
+  <navigation-bar
+    title="{{toolId === 'background' ? '更换证件照底色' : '制作证件照'}}"
+    show-back="{{true}}"
+  />
+  <view wx:if="{{sourcePath}}" class="studio-toolbar"
+    ><view class="studio-caption"
+      ><t-icon name="adjustment" size="32rpx" /><text>调整照片</text></view
+    ><view
+      class="compare-button"
+      bindtap="toggleCompare"
+      hover-class="pressed"
+      aria-role="button"
+      aria-pressed="{{comparing}}"
+      aria-label="{{comparing ? '查看处理效果' : '查看原始照片'}}"
+      ><t-icon name="browse" size="30rpx" /><text
+        >{{comparing ? '查看效果' : '查看原图'}}</text
+      ></view
+    ></view
+  >
+  <view class="studio">
+    <image
+      wx:if="{{sourcePath}}"
+      class="studio-photo"
+      src="{{comparing ? sourcePath : (resultPath || sourcePath)}}"
+      mode="aspectFit"
     />
+    <view wx:else class="studio-empty"
+      ><t-icon name="image-add" size="64rpx" /><text
+        >请选择一张正面照片</text
+      ></view
+    >
+    <view wx:if="{{processing}}" class="processing-cover"
+      ><view class="processing-dot"></view><text>{{status}}</text
+      ><view
+        class="processing-cancel"
+        bindtap="cancelProcessing"
+        aria-role="button"
+        hover-class="pressed"
+        >取消处理</view
+      ></view
+    >
   </view>
-
+  <view class="editor-controls">
+    <view
+      class="size-summary"
+      bindtap="showSpecs"
+      hover-class="pressed"
+      aria-role="button"
+      aria-label="{{'更改规格，当前' + size.name + '，' + size.width + '乘' + size.height + '像素'}}"
+      ><view class="size-copy"
+        ><text class="size-name">{{size.name}}</text
+        ><text class="size-pixels"
+          >{{size.width}} × {{size.height}} px</text
+        ></view
+      ><view class="size-change"
+        >更改规格<t-icon name="chevron-right" size="28rpx" /></view
+    ></view>
+    <view class="editor-tabs" aria-role="tablist"
+      ><view
+        class="editor-tab {{panel !== 'adjust' ? 'active' : ''}}"
+        data-panel="color"
+        bindtap="setPanel"
+        aria-role="tab"
+        aria-selected="{{panel !== 'adjust'}}"
+        >背景底色</view
+      ><view
+        class="editor-tab {{panel === 'adjust' ? 'active' : ''}}"
+        data-panel="adjust"
+        bindtap="setPanel"
+        aria-role="tab"
+        aria-selected="{{panel === 'adjust'}}"
+        >裁剪构图</view
+      ></view
+    >
+    <view wx:if="{{panel !== 'adjust'}}" class="color-row">
+      <view
+        class="swatch-item"
+        wx:for="{{presetColors}}"
+        wx:key="value"
+        data-color="{{item.value}}"
+        bindtap="selectColor"
+        aria-role="radio"
+        aria-label="{{item.name}}"
+        aria-checked="{{currentBgColor === item.value && !custom}}"
+        aria-disabled="{{processing}}"
+        ><view
+          class="swatch {{currentBgColor === item.value && !custom ? 'selected' : ''}}"
+          style="background-color:{{item.value}}"
+          ><t-icon
+            wx:if="{{currentBgColor === item.value && !custom}}"
+            name="check"
+            size="34rpx"
+            color="{{item.value === '#FFFFFF' ? '#174E45' : '#FFFFFF'}}" /></view
+        ><text
+          class="swatch-name {{currentBgColor === item.value && !custom ? 'chosen' : ''}}"
+          >{{item.name}}</text
+        ></view
+      >
+      <view
+        class="swatch-item"
+        bindtap="showCustomColor"
+        aria-role="radio"
+        aria-label="自定义底色"
+        aria-checked="{{custom}}"
+        ><view
+          class="swatch custom-swatch {{custom ? 'selected' : ''}}"
+          style="background-color:{{custom ? currentBgColor : ''}}"
+          ><t-icon name="{{custom ? 'check' : 'palette'}}" size="36rpx" /></view
+        ><text class="swatch-name {{custom ? 'chosen' : ''}}"
+          >自定义</text
+        ></view
+      >
+    </view>
+    <view wx:else class="adjust-row"
+      ><view
+        class="secondary adjust-button"
+        bindtap="adjustPhoto"
+        aria-role="button"
+        ><t-icon name="cut" size="34rpx" /><text>裁剪与旋转</text></view
+      ><view
+        class="secondary adjust-button"
+        bindtap="reselect"
+        aria-role="button"
+        ><t-icon name="refresh" size="34rpx" /><text>重选照片</text></view
+      ></view
+    >
+    <view wx:if="{{error}}" class="editor-error" aria-role="alert"
+      >{{error}}</view
+    >
+    <view wx:if="{{error}}" class="recovery-actions"
+      ><view
+        class="link"
+        bindtap="retry"
+        hover-class="pressed"
+        aria-role="button"
+        >{{errorRecovery === 'reselect' ? '重新选择照片' : '重试处理'}}</view
+      ><view
+        wx:if="{{errorRecovery !== 'reselect'}}"
+        class="link"
+        bindtap="reselect"
+        hover-class="pressed"
+        aria-role="button"
+        >重新选择</view
+      ></view
+    >
+  </view>
+  <view class="footer-actions"
+    ><view
+      class="primary {{processing || !resultPath ? 'disabled' : ''}}"
+      aria-disabled="{{processing || !resultPath}}"
+      bindtap="goExport"
+      hover-class="pressed"
+      aria-role="button"
+      >{{processing ? '正在处理照片…' : '预览并保存'}}</view
+    ></view
+  >
+  <spec-picker
+    visible="{{specVisible}}"
+    current-width="{{size.width}}"
+    current-height="{{size.height}}"
+    bind:select="selectSpec"
+    bind:close="closeSpecs"
+  />
+  <t-color-picker
+    visible="{{colorPickerVisible}}"
+    use-popup="{{true}}"
+    type="multiple"
+    format="HEX"
+    value="{{currentBgColor}}"
+    bind:change="customColor"
+    bind:close="closeCustomColor"
+  />
 </view>

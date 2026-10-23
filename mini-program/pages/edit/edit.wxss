@@ -1,203 +1,229 @@
-.main-canvas {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  width: 100%;
-  height: 100%;
-  padding: 20rpx 0 0 0;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 10;
-  overflow: hidden; /* Avoid page-level scroll */
+.editor-page {
+  background: var(--sg-canvas);
 }
-
-
-.image-stage {
-  flex: 1;
-  min-height: 0; /* 允许 flex 子项在小屏幕下缩小而不被内容撑开 */
-  margin: 0 40rpx 24rpx 40rpx;
-  border-radius: 48rpx;
-  overflow: hidden;
-  position: relative;
-  box-shadow: 0 20rpx 60rpx -10rpx rgba(0,0,0,0.15);
-}
-.preview-img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  background-color: var(--spatial-card);
-}
-
-
-.control-panel {
-  position: relative;
-  width: 100%;
-  background: var(--spatial-card);
-  /* backdrop-filter 在 Skyline 不支持，已移除 */
-  border-radius: 0;
-  padding: 32rpx 0;
-  padding-bottom: max(32rpx, env(safe-area-inset-bottom));
-  box-shadow: 0 -10rpx 40rpx -10rpx rgba(0,0,0,0.12);
-  border-top: 2rpx solid rgba(255,255,255,0.4);
-  animation: slideUp 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  box-sizing: border-box;
+.studio-toolbar {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4rpx 36rpx 12rpx;
+  background: var(--sg-surface);
 }
-
-.panel-scroll {
-  height: 800rpx;
-  max-height: calc(70vh - 40rpx);
+.studio-caption {
+  display: flex;
+  align-items: center;
+  font-size: 26rpx;
+  color: var(--sg-muted);
+}
+.studio-caption text {
+  margin-left: 12rpx;
+}
+.compare-button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20rpx;
+  border: 1rpx solid var(--sg-line);
+  border-radius: 14rpx;
+  font-size: 25rpx;
+  color: var(--sg-text);
+}
+.compare-button text {
+  margin-left: 10rpx;
+}
+.studio {
+  flex: 1;
+  min-height: 120rpx;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 56rpx;
+}
+.studio-photo {
   width: 100%;
+  height: 100%;
 }
-@media (prefers-color-scheme: dark) {
-  .control-panel {
-    border-top-color: rgba(255,255,255,0.1);
-    box-shadow: 0 -10rpx 40rpx -10rpx rgba(0,0,0,0.5);
+.studio-empty {
+  color: var(--sg-muted);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  font-size: 26rpx;
+}
+.studio-empty text {
+  margin-top: 20rpx;
+}
+.processing-cover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(238, 241, 242, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  font-size: 26rpx;
+  color: #174e45;
+}
+.processing-dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 10rpx;
+  background: currentColor;
+  margin-bottom: 20rpx;
+  animation: sg-pulse 1s ease-in-out infinite alternate;
+}
+@keyframes sg-pulse {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
   }
 }
-
-@keyframes slideUp {
-  from { transform: translateY(120rpx); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.panel-handle {
-  width: 72rpx;
-  height: 10rpx;
-  background: var(--spatial-text-sub);
-  opacity: 0.3;
-  border-radius: 10rpx;
-  margin: 0 auto 32rpx;
-}
-
-.panel-title {
-  font-size: 34rpx;
-  font-weight: 800;
-  margin-bottom: 32rpx;
-}
-
-.size-track {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 24rpx;
-  margin-bottom: 40rpx;
-}
-
-.size-node-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.size-node {
-  padding: 12rpx 32rpx;
-  border-radius: 100rpx;
-  font-size: 26rpx;
-  font-weight: 500;
-  color: var(--spatial-text-main);
-  background: rgba(120, 120, 128, 0.08);
-  border: 2rpx solid transparent;
-  transition: all 0.3s ease;
-}
-
-.size-active {
-  background: var(--spatial-brand);
-  color: #FFFFFF;
-  border-color: rgba(0, 82, 217, 0.3);
-  box-shadow: 0 8rpx 16rpx rgba(0, 82, 217, 0.2);
-}
-
-.color-track {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 32rpx;
-  padding-bottom: 40rpx;
-}
-
-.color-node-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16rpx;
-  flex-shrink: 0;
-}
-
-.custom-color-node {
-  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
-}
-
-.color-node {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 50%;
+.processing-cancel {
+  min-height: 44px;
+  padding: 0 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 4rpx 8rpx rgba(255,255,255,0.5), 0 8rpx 16rpx rgba(0,0,0,0.06);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 6rpx solid transparent;
+  border: 1rpx solid currentColor;
+  border-radius: 14rpx;
+  margin-top: 24rpx;
 }
-/* :active 在 Skyline 不支持，用 hover-class="node-pressed" 替代 */
-.node-pressed .color-node { transform: scale(0.9); }
-
-.node-active {
-  transform: scale(1.15) !important;
-  border-color: rgba(255,255,255,0.9);
-  box-shadow: 0 16rpx 32rpx rgba(0,0,0,0.15);
+.editor-controls {
+  background: var(--sg-surface);
+  padding: 0 36rpx 8rpx;
+  border-radius: 24rpx 24rpx 0 0;
+  flex-shrink: 0;
 }
-.color-node[data-color="#FFFFFF"] {
-  border: 2rpx solid rgba(0,0,0,0.1);
-}
-
-.color-name {
-  font-size: 24rpx;
-  color: var(--spatial-text-sub);
-  transition: all 0.3s;
-}
-.name-active {
-  color: var(--spatial-text-main);
-  font-weight: 700;
-}
-
-.action-dock {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-  gap: 32rpx;
-}
-
-.btn-ghost, .btn-prime {
-  height: 104rpx;
-  border-radius: 32rpx;
+.size-summary {
+  min-height: 104rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 32rpx;
+  justify-content: space-between;
+  border-bottom: 1rpx solid var(--sg-line);
 }
-.btn-ghost {
+.size-copy {
+  display: flex;
+  align-items: baseline;
   flex: 1;
-  background: rgba(120,120,128,0.12);
-  color: var(--spatial-text-main);
+  min-width: 0;
+  padding-right: 12rpx;
+  flex-wrap: wrap;
 }
-.btn-prime {
-  flex: 2;
-  background: var(--spatial-text-main); /* 纯粹极简，极客感黑/白色按钮 */
-  color: var(--spatial-bg);
-  box-shadow: 0 12rpx 24rpx rgba(0,0,0,0.1);
+.size-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-right: 16rpx;
+}
+.size-pixels {
+  color: var(--sg-muted);
+  font-size: 24rpx;
+}
+.size-change {
+  display: flex;
+  align-items: center;
+  color: var(--sg-muted);
+  font-size: 24rpx;
+  min-height: 44px;
+}
+.editor-tabs {
+  display: flex;
+  border-bottom: 1rpx solid var(--sg-line);
+}
+.editor-tab {
+  flex: 1;
+  min-height: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  border-bottom: 4rpx solid transparent;
+  color: var(--sg-muted);
+}
+.editor-tab.active {
+  border-color: var(--sg-brand);
+  color: var(--sg-brand);
+  font-weight: 600;
+}
+.color-row {
+  display: flex;
+  padding: 24rpx 0 12rpx;
+}
+.swatch-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  min-height: 104rpx;
+}
+.swatch {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 36rpx;
+  border: 2rpx solid var(--sg-line);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.swatch.selected {
+  border-color: var(--sg-brand);
+  border-width: 3rpx;
+}
+.custom-swatch {
+  background: var(--sg-soft);
+  color: var(--sg-brand);
+}
+.swatch-name {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: var(--sg-muted);
+}
+.swatch-name.chosen {
+  color: var(--sg-brand);
+  font-weight: 600;
+}
+.adjust-row {
+  display: flex;
+  padding: 24rpx 0;
+}
+.adjust-button {
+  flex: 1;
+  margin-right: 16rpx;
+  font-size: 25rpx;
+}
+.adjust-button:last-child {
+  margin-right: 0;
+}
+.adjust-button text {
+  margin-left: 10rpx;
+}
+.editor-error {
+  font-size: 24rpx;
+  color: var(--sg-danger);
+  line-height: 1.6;
+  margin-top: 12rpx;
+}
+.recovery-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.editor-page .footer-actions {
+  border-top: 0;
+  padding-top: 12rpx;
 }
 @media (prefers-color-scheme: dark) {
-  .btn-prime {
-     background: var(--spatial-text-main);
-     color: var(--spatial-bg);
+  .processing-cover {
+    background: rgba(32, 32, 34, 0.92);
+    color: #f2f2f4;
   }
 }

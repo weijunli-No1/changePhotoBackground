@@ -1,0 +1,65 @@
+<view class="page-wrap">
+  <navigation-bar title="帮助与客服" show-back="{{true}}" />
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
+    <view class="support-body">
+      <view class="support-title">哪里需要帮助？</view>
+      <view class="support-intro"
+        >先看看常见问题，也可以直接联系微信客服。</view
+      >
+      <view class="faq-heading">常见问题</view>
+      <view wx:for="{{faqs}}" wx:key="id" class="faq-item">
+        <button
+          class="faq-question"
+          bindtap="toggleFaq"
+          data-id="{{item.id}}"
+          hover-class="pressed"
+          aria-expanded="{{expanded === item.id}}"
+        >
+          <text class="faq-label">{{item.title}}</text>
+          <t-icon
+            name="{{expanded === item.id ? 'chevron-up' : 'chevron-down'}}"
+            size="30rpx"
+          />
+        </button>
+        <view wx:if="{{expanded === item.id}}" class="faq-answer"
+          >{{item.answer}}</view
+        >
+      </view>
+      <view class="feedback-note"
+        >联系时请描述操作步骤、出现的提示和手机型号，方便定位问题。</view
+      >
+      <button
+        class="device-copy"
+        bindtap="copyDeviceInfo"
+        disabled="{{copying}}"
+        hover-class="pressed"
+      >
+        <t-icon name="copy" size="30rpx" /><text
+          >{{copying ? '正在复制…' : '复制设备与问题信息'}}</text
+        >
+      </button>
+      <view wx:if="{{error}}" class="error-inline">{{error}}</view>
+      <view wx:if="{{!contactSupported}}" class="error-inline"
+        >当前微信环境暂不支持客服会话，请升级微信后再试。</view
+      >
+    </view>
+  </scroll-view>
+  <view class="footer-actions">
+    <button
+      class="primary"
+      open-type="contact"
+      session-from="support_center"
+      show-message-card="{{false}}"
+      bindtap="prepareContact"
+      bindcontact="onContact"
+      binderror="contactError"
+      disabled="{{!contactSupported}}"
+      hover-class="pressed"
+    >
+      联系微信客服
+    </button>
+    <view class="contact-note"
+      >将打开微信客服会话，回复以实际接待情况为准。</view
+    >
+  </view>
+</view>

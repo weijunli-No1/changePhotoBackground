@@ -7,3 +7,6 @@ backend/target/
 
 # macOS
 .DS_Store
+
+# 本地生成的测试素材与临时产物
+/output/

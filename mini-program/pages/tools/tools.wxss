@@ -1,0 +1,134 @@
+.local-body {
+  padding: 24rpx 36rpx 40rpx;
+}
+.local-preview {
+  height: 490rpx;
+  border-radius: 20rpx;
+  background: var(--sg-canvas);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.local-image {
+  width: 100%;
+  height: 100%;
+}
+.upload-local {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  color: var(--sg-brand);
+}
+.upload-local text {
+  margin-top: 20rpx;
+}
+.tool-processing {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(238, 241, 242, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #174e45;
+}
+.file-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 22rpx;
+  color: var(--sg-muted);
+  padding: 20rpx 0;
+}
+.local-settings {
+  padding-top: 10rpx;
+}
+.setting-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin: 22rpx 0 18rpx;
+}
+.choice-row {
+  display: flex;
+}
+.choice {
+  flex: 1;
+  text-align: center;
+  border: 2rpx solid var(--sg-line);
+  border-radius: 12rpx;
+  margin-right: 12rpx;
+  padding: 20rpx 6rpx;
+  font-size: 26rpx;
+}
+.choice.active,
+.ratio-choice.active {
+  background: var(--sg-brand-soft);
+  border-color: var(--sg-brand);
+  color: var(--sg-brand);
+  font-weight: 600;
+}
+.setting-hint {
+  font-size: 23rpx;
+  color: var(--sg-muted);
+  line-height: 1.7;
+  margin-top: 24rpx;
+}
+.ratio-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.ratio-choice {
+  padding: 18rpx 20rpx;
+  border: 2rpx solid var(--sg-line);
+  border-radius: 12rpx;
+  margin: 0 12rpx 12rpx 0;
+  font-size: 26rpx;
+}
+.rotate-row {
+  display: flex;
+  margin: 18rpx 0;
+}
+.rotate-row .secondary {
+  flex: 1;
+  margin-right: 12rpx;
+}
+.rotate-row text {
+  margin-left: 10rpx;
+}
+.slider-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 24rpx;
+  color: var(--sg-muted);
+}
+.local-links {
+  display: flex;
+  justify-content: space-between;
+}
+.local-links .link {
+  font-size: 25rpx;
+}
+
+.tool-processing .loading-spinner {
+  margin-right: 16rpx;
+}
+@media (prefers-color-scheme: dark) {
+  .tool-processing {
+    background: rgba(32, 32, 34, 0.9);
+    color: #f2f2f4;
+  }
+}
+
+.choice,
+.ratio-choice {
+  min-height: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

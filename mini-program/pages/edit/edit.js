@@ -1,422 +1,402 @@
-const app = getApp();
-
+const api = require("../../utils/api");
+const files = require("../../utils/files");
+const drafts = require("../../utils/drafts");
+const { sizes, validateSize } = require("../../utils/photo-specs");
 Page({
   data: {
-    selectedImage: '',      // 用户选择的原始图像
-    transparentBase64: '',  // 透明底的 Base64 图像
-    coloredBase64: '',      // 最终上色的 Base64 图像
-    showColorPicker: false, // 是否展示颜色选择器
-    colorPickerVisible: false, // 颜色盘是否可见
-    isCustomColor: false, // 当前是否选用自定义颜色
-    currentBgColor: '#FFFFFF', // 当前背景色
-    colorPickerPopupProps: {
-      zIndex: 11500,
-      overlayProps: {
-        zIndex: 11000,
-        backgroundColor: 'transparent',
-        style: 'background-color: transparent;'
-      }
-    },
-    presetSizes: [          // 常用尺寸预设
-      { name: '一寸照', width: 295, height: 413 },
-      { name: '二寸照', width: 413, height: 579 },
-      { name: '小一寸', width: 260, height: 378 },
-      { name: '小二寸', width: 390, height: 567 }
+    toolId: "idphoto",
+    sourcePath: "",
+    resultPath: "",
+    comparing: false,
+    processing: false,
+    status: "",
+    error: "",
+    errorRecovery: "retry",
+    panel: "color",
+    specVisible: false,
+    colorPickerVisible: false,
+    currentBgColor: "#FFFFFF",
+    size: sizes[0],
+    presetColors: [
+      { name: "白色", value: "#FFFFFF" },
+      { name: "蓝色", value: "#638cce" },
+      { name: "红色", value: "#FF0000" },
     ],
-    currentSizeIndex: 0,    // 当前选中的尺寸索引
-    presetColors: [         // 预设背景色
-      { name: '白', value: '#FFFFFF' },
-      { name: '蓝', value: '#638cce' },
-      { name: '红', value: '#FF0000' }
-    ]
+    custom: false,
   },
-
-  onLoad(options) {
-    // 用于保证换底色时仅最新请求可关闭 loading，避免并发请求导致 loading 提前消失
-    this._bgReqSeq = 0;
-    this._activeBgReqId = 0;
-    this._customColorDebounceTimer = null;
-
-    if (options.src) {
+  async onLoad(options) {
+    this._unloaded = false;
+    this._seq = 0;
+    this._colorSeq = 0;
+    this._draftId = options.draft || drafts.createId();
+    const draft = options.draft ? drafts.get(options.draft) : null;
+    this.setData({
+      toolId:
+        (draft && draft.toolId === "background") ||
+        options.tool === "background"
+          ? "background"
+          : "idphoto",
+    });
+    if (options.draft && !draft) {
       this.setData({
-        selectedImage: decodeURIComponent(options.src)
-      });
-      // 开始上传处理透明图
-      this.processTransparentImage(this.data.selectedImage);
-    } else {
-      wx.navigateBack();
-    }
-  },
-
-  onUnload() {
-    if (this._customColorDebounceTimer) {
-      clearTimeout(this._customColorDebounceTimer);
-      this._customColorDebounceTimer = null;
-    }
-  },
-
-
-  // 选择尺寸
-  onSizeSelect(e) {
-    const newIndex = e.currentTarget.dataset.index;
-    if (newIndex === this.data.currentSizeIndex) return;
-
-    this.setData({
-      currentSizeIndex: newIndex
-    });
-    
-    // 如果已经选择了图片，修改尺寸后需要重新抠图处理
-    if (this.data.selectedImage) {
-      this.processTransparentImage(this.data.selectedImage);
-    }
-  },
-
-  // 1. 生成透明图片
-  processTransparentImage(filePath) {
-    wx.showLoading({ title: '魔法正在生效...', mask: true });
-    
-    // 获取当期选中的尺寸参数
-    const sizeObj = this.data.presetSizes[this.data.currentSizeIndex];
-
-    wx.uploadFile({
-      url: `${app.globalData.baseUrl}/api/photo/generate-idphoto`, 
-      filePath: filePath,
-      name: 'file',
-      formData: {
-        height: sizeObj.height,
-        width: sizeObj.width
-      },
-      success: (res) => {
-        try {
-          const data = JSON.parse(res.data);
-          if (data.code === 200) {
-            // 优先使用高清图(hd)，如果没有则兜底使用标准图
-            let base64Image = data.data.image_base64_hd || data.data.image_base64_standard || '';
-            base64Image = base64Image.replace(/^data:image\/\w+;base64,/, '').replace(/[\r\n\s]/g, '');
-            this.setData({
-              transparentBase64: base64Image,
-              showColorPicker: true
-            });
-            // 顺便生成一张当时所选背景色的预览图，默认为白色
-            this.changeBackgroundColor(this.data.currentBgColor || '#FFFFFF');
-          } else {
-            wx.showToast({ title: '处理失败, 请重试', icon: 'none' });
-          }
-        } catch (e) {
-          wx.showToast({ title: '系统异常，解析失败', icon: 'none' });
-        }
-      },
-      fail: (err) => {
-        wx.showToast({ title: '请求失败', icon: 'none' });
-      },
-      complete: () => {
-        wx.hideLoading();
-      }
-    });
-  },
-
-  // 2. 变换背景色API调用
-  changeBackgroundColor(color) {
-    if (!this.data.transparentBase64) return;
-
-    const previousColor = this.data.currentBgColor;
-    this.setData({ currentBgColor: color });
-
-    const requestId = ++this._bgReqSeq;
-    this._activeBgReqId = requestId;
-    wx.showLoading({ title: '魔法正在生效...', mask: true });
-
-    wx.request({
-      url: `${app.globalData.baseUrl}/api/photo/add-background`,
-      method: 'POST',
-      header: {
-        'content-type': 'application/x-www-form-urlencoded'
-      },
-      data: {
-        base64Image: this.data.transparentBase64,
-        color: color
-      },
-      success: (res) => {
-        // 只处理最新一次请求的结果，避免旧请求覆盖新结果
-        if (requestId !== this._activeBgReqId) return;
-
-        if (res.data && res.data.code === 200 && res.data.data) {
-          let base64 = res.data.data.image_base64 || '';
-          base64 = base64.replace(/^data:image\/\w+;base64,/, '').replace(/[\r\n\s]/g, '');
-          this.setData({
-            coloredBase64: base64
-          });
-        } else {
-          // 失败兜底：回退到上一次背景色，避免界面状态和图片结果不一致
-          this.setData({ currentBgColor: previousColor });
-          wx.showToast({ title: (res.data && res.data.message) || '换底色失败，请重试', icon: 'none' });
-        }
-      },
-      fail: () => {
-        if (requestId !== this._activeBgReqId) return;
-        this.setData({ currentBgColor: previousColor });
-        wx.showToast({ title: '网络异常，已恢复上次颜色', icon: 'none' });
-      },
-      complete: () => {
-        if (requestId !== this._activeBgReqId) return;
-        wx.hideLoading();
-      }
-    });
-  },
-
-  // 点击选择颜色
-  onColorSelect(e) {
-    const color = e.currentTarget.dataset.color;
-    if (color === this.data.currentBgColor) return;
-
-    this.setData({ isCustomColor: false });
-    this.changeBackgroundColor(color);
-  },
-
-  // 展开色盘
-  showColorPickerPopup() {
-    this.setData({ colorPickerVisible: true });
-  },
-
-  // 拾取颜色关闭回调
-  onColorPickerClose() {
-    this.setData({ colorPickerVisible: false });
-  },
-
-  // 拾取新颜色触发
-  onCustomColorChange(e) {
-    const color = e.detail.value;
-    this.setData({
-      isCustomColor: true,
-      currentBgColor: color
-    });
-
-    // 色盘拖动会高频触发 change，这里做防抖避免并发请求过多造成 loading 闪烁
-    if (this._customColorDebounceTimer) {
-      clearTimeout(this._customColorDebounceTimer);
-    }
-    this._customColorDebounceTimer = setTimeout(() => {
-      this.changeBackgroundColor(color);
-      this._customColorDebounceTimer = null;
-    }, 200);
-  },
-
-  // 放弃重选，返回上一页
-  reselect() {
-    wx.navigateBack();
-  },
-
-  // 保存相册及历史
-  savePhoto() {
-    if (!app.globalData.openid) {
-      wx.showModal({
-        title: '温馨提示',
-        content: '请先前往“我的”进行登录',
-        success: (res) => {
-          if (res.confirm) {
-            app.globalData.isFromEditForLogin = true; wx.switchTab({ url: '/pages/profile/profile' });
-          }
-        }
+        error: "草稿已被清理，请重新选择照片",
+        errorRecovery: "reselect",
       });
       return;
     }
-
-    if (!this.data.coloredBase64) return;
-
-    wx.showLoading({ title: '魔法正在生效...', mask: true });
-
-    // 1. 同步保存到历史记录云端
-    wx.request({
-      url: `${app.globalData.baseUrl}/api/history/save`,
-      method: 'POST',
-      data: {
-        openid: app.globalData.openid,
-        base64Image: this.data.coloredBase64,
-        bgColor: this.data.currentBgColor
-      },
-      success: (res) => {
-        if (res.data.code === 200) {
-          // 2. 保存到相册
-          this.saveToAlbum(this.data.coloredBase64);
-        } else if (res.data.code === 4031) {
-          // 需要看广告
-          this.showAdDialog();
-        } else {
-          wx.showToast({ title: '历史记录保存失败', icon: 'none' });
+    try {
+      if (draft) {
+        await files.call("getImageInfo", { src: draft.sourcePath });
+        this._transparentPath = draft.transparentPath || "";
+        this.setData({
+          sourcePath: draft.sourcePath,
+          resultPath: draft.resultPath || "",
+          size: {
+            name: draft.sizeName || "自定义",
+            width: draft.width,
+            height: draft.height,
+          },
+          currentBgColor: draft.bgColor || "#FFFFFF",
+          custom: !["#FFFFFF", "#638cce", "#FF0000"].includes(draft.bgColor),
+        });
+        if (this._transparentPath) {
+          try {
+            this._transparent = await files.readBase64(this._transparentPath);
+          } catch (error) {
+            this._transparentPath = "";
+            this._transparent = "";
+          }
         }
-      },
-      complete: () => {
-        wx.hideLoading();
-      }
-    });
-  },
-
-  showAdDialog() {
-    wx.showModal({
-      title: '免费次数已用完',
-      content: '今日免费保存次数已达上限(5次)，观看广告即可继续保存！',
-      confirmText: '看广告',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          this.playVideoAd();
+        if (draft.resultPath && this._transparent) {
+          try {
+            await files.call("getImageInfo", { src: draft.resultPath });
+            this._appliedColor = draft.bgColor || "#FFFFFF";
+            return;
+          } catch (error) {
+            this.setData({ resultPath: "" });
+          }
         }
-      }
-    });
-  },
-
-  playVideoAd() {
-    if (wx.createRewardedVideoAd) {
-      const adUnitId = app.globalData.rewardedVideoAdUnitId || app.globalData.defaultRewardedVideoAdUnitId || '';
-      if (!adUnitId) {
-        wx.showToast({ title: '广告配置缺失，请稍后再试', icon: 'none' });
+      } else if (options.src) {
+        let size = sizes[0];
+        if (options.width && options.height)
+          size = {
+            ...validateSize(options.width, options.height),
+            name: options.name ? decodeURIComponent(options.name) : "自定义",
+          };
+        this.setData({ sourcePath: decodeURIComponent(options.src), size });
+      } else {
+        this.setData({ error: "请先选择一张照片", errorRecovery: "reselect" });
         return;
       }
-
-      if (!this.videoAd) {
-        this.videoAd = wx.createRewardedVideoAd({
-          adUnitId: adUnitId
+      this.processTransparentImage();
+    } catch (error) {
+      if (!this._unloaded)
+        this.setData({
+          error: "草稿文件不可用，请重新选择照片",
+          errorRecovery: "reselect",
+          processing: false,
         });
-      } else if (this.videoAdUnitId !== adUnitId) {
-        // 后端配置更新后，重建实例确保使用最新广告位
-        this.videoAd = wx.createRewardedVideoAd({
-          adUnitId: adUnitId
-        });
-      }
-      this.videoAdUnitId = adUnitId;
-
-      const closeHandler = (res) => {
-        if (res && res.isEnded) {
-          // 观看完毕，调后端接口记录
-          this.recordAdViewAndSave();
-        } else {
-          wx.showToast({ title: '需要观看完整广告哦', icon: 'none' });
-        }
-        this.videoAd.offClose(closeHandler);
-      };
-
-      this.videoAd.onClose(closeHandler);
-
-      this.videoAd.show().catch(() => {
-        this.videoAd.load()
-          .then(() => this.videoAd.show())
-          .catch(err => {
-            wx.showToast({ title: '广告加载失败', icon: 'none' });
-            this.videoAd.offClose(closeHandler);
-          });
-      });
-    } else {
-      wx.showToast({ title: '当前环境不支持视频广告', icon: 'none' });
     }
   },
-
-  recordAdViewAndSave() {
-    wx.showLoading({ title: '魔法正在生效...', mask: true });
-    wx.request({
-      url: `${app.globalData.baseUrl}/api/user/recordAd`,
-      method: 'POST',
-      header: {
-        'content-type': 'application/x-www-form-urlencoded'
-      },
-      data: {
-        openid: app.globalData.openid
-      },
-      success: (res) => {
-        if (res.data.code === 200) {
-          wx.showToast({ title: '奖励已到账', icon: 'success' });
-          // 重新发起保存
-          this.savePhoto();
-        } else {
-          wx.showToast({ title: res.data.message || '记录异常', icon: 'none' });
-        }
-      },
-      complete: () => {
-        wx.hideLoading();
-      }
-    });
+  onHide() {
+    this.persistDraft();
   },
-
-  // 保存冲印排版照
-  savePrintLayout() {
-    if (!app.globalData.openid) {
-      wx.showModal({
-        title: '温馨提示',
-        content: '请先前往“我的”进行登录',
-        success: (res) => {
-          if (res.confirm) {
-            app.globalData.isFromEditForLogin = true; wx.switchTab({ url: '/pages/profile/profile' });
-          }
-        }
-      });
+  onUnload() {
+    this.persistDraft();
+    this._unloaded = true;
+    this._seq++;
+    this._colorSeq++;
+    clearTimeout(this._colorTimer);
+    if (this._activeTask && this._activeTask.abort) this._activeTask.abort();
+    this._activeTask = null;
+  },
+  setPanel(e) {
+    const panel = e.currentTarget.dataset.panel;
+    if (panel === "size" && this._mattingBusy) return;
+    this.setData({ panel });
+    if (panel === "size") this.setData({ specVisible: true });
+  },
+  showSpecs() {
+    if (!this._mattingBusy) this.setData({ specVisible: true });
+  },
+  closeSpecs() {
+    this.setData({ specVisible: false });
+  },
+  selectSpec(e) {
+    const size = e.detail;
+    this.setData({ specVisible: false, panel: "color" });
+    if (
+      size.width === this.data.size.width &&
+      size.height === this.data.size.height
+    )
       return;
-    }
-
-    if (!this.data.coloredBase64) return;
-
-    wx.showLoading({ title: '魔法正在生效...', mask: true });
-
-    const sizeObj = this.data.presetSizes[this.data.currentSizeIndex];
-
-    wx.request({
-      url: `${app.globalData.baseUrl}/api/photo/generate-layout`,
-      method: 'POST',
-      header: {
-        'content-type': 'application/x-www-form-urlencoded'
-      },
-      data: {
-        openid: app.globalData.openid,
-        base64Image: this.data.coloredBase64,
-        height: sizeObj.height,
-        width: sizeObj.width
-      },
-      success: (res) => {
-        if (res.data.code === 200) {
-          let base64 = res.data.data.image_base64 || '';
-          base64 = base64.replace(/^data:image\/\w+;base64,/, '').replace(/[\r\n\s]/g, '');
-          
-          this.saveToAlbum(base64);
-        } else if (res.data.code === 4031) {
-          this.showAdDialog();
-        } else {
-          wx.showToast({ title: '排版生成失败, 请重试', icon: 'none' });
-        }
-      },
-      fail: () => {
-        wx.showToast({ title: '排版请求失败', icon: 'none' });
-      },
-      complete: () => {
-        wx.hideLoading();
+    if (this._mattingBusy) return;
+    this.setData({ size });
+    this.processTransparentImage();
+  },
+  async processTransparentImage() {
+    if (!this.data.sourcePath || this._unloaded) return;
+    clearTimeout(this._colorTimer);
+    const seq = ++this._seq;
+    this._colorSeq++;
+    this._mattingBusy = true;
+    this._transparent = "";
+    this._transparentPath = "";
+    this._failedColor = "";
+    this.setData({
+      processing: true,
+      status: "正在识别人像与制作证件照",
+      error: "",
+      errorRecovery: "retry",
+      resultPath: "",
+    });
+    try {
+      const data = await api.upload(
+        this.data.sourcePath,
+        this.data.size,
+        (task) => {
+          this._activeTask = task;
+        },
+      );
+      if (this._unloaded || seq !== this._seq) return;
+      const transparent = files.cleanBase64(
+        data.image_base64_hd || data.image_base64_standard,
+      );
+      if (!transparent) throw new Error("没有生成有效照片，请换一张正面照片");
+      const transparentPath = await files.writeBase64(
+        transparent,
+        "transparent",
+      );
+      if (this._unloaded || seq !== this._seq) {
+        files.removeTemp(transparentPath);
+        return;
       }
+      this._transparent = transparent;
+      this._transparentPath = transparentPath;
+      this._mattingBusy = false;
+      await this.changeBackgroundColor(this.data.currentBgColor);
+    } catch (error) {
+      if (!this._unloaded && seq === this._seq)
+        this.setData({
+          processing: false,
+          error: error.message || "照片处理失败，请重试",
+          status: "",
+        });
+    } finally {
+      if (seq === this._seq) {
+        this._mattingBusy = false;
+        this._activeTask = null;
+      }
+    }
+  },
+  async changeBackgroundColor(color) {
+    if (!this._transparent || this._unloaded) return;
+    const seq = ++this._colorSeq,
+      sourceSeq = this._seq;
+    this._failedColor = "";
+    this.setData({
+      processing: true,
+      currentBgColor: color,
+      error: "",
+      errorRecovery: "retry",
+      status: "正在合成背景",
+    });
+    try {
+      const data = api.unwrap(
+        await api.request(
+          "/api/photo/add-background",
+          {
+            method: "POST",
+            header: { "content-type": "application/x-www-form-urlencoded" },
+            data: { base64Image: this._transparent, color },
+          },
+          (task) => {
+            this._activeTask = task;
+          },
+        ),
+      );
+      if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq)
+        return;
+      if (!data || data.status === false) throw new Error("换底色失败，请重试");
+      const path = await files.writeBase64(data.image_base64, "photo");
+      if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq) {
+        files.removeTemp(path);
+        return;
+      }
+      this._activeTask = null;
+      this._appliedColor = color;
+      this.setData({
+        resultPath: path,
+        currentBgColor: color,
+        processing: false,
+        status: "",
+      });
+      this.persistDraft();
+    } catch (error) {
+      if (
+        !this._unloaded &&
+        seq === this._colorSeq &&
+        sourceSeq === this._seq
+      ) {
+        this._activeTask = null;
+        this._failedColor = color;
+        this.setData({
+          processing: false,
+          error: error.message || "换底色失败，请重试",
+          status: "",
+          currentBgColor: this._appliedColor || "#FFFFFF",
+          custom: !["#FFFFFF", "#638cce", "#FF0000"].includes(
+            this._appliedColor || "#FFFFFF",
+          ),
+        });
+      }
+    }
+  },
+  selectColor(e) {
+    if (this._mattingBusy) return;
+    clearTimeout(this._colorTimer);
+    this.setData({ custom: false });
+    this.changeBackgroundColor(e.currentTarget.dataset.color);
+  },
+  showCustomColor() {
+    if (this._transparent && !this._mattingBusy)
+      this.setData({ colorPickerVisible: true });
+  },
+  closeCustomColor() {
+    this.setData({ colorPickerVisible: false });
+  },
+  customColor(e) {
+    if (!this._transparent || this._mattingBusy) return;
+    const color = e.detail.value;
+    if (!/^#[a-fA-F0-9]{6}$/.test(color)) return;
+    this.setData({
+      custom: true,
+      processing: true,
+      status: "正在合成背景",
+      error: "",
+    });
+    clearTimeout(this._colorTimer);
+    this._colorTimer = setTimeout(() => this.changeBackgroundColor(color), 240);
+  },
+  compareStart() {
+    this.setData({ comparing: true });
+  },
+  compareEnd() {
+    this.setData({ comparing: false });
+  },
+  toggleCompare() {
+    if (this.data.sourcePath) this.setData({ comparing: !this.data.comparing });
+  },
+  cancelProcessing() {
+    if (!this.data.processing) return;
+    this._seq++;
+    this._colorSeq++;
+    this._mattingBusy = false;
+    this._failedColor = this._transparent ? this.data.currentBgColor : "";
+    clearTimeout(this._colorTimer);
+    if (this._activeTask && this._activeTask.abort) this._activeTask.abort();
+    this._activeTask = null;
+    const color = this._appliedColor || this.data.currentBgColor;
+    this.setData({
+      processing: false,
+      status: "",
+      error: "处理已取消，可重试或重新选择照片",
+      errorRecovery: "retry",
+      currentBgColor: color,
+      custom: !["#FFFFFF", "#638cce", "#FF0000"].includes(color),
     });
   },
-
-  saveToAlbum(base64Data) {
-    const fs = wx.getFileSystemManager();
-    const filePath = `${wx.env.USER_DATA_PATH}/photo_bg_temp.png`;
-    const buffer = wx.base64ToArrayBuffer(base64Data);
-
-    fs.writeFile({
-      filePath,
-      data: buffer,
-      encoding: 'binary',
-      success: () => {
-        wx.saveImageToPhotosAlbum({
-          filePath,
-          success: () => {
-            wx.showToast({ title: '保存相册成功', icon: 'success' });
-          },
-          fail: (err) => {
-            if (err.errMsg.indexOf('auth deny') > -1) {
-              wx.showToast({ title: '请授权相册权限', icon: 'none' });
-            } else {
-              wx.showToast({ title: data.message || '处理失败, 请重试', icon: 'none' });
-            }
-          }
+  retry() {
+    if (this.data.processing) return;
+    if (this.data.errorRecovery === "reselect" || !this.data.sourcePath)
+      return this.reselect();
+    if (this._transparent && this._failedColor)
+      return this.changeBackgroundColor(this._failedColor);
+    return this.processTransparentImage();
+  },
+  async reselect() {
+    if (this.data.processing) return;
+    try {
+      const res = await files.call("chooseMedia", {
+        count: 1,
+        mediaType: ["image"],
+        sourceType: ["album", "camera"],
+        sizeType: ["original"],
+      });
+      if (this._unloaded) return;
+      this._draftId = drafts.createId();
+      this.setData({ sourcePath: res.tempFiles[0].tempFilePath });
+      this.processTransparentImage();
+    } catch (error) {
+      if (!/cancel/.test(error.errMsg || ""))
+        wx.showToast({ title: "选择照片失败", icon: "none" });
+    }
+  },
+  adjustPhoto() {
+    if (this.data.processing || !this.data.sourcePath) return;
+    wx.navigateTo({
+      url: `/pages/tools/tools?mode=crop&src=${encodeURIComponent(this.data.sourcePath)}&returnToEditor=1`,
+      success: (res) => {
+        res.eventChannel.on("adjusted", (result) => {
+          if (this._unloaded) return;
+          this.setData({ sourcePath: result.path });
+          this.processTransparentImage();
         });
       },
-      fail: () => {
-        wx.showToast({ title: '文件写入失败', icon: 'none' });
-      }
     });
-  }
+  },
+  snapshot() {
+    return {
+      id: this._draftId,
+      mode: "idphoto",
+      toolId: this.data.toolId,
+      sourcePath: this.data.sourcePath,
+      resultPath: this.data.resultPath,
+      transparentPath: this._transparentPath || "",
+      width: this.data.size.width,
+      height: this.data.size.height,
+      sizeName: this.data.size.name,
+      bgColor: this.data.processing
+        ? this._appliedColor || this.data.currentBgColor
+        : this.data.currentBgColor,
+    };
+  },
+  async persistDraft() {
+    if (!this.data.sourcePath) return null;
+    const snapshot = this.snapshot();
+    try {
+      const saved = await drafts.save(snapshot);
+      if (
+        !this._unloaded &&
+        this.data.sourcePath === snapshot.sourcePath &&
+        this.data.resultPath === snapshot.resultPath
+      ) {
+        this.setData({
+          sourcePath: saved.sourcePath,
+          resultPath: saved.resultPath,
+        });
+        if (this._transparentPath === snapshot.transparentPath)
+          this._transparentPath = saved.transparentPath;
+      }
+      return saved;
+    } catch (error) {
+      if (!this._draftWarning && !this._unloaded) {
+        this._draftWarning = true;
+        wx.showToast({ title: "草稿保存失败，请检查可用空间", icon: "none" });
+      }
+      return null;
+    }
+  },
+  async goExport() {
+    if (this._opening || this.data.processing || !this.data.resultPath) return;
+    this._opening = true;
+    try {
+      const draft = await this.persistDraft();
+      if (this._unloaded) return;
+      getApp().globalData.exportSession = draft || this.snapshot();
+      wx.navigateTo({ url: "/pages/export/export" });
+    } finally {
+      this._opening = false;
+    }
+  },
 });

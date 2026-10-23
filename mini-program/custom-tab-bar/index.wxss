@@ -1,33 +1,47 @@
-/* 去除组件自带的背景或圆角多余边距，如果在 skyline 下有需要可以定制 */
 :host {
   display: block;
 }
-:host {
-  display: block;
-  position: absolute;
-  bottom: 0;
+.tab-bar {
+  position: fixed;
   left: 0;
   right: 0;
-  z-index: 9999;
-  
-  /* 定义浅色模式默认变量，避免系统切回时无法回退的 Bug */
-  --td-tab-bar-bg-color: #FFFFFF;
-  --td-tab-bar-border-color: #E7E7E7;
-  --td-bg-color-container: #FFFFFF;
-  --td-text-color-primary: rgba(0, 0, 0, 0.9);
-  --td-text-color-secondary: rgba(0, 0, 0, 0.6);
-  --td-brand-color: #0052D9;
-  --td-brand-color-light: #F2F3FF;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 16rpx 16rpx calc(12rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1rpx solid #e7ece8;
 }
-
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 84rpx;
+  color: #7c8580;
+  font-size: 22rpx;
+}
+.tab-item text {
+  margin-top: 4rpx;
+}
+.active {
+  color: #174e45;
+  font-weight: 600;
+}
+.tab-pressed {
+  opacity: 0.6;
+}
 @media (prefers-color-scheme: dark) {
-  :host {
-    --td-tab-bar-bg-color: #1A1A1A;
-    --td-tab-bar-border-color: #333333;
-    --td-bg-color-container: #1A1A1A;
-    --td-text-color-primary: #FFFFFF;
-    --td-text-color-secondary: #999999;
-    --td-brand-color: #4582E6;
-    --td-brand-color-light: #1B2F51;
+  .tab-bar {
+    background: #1c1c1e;
+    border-color: #363639;
+  }
+  .tab-item {
+    color: #ababaf;
+  }
+  .active {
+    color: #78cbb4;
   }
 }

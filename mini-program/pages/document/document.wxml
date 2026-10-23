@@ -1,6 +1,10 @@
 <view class="page-wrap">
-  <navigation-bar title="{{title}}" showBack="{{true}}" />
-  <scroll-view class="container doc-scroll" scroll-y show-scrollbar="{{false}}">
+  <navigation-bar title="{{title}}" show-back="{{true}}" />
+  <scroll-view
+    class="page-scroll doc-scroll"
+    scroll-y
+    show-scrollbar="{{false}}"
+  >
     <text class="doc-text">{{content}}</text>
   </scroll-view>
 </view>

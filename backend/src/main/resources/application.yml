@@ -29,7 +29,8 @@ wx:
   miniapp:
     appid: your_wechat_appid
     secret: your_wechat_secret
-    rewarded-ad-unit-id: your_ad_unit_id
+    # 可通过环境变量覆盖激励视频广告位。
+    rewarded-ad-unit-id: ${WX_REWARDED_AD_UNIT_ID:adunit-8643a04d0caed362}
 
 # Python 图像处理接口配置
 python-api:

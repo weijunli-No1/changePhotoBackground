@@ -1,0 +1,145 @@
+{
+  "viewport": "320x568 logical container in 375x812 simulator; not physical-device emulation",
+  "pages": {
+    "home": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      }
+    ],
+    "library": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 20,
+        "top": 155,
+        "right": 300.1000061035156,
+        "bottom": 207,
+        "width": 280.1000061035156,
+        "height": 52
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 20,
+        "top": 223.10000610351562,
+        "right": 300.1000061035156,
+        "bottom": 248.10000610351562,
+        "width": 280.1000061035156,
+        "height": 25
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 20,
+        "top": 427.20001220703125,
+        "right": 300.1000061035156,
+        "bottom": 452.20001220703125,
+        "width": 280.1000061035156,
+        "height": 25
+      }
+    ],
+    "editor": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 210.10000610351562,
+        "right": 320,
+        "bottom": 477.1000061035156,
+        "width": 320,
+        "height": 267
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 477.1000061035156,
+        "right": 320,
+        "bottom": 568.1000061035156,
+        "width": 320,
+        "height": 91
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 20,
+        "top": 483.20001220703125,
+        "right": 300.1000061035156,
+        "bottom": 527.2000122070312,
+        "width": 280.1000061035156,
+        "height": 44
+      }
+    ],
+    "export": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 465.6000061035156,
+        "right": 320,
+        "bottom": 568.1000061035156,
+        "width": 320,
+        "height": 102.5
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 20,
+        "top": 478.1000061035156,
+        "right": 300.1000061035156,
+        "bottom": 522.1000061035156,
+        "width": 280.1000061035156,
+        "height": 44
+      }
+    ],
+    "profile": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      }
+    ]
+  }
+}

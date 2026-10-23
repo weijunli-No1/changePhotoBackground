@@ -1,101 +1,182 @@
 const app = getApp();
-
+const api = require("../../utils/api");
+const drafts = require("../../utils/drafts");
+const { call } = require("../../utils/files");
+const profiles = require("../../utils/user-profile");
 Page({
   data: {
-    userInfo: null,
-    hasLogin: false
+    hasLogin: false,
+    nickname: "",
+    avatarUrl: "",
+    busy: false,
+    loggingOut: false,
+    usageKnown: false,
+    usageBusy: false,
+    usageError: "",
+    remaining: 0,
+    unlimited: false,
+    error: "",
+    draftCount: 0,
   },
-
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().init();
-    }
-
-    if (app.globalData.openid) {
-      this.setData({ hasLogin: true, userInfo: { openid: app.globalData.openid } }); // 实际应用中这里可以拉取更多用户信息
+    if (this.getTabBar && this.getTabBar()) this.getTabBar().init();
+    this._unloaded = false;
+    this._usageSeq = (this._usageSeq || 0) + 1;
+    this.setData({
+      hasLogin: Boolean(app.globalData.openid),
+      draftCount: drafts.list().length,
+      usageKnown: false,
+      usageBusy: false,
+      usageError: "",
+      error: "",
+    });
+    this.loadIdentity();
+    this.fetchUsage();
+  },
+  loadIdentity() {
+    const owner = app.globalData.openid;
+    const local = profiles.get(owner);
+    const remote = app.globalData.userInfo || {};
+    const sameOwner = Boolean(owner && remote.openid === owner);
+    this.setData({
+      nickname: owner
+        ? (local && local.nickname) ||
+          (sameOwner && remote.nickname) ||
+          "微信用户"
+        : "",
+      avatarUrl: owner
+        ? (local && local.avatarUrl) || (sameOwner && remote.avatar) || ""
+        : "",
+    });
+  },
+  avatarError() {
+    this.setData({ avatarUrl: "" });
+  },
+  editProfile() {
+    if (!app.globalData.openid || this._openingAccount) return;
+    this._openingAccount = true;
+    wx.navigateTo({
+      url: "/pages/account/account",
+      complete: () => {
+        this._openingAccount = false;
+      },
+    });
+  },
+  onUnload() {
+    this._unloaded = true;
+  },
+  async onLogin() {
+    if (this.data.busy || app.globalData.openid) return;
+    const attempt = (this._loginAttempt = (this._loginAttempt || 0) + 1);
+    this.setData({ busy: true, error: "" });
+    try {
+      await app.doLogin();
+      if (
+        !this._unloaded &&
+        attempt === this._loginAttempt &&
+        app.globalData.openid
+      ) {
+        this.setData({ hasLogin: true });
+        this.loadIdentity();
+        this.fetchUsage();
+      }
+    } catch (error) {
+      if (!this._unloaded && attempt === this._loginAttempt && !error.cancelled)
+        this.setData({ error: error.message || "登录失败，请重试" });
+    } finally {
+      if (!this._unloaded && attempt === this._loginAttempt)
+        this.setData({ busy: false });
     }
   },
-
-  onLogin() {
-    wx.showLoading({ title: '登录中...', mask: true });
-    app.doLogin()
-      .then(res => {
+  cancelLogin() {
+    if (!this.data.busy || app.globalData.openid) return;
+    app.cancelLogin();
+    this._loginAttempt = (this._loginAttempt || 0) + 1;
+    this.setData({ busy: false, error: "" });
+  },
+  async fetchUsage() {
+    if (!app.globalData.openid || this.data.usageBusy) return;
+    const openid = app.globalData.openid;
+    const seq = (this._usageSeq = (this._usageSeq || 0) + 1);
+    this.setData({ usageBusy: true, usageError: "" });
+    try {
+      const usage = api.unwrap(
+        await api.request("/api/user/usage", { data: { openid } }),
+      );
+      if (
+        !this._unloaded &&
+        seq === this._usageSeq &&
+        app.globalData.openid === openid
+      )
         this.setData({
-          hasLogin: true,
-          userInfo: res
+          usageKnown: true,
+          remaining: Math.max(
+            0,
+            5 + (usage.adViewCount || 0) - (usage.saveCount || 0),
+          ),
+          unlimited: usage.adViewCount >= 5,
         });
-        wx.hideLoading();
-        if (app.globalData.isFromEditForLogin) {
-          app.globalData.isFromEditForLogin = false; // 重置标识
-          wx.showModal({
-            title: '登录成功',
-            content: '是否立即返回去制作证件照？',
-            confirmText: '去制作',
-            cancelText: '留在本页',
-            success: (mRes) => {
-              if (mRes.confirm) {
-                wx.switchTab({ url: '/pages/index/index' });
-              }
-            }
-          });
-        } else {
-          wx.showToast({ title: '登录成功', icon: 'success' });
-        }
-      })
-      .catch(err => {
-        wx.hideLoading();
-        // wx.showToast({ title: '登录失败', icon: 'none' });
+    } catch (error) {
+      if (
+        !this._unloaded &&
+        seq === this._usageSeq &&
+        app.globalData.openid === openid
+      )
+        this.setData({ usageError: "暂时无法查询剩余次数，请重试" });
+    } finally {
+      if (!this._unloaded && seq === this._usageSeq)
+        this.setData({ usageBusy: false });
+    }
+  },
+  openDrafts() {
+    app.globalData.requestedWorksTab = "drafts";
+    wx.switchTab({
+      url: "/pages/history/history",
+      fail: () => {
+        delete app.globalData.requestedWorksTab;
+        if (!this._unloaded) this.setData({ error: "作品页未能打开，请重试" });
+      },
+    });
+  },
+  async onLogout() {
+    if (!app.globalData.openid || this.data.loggingOut) return;
+    this.setData({ loggingOut: true, error: "" });
+    try {
+      const res = await call("showModal", {
+        title: "退出当前账号？",
+        content:
+          "退出后，查看云端作品和保存证件照需要重新登录。本机草稿、头像昵称及手机相册里的照片会保留。",
+        confirmText: "退出登录",
+        cancelText: "继续使用",
+        confirmColor: "#ac4939",
       });
+      if (!res.confirm || this._unloaded) return;
+      app.logout();
+      this.loadIdentity();
+      wx.showToast({ title: "已退出登录", icon: "success" });
+    } catch (error) {
+      if (!this._unloaded) this.setData({ error: "退出失败，请稍后重试" });
+    } finally {
+      if (!this._unloaded) this.setData({ loggingOut: false });
+    }
   },
-
-  clearHistory() {
-    wx.showModal({
-      title: '清空缓存',
-      content: '确定要清空本地缓存记录吗？将删除您所保存的一些本地临时数据。',
-      confirmColor: '#e11d48',
-      success: (res) => {
-        if (res.confirm) {
-          // 保存openid避免被误清空
-          const openid = wx.getStorageSync('openid');
-          wx.clearStorageSync();
-          if (openid) {
-            wx.setStorageSync('openid', openid);
-          }
-          wx.showToast({ title: '清理完成', icon: 'success' });
-        }
-      }
+  openSupport() {
+    if (this._openingSupport) return;
+    this._openingSupport = true;
+    wx.navigateTo({
+      url: "/pages/support/support",
+      complete: () => {
+        this._openingSupport = false;
+      },
     });
   },
-
-  onLogout() {
-    wx.showModal({
-      title: '退出登录',
-      content: '确定要退出登录吗？',
-      confirmColor: '#e11d48',
-      success: (res) => {
-        if (res.confirm) {
-          app.globalData.openid = '';
-          app.globalData.userInfo = null;
-          wx.removeStorageSync('openid');
-          this.setData({ 
-            hasLogin: false,
-            userInfo: null 
-          });                                                                           
-          wx.showToast({ title: '已退出登录', icon: 'none' });
-        }
-      }
-    });
-  },
-
   navToPrivacy() {
-    wx.navigateTo({
-      url: '/pages/document/document?type=privacy'
-    });
+    wx.navigateTo({ url: "/pages/document/document?type=privacy" });
   },
-
   navToAgreement() {
-    wx.navigateTo({
-      url: '/pages/document/document?type=agreement'
-    });
-  }
+    wx.navigateTo({ url: "/pages/document/document?type=agreement" });
+  },
+  goToTools() {
+    wx.switchTab({ url: "/pages/index/index" });
+  },
 });

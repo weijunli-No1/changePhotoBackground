@@ -1,17 +1,15 @@
-<!-- 占位元素，防止内容被遮挡 -->
-<view class="nav-placeholder" style="height:{{navHeight}}px;"></view>
-
-<view class="nav-container" style="height:{{navHeight}}px; background:{{bgColor}};">
-  <!-- 状态栏占位 -->
-  <view class="status-bar" style="height:{{statusBarHeight}}px;"></view>
-  <!-- 导航栏内容 -->
-  <view class="nav-content" style="height:{{contentHeight}}px; line-height:{{contentHeight}}px;">
-    <!-- 左侧占位（如有需要可添加返回按钮） -->
-    <view class="left-box" hover-class="nav-btn-pressed" hover-stay-time="80" bindtap="goBack">
-      <t-icon wx:if="{{showBack}}" name="chevron-left" size="48rpx" color="{{titleColor}}" class="back-icon" />
-    </view>
-    <text class="nav-title" style="color:{{titleColor}};">{{title}}</text>
-    <!-- 右侧胶囊占位 -->
-    <view class="right-box"></view>
-  </view>
-</view>
+<view style="height:{{navHeight}}px;"></view
+><view class="nav-container" style="height:{{navHeight}}px;"
+  ><view style="height:{{statusBarHeight}}px;"></view
+  ><view class="nav-content" style="height:{{contentHeight}}px;"
+    ><view
+      wx:if="{{showBack}}"
+      class="left-box"
+      hover-class="nav-btn-pressed"
+      bindtap="goBack"
+      aria-label="返回"
+      aria-role="button"
+      ><t-icon name="chevron-left" size="48rpx" /></view
+    ><text class="nav-title">{{title}}</text></view
+  ></view
+>

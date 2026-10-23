@@ -2,5 +2,8 @@
   "navigationStyle": "custom",
   "renderer": "skyline",
   "componentFramework": "glass-easel",
-  "usingComponents": {}
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index",
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
 }

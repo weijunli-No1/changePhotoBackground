@@ -1,0 +1,130 @@
+<view class="page-wrap export-page">
+  <navigation-bar title="预览与保存" show-back="{{true}}" />
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
+    <view class="export-body">
+      <view class="export-preview"
+        ><image src="{{previewPath}}" mode="aspectFit" class="export-photo"
+      /></view>
+      <view class="export-spec"
+        >{{sizeName}}{{!local ? ' · ' + colorName : ''}}</view
+      >
+      <view wx:if="{{actualWidth}}" class="export-dimensions"
+        >实际图片 {{actualWidth}} × {{actualHeight}} px</view
+      >
+      <block wx:if="{{!local}}">
+        <view class="format-title">选择保存格式</view>
+        <view class="export-options" aria-role="radiogroup">
+          <view
+            class="export-option {{action === 'single' ? 'selected' : ''}}"
+            data-action="single"
+            aria-role="radio"
+            aria-checked="{{action === 'single'}}"
+            aria-disabled="{{busy}}"
+            aria-label="电子照片，单张高清照片"
+            bindtap="selectAction"
+            hover-class="pressed"
+            ><image
+              src="{{previewPath}}"
+              class="single-thumb"
+              mode="aspectFit" /><view class="format-copy"
+              ><view class="format-name">电子照片</view
+              ><view class="format-note">单张高清照片</view></view
+            ><t-icon
+              name="{{action === 'single' ? 'check-circle-filled' : 'circle'}}"
+              size="38rpx"
+              color="{{action === 'single' ? 'var(--sg-brand)' : 'var(--sg-muted)'}}"
+          /></view>
+          <view
+            class="export-option {{action === 'layout' ? 'selected' : ''}}"
+            data-action="layout"
+            aria-role="radio"
+            aria-checked="{{action === 'layout'}}"
+            aria-disabled="{{busy}}"
+            aria-label="六寸排版，适合打印，自动排版"
+            bindtap="selectAction"
+            hover-class="pressed"
+            ><view class="layout-thumb"
+              ><image
+                wx:for="{{layoutSlots}}"
+                wx:key="*this"
+                src="{{previewPath}}"
+                mode="aspectFill" /></view
+            ><view class="format-copy"
+              ><view class="format-name">六寸排版</view
+              ><view class="format-note">适合打印，自动排版</view></view
+            ><t-icon
+              name="{{action === 'layout' ? 'check-circle-filled' : 'circle'}}"
+              size="38rpx"
+              color="{{action === 'layout' ? 'var(--sg-brand)' : 'var(--sg-muted)'}}"
+          /></view>
+        </view>
+        <view wx:if="{{action === 'layout'}}" class="export-note"
+          >上图为单张预览，保存时生成实际六寸排版图。</view
+        >
+        <view class="usage-note"
+          >{{quotaKnown ? (unlimited ? '今天可不限次数保存' : '今日剩余 ' +
+          remaining + ' 次保存机会') :
+          '每日5次免费保存，超出后可观看视频增加次数'}}</view
+        >
+      </block>
+      <view wx:else class="export-note local-note"
+        >本地处理的照片直接保存，不占用证件照次数。</view
+      >
+      <view wx:if="{{saved}}" class="notice success-note" aria-role="status"
+        ><t-icon name="check-circle-filled" size="34rpx" /><view
+          ><view class="saved-title">已保存到手机相册</view
+          ><view class="saved-detail"
+            >可以返回首页，继续使用其他工具。</view
+          ></view
+        ></view
+      >
+      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
+        >{{error}}</view
+      >
+    </view>
+  </scroll-view>
+  <view class="footer-actions">
+    <view
+      class="primary {{busy || !previewPath ? 'disabled' : ''}}"
+      aria-disabled="{{busy || !previewPath}}"
+      bindtap="primaryAction"
+      hover-class="pressed"
+      aria-role="button"
+      ><view wx:if="{{busy}}" class="loading-spinner"></view
+      ><text
+        >{{busy ? (savingStage || '正在保存…') : saved ? '完成，返回首页' :
+        local ? '保存到相册' : action === 'layout' ? '保存六寸排版' :
+        '保存电子照片'}}</text
+      ></view
+    >
+    <view
+      wx:if="{{saved && !busy}}"
+      class="save-again"
+      bindtap="saveCurrent"
+      aria-role="button"
+      hover-class="pressed"
+      >再次保存到相册</view
+    >
+  </view>
+  <view wx:if="{{quotaVisible}}" class="quota-mask" bindtap="cancelAd"
+    ><view
+      class="quota-sheet"
+      catchtap="stop"
+      aria-role="dialog"
+      aria-modal="{{true}}"
+      aria-label="今日免费次数已用完"
+      ><view class="sheet-handle"></view
+      ><view class="quota-title">今日免费次数已用完</view
+      ><view class="quota-desc">完整观看视频，增加一次保存机会</view
+      ><view
+        class="primary"
+        bindtap="confirmAd"
+        hover-class="pressed"
+        aria-role="button"
+        >看视频，继续保存</view
+      ><view class="link" bindtap="cancelAd" aria-role="button"
+        >稍后再说</view
+      ></view
+    ></view
+  >
+</view>

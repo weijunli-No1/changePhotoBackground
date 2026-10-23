@@ -1,0 +1,120 @@
+.library-header {
+  padding: 24rpx 40rpx 0;
+  flex-shrink: 0;
+}
+.catalog-search {
+  display: flex;
+  align-items: center;
+  background: var(--sg-soft);
+  border-radius: 20rpx;
+  padding-left: 24rpx;
+  min-height: 88rpx;
+  color: var(--sg-muted);
+}
+.catalog-search input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  font-size: 28rpx;
+  color: var(--sg-text);
+  margin-left: 16rpx;
+}
+.search-clear {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.catalog-tabs {
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  white-space: nowrap;
+  margin-top: 24rpx;
+}
+.category-row {
+  display: inline-flex;
+  height: 52px;
+}
+.category-tab {
+  min-height: 48px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  margin-right: 44rpx;
+  color: var(--sg-muted);
+  border-bottom: 4rpx solid transparent;
+}
+.category-tab.selected {
+  border-color: var(--sg-brand);
+  color: var(--sg-brand);
+  font-weight: 600;
+}
+.catalog-body {
+  padding: 0 40rpx 48rpx;
+}
+.catalog-group {
+  margin-top: 32rpx;
+}
+.catalog-heading {
+  font-size: 34rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+.catalog-tool {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 0;
+  border-bottom: 1rpx solid var(--sg-line);
+}
+.catalog-icon {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 20rpx;
+  background: var(--sg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  color: var(--sg-brand);
+  flex-shrink: 0;
+}
+.catalog-portrait {
+  width: 68rpx;
+  height: 94rpx;
+  border-radius: 6rpx;
+}
+.catalog-copy {
+  flex: 1;
+  min-width: 0;
+  padding-right: 12rpx;
+}
+.catalog-name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.catalog-description {
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: var(--sg-muted);
+  margin-top: 8rpx;
+}
+.catalog-local {
+  font-size: 22rpx;
+  color: var(--sg-muted);
+  margin-top: 6rpx;
+}
+.catalog-empty {
+  padding: 90rpx 0;
+  text-align: center;
+  color: var(--sg-muted);
+}
+.catalog-empty .secondary {
+  margin-top: 36rpx;
+}
+.catalog-error {
+  margin-top: 24rpx;
+}

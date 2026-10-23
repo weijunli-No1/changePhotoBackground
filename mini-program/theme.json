@@ -2,19 +2,31 @@
   "light": {
     "navBgColor": "#FFFFFF",
     "navTextStyle": "black",
-    "tabBarColor": "#999999",
-    "tabBarSelectedColor": "#0052D9",
+    "tabBarColor": "#656b68",
+    "tabBarSelectedColor": "#174E45",
     "tabBarBgColor": "#FFFFFF",
     "tabBarBorderStyle": "black",
-    "pageBgColor": "#F5F5F5"
+    "pageBgColor": "#FFFFFF",
+    "homeIcon": "assets/icons/home.png",
+    "homeActiveIcon": "assets/icons/home-active.png",
+    "historyIcon": "assets/icons/history.png",
+    "historyActiveIcon": "assets/icons/history-active.png",
+    "userIcon": "assets/icons/user.png",
+    "userActiveIcon": "assets/icons/user-active.png"
   },
   "dark": {
-    "navBgColor": "#1A1A1A",
+    "navBgColor": "#121212",
     "navTextStyle": "white",
-    "tabBarColor": "#666666",
-    "tabBarSelectedColor": "#4582E6",
-    "tabBarBgColor": "#1A1A1A",
+    "tabBarColor": "#ababaf",
+    "tabBarSelectedColor": "#78CBB4",
+    "tabBarBgColor": "#1c1c1e",
     "tabBarBorderStyle": "white",
-    "pageBgColor": "#121212"
+    "pageBgColor": "#121212",
+    "homeIcon": "assets/icons/home-dark.png",
+    "homeActiveIcon": "assets/icons/home-active-dark.png",
+    "historyIcon": "assets/icons/history-dark.png",
+    "historyActiveIcon": "assets/icons/history-active-dark.png",
+    "userIcon": "assets/icons/user-dark.png",
+    "userActiveIcon": "assets/icons/user-active-dark.png"
   }
 }

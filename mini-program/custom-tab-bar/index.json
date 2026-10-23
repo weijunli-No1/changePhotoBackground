@@ -1,8 +1,5 @@
 {
   "component": true,
   "componentFramework": "glass-easel",
-  "usingComponents": {
-    "t-tab-bar": "tdesign-miniprogram/tab-bar/tab-bar",
-    "t-tab-bar-item": "tdesign-miniprogram/tab-bar-item/tab-bar-item"
-  }
+  "usingComponents": { "t-icon": "tdesign-miniprogram/icon/icon" }
 }
