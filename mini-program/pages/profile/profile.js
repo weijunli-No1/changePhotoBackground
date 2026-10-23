@@ -21,17 +21,27 @@ Page({
   onShow() {
     if (this.getTabBar && this.getTabBar()) this.getTabBar().init();
     this._unloaded = false;
-    this._usageSeq = (this._usageSeq || 0) + 1;
+    this.syncUsageOwner();
     this.setData({
       hasLogin: Boolean(app.globalData.openid),
       draftCount: drafts.list().length,
-      usageKnown: false,
-      usageBusy: false,
-      usageError: "",
       error: "",
     });
     this.loadIdentity();
     this.fetchUsage();
+  },
+  syncUsageOwner() {
+    const owner = app.globalData.openid || "";
+    if (this._usageOwner === owner) return;
+    this._usageOwner = owner;
+    this._usageSeq = (this._usageSeq || 0) + 1;
+    this.setData({
+      usageKnown: false,
+      usageBusy: false,
+      usageError: "",
+      remaining: 0,
+      unlimited: false,
+    });
   },
   loadIdentity() {
     const owner = app.globalData.openid;
@@ -95,6 +105,7 @@ Page({
     this.setData({ busy: false, error: "" });
   },
   async fetchUsage() {
+    this.syncUsageOwner();
     if (!app.globalData.openid || this.data.usageBusy) return;
     const openid = app.globalData.openid;
     const seq = (this._usageSeq = (this._usageSeq || 0) + 1);
@@ -122,7 +133,11 @@ Page({
         seq === this._usageSeq &&
         app.globalData.openid === openid
       )
-        this.setData({ usageError: "暂时无法查询剩余次数，请重试" });
+        this.setData({
+          usageError: this.data.usageKnown
+            ? "次数暂未更新，当前显示上次查询结果"
+            : "暂时无法查询剩余次数，请重试",
+        });
     } finally {
       if (!this._unloaded && seq === this._usageSeq)
         this.setData({ usageBusy: false });
@@ -152,6 +167,8 @@ Page({
       });
       if (!res.confirm || this._unloaded) return;
       app.logout();
+      this.syncUsageOwner();
+      this.setData({ hasLogin: false });
       this.loadIdentity();
       wx.showToast({ title: "已退出登录", icon: "success" });
     } catch (error) {

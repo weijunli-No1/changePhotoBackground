@@ -35,10 +35,9 @@
           value="{{nickname}}"
           maxlength="20"
           placeholder="点击使用微信昵称"
-          disabled="{{saving || reviewPending || !ownerValid}}"
+          disabled="{{saving || !ownerValid}}"
           bindinput="nicknameInput"
           bindblur="nicknameBlur"
-          bindnicknamereview="nicknameReview"
           cursor-spacing="32"
           confirm-type="done"
           aria-label="微信昵称快捷填写"
@@ -46,7 +45,6 @@
         <view class="account-note input-note"
           >点击输入框，在键盘上方选择你的微信昵称。</view
         >
-        <view wx:if="{{reviewPending}}" class="review-note">正在检测昵称…</view>
         <view wx:if="{{error}}" class="error-inline">{{error}}</view>
         <view class="account-privacy"
           >头像和昵称仅用于“我的”页面展示，保存在当前设备。</view
@@ -61,7 +59,7 @@
         loading="{{saving}}"
         hover-class="pressed"
       >
-        {{saving ? '正在保存…' : reviewPending ? '检测中，请稍候' : '保存资料'}}
+        {{saving ? '正在保存…' : '保存资料'}}
       </button>
     </view>
   </view>

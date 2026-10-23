@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-23",
+  "appid": "wx0656800976d3244f",
+  "version": "1.1.0",
+  "description": "Skyline 界面升级、交互优化及个人资料功能完善",
+  "result": "WeChat Developer Tools CLI upload succeeded (exit 0)",
+  "packageBytes": 778601,
+  "sourceFingerprint": "16d79ab1f4ebad194bfe3fd1171a7153c3039a39ef16e5dfcfe915cf2ec9a069",
+  "reviewSubmitted": false,
+  "published": false,
+  "cliInfo": {
+    "size": {
+      "total": 778601,
+      "packages": [
+        {
+          "name": "TOTAL",
+          "size": 778601
+        }
+      ]
+    }
+  }
+}

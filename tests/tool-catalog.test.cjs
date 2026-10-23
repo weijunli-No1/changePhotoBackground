@@ -196,6 +196,8 @@ test("从个人中心进入草稿会消费一次导航意图，不落到先前�
   const p = load("pages/history/history.js", {
     getApp: () => app,
     require: (name) => {
+      if (name.endsWith("/skyline-motion"))
+        return require("../mini-program/utils/skyline-motion");
       if (name.endsWith("/tool-catalog")) return catalog;
       if (name.endsWith("/drafts")) return { list: () => [] };
       return {};
@@ -218,6 +220,8 @@ test("在作品管理清理草稿需确认且防重，取消不清理，成功�
     getApp: () => app,
     wx: { showToast() {} },
     require: (name) => {
+      if (name.endsWith("/skyline-motion"))
+        return require("../mini-program/utils/skyline-motion");
       if (name.endsWith("/tool-catalog")) return catalog;
       if (name.endsWith("/drafts")) return { clear: async () => cleared++ };
       if (name.endsWith("/files"))

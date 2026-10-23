@@ -5,7 +5,7 @@
   right: 0;
   z-index: 1000;
   background: #fff;
-  color: #17221f;
+  color: #1e293b;
 }
 .nav-content {
   position: relative;

@@ -4,6 +4,7 @@
   "componentFramework": "glass-easel",
   "usingComponents": {
     "navigation-bar": "/components/navigation-bar/index",
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "faq-item": "/components/faq-item/index"
   }
 }

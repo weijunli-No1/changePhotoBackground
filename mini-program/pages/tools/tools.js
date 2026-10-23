@@ -6,7 +6,16 @@ Page({
     mode: "compress",
     sourcePath: "",
     resultPath: "",
+    displayPath: "",
     processing: false,
+    opening: false,
+    openingError: "",
+    adjusting: false,
+    cropFrameStyle: "",
+    cropImageStyle: "",
+    cropFallbackTransform: "",
+    cropPreviewReady: false,
+    accentColor: "#2563eb",
     error: "",
     errorRecovery: "reselect",
     quality: 85,
@@ -41,6 +50,12 @@ Page({
   },
   onLoad(options) {
     this._unloaded = false;
+    this._themeChange = ({ theme }) => {
+      if (!this._unloaded)
+        this.setData({ accentColor: theme === "dark" ? "#78cbb4" : "#2563eb" });
+    };
+    if (wx.getAppBaseInfo) this._themeChange(wx.getAppBaseInfo());
+    if (wx.onThemeChange) wx.onThemeChange(this._themeChange);
     this._draftId = options.draft || drafts.createId();
     const draft = options.draft ? drafts.get(options.draft) : null;
     const mode = draft
@@ -54,6 +69,7 @@ Page({
         ...draft.toolState,
         sourcePath: draft.sourcePath,
         resultPath: draft.resultPath || "",
+        displayPath: draft.resultPath || draft.sourcePath,
         width: draft.width,
         height: draft.height,
       });
@@ -66,15 +82,27 @@ Page({
     this._ready = true;
     if (this.data.sourcePath) this.loadSource(this.data.sourcePath);
   },
+  onResize() {
+    this.updateCropPreview();
+  },
   onHide() {
-    this.persistDraft();
+    if (!this.data.opening) this.persistDraft();
   },
   onUnload() {
     this.persistDraft();
     this._unloaded = true;
+    if (this._themeChange && wx.offThemeChange)
+      wx.offThemeChange(this._themeChange);
+    this.releaseCropMotion();
   },
   async choosePhoto() {
-    if (this.data.processing || this._choosing) return;
+    if (
+      this.data.processing ||
+      this.data.opening ||
+      this.data.adjusting ||
+      this._choosing
+    )
+      return;
     this._choosing = true;
     try {
       const res = await files.call("chooseMedia", {
@@ -105,6 +133,8 @@ Page({
       processing: true,
       resultPath: "",
       resultSize: "",
+      displayPath: "",
+      cropPreviewReady: false,
       error: "",
     });
     try {
@@ -114,6 +144,7 @@ Page({
       this.setData({
         processing: false,
         sourcePath: path,
+        displayPath: path,
         sourceSize: files.formatBytes(size),
         sourceWidth: info.width,
         sourceHeight: info.height,
@@ -133,13 +164,21 @@ Page({
     }
   },
   async apply() {
-    if (this.data.processing || !this.data.sourcePath || this._unloaded) return;
+    if (
+      this.data.processing ||
+      this.data.opening ||
+      !this.data.sourcePath ||
+      this._unloaded
+    )
+      return;
+    this.updateCropPreview();
     // 参数已经更新，旧结果不再代表当前设置，也不能作为当前草稿导出。
     this.setData({
       processing: true,
       error: "",
       resultPath: "",
       resultSize: "",
+      openingError: "",
       errorRecovery: "retry",
     });
     try {
@@ -166,6 +205,7 @@ Page({
         canMoveX: rect.width < orientedWidth - 0.5,
         canMoveY: rect.height < orientedHeight - 0.5,
         resultPath: result.path,
+        displayPath: result.path,
         width: result.width,
         height: result.height,
         resultSize: files.formatBytes(size),
@@ -183,34 +223,43 @@ Page({
     }
   },
   retry() {
-    if (this.data.processing) return;
+    if (this.data.processing || this.data.opening || this.data.adjusting)
+      return;
     return this.data.sourcePath && this.data.errorRecovery === "retry"
       ? this.apply()
       : this.choosePhoto();
   },
   setQuality(e) {
-    if (this.data.processing) return;
+    if (this.data.processing || this.data.opening || this.data.adjusting)
+      return;
+    if (this.data.quality === Number(e.currentTarget.dataset.quality)) return;
     this.setData({ quality: Number(e.currentTarget.dataset.quality) });
     this.apply();
   },
   setEdge(e) {
-    if (this.data.processing) return;
+    if (this.data.processing || this.data.opening || this.data.adjusting)
+      return;
+    if (this.data.maxEdge === Number(e.currentTarget.dataset.edge)) return;
     this.setData({ maxEdge: Number(e.currentTarget.dataset.edge) });
     this.apply();
   },
   setRatio(e) {
-    if (this.data.processing) return;
+    if (this.data.processing || this.data.opening || this.data.adjusting)
+      return;
     const item = this.data.ratios[Number(e.currentTarget.dataset.index)];
+    if (!item || this.data.ratio === item.value) return;
     this.setData({ ratio: item.value, ratioName: item.name });
     this.apply();
   },
   rotate() {
-    if (this.data.processing) return;
+    if (this.data.processing || this.data.opening || this.data.adjusting)
+      return;
     this.setData({ angle: (this.data.angle + 90) % 360 });
     this.apply();
   },
   reset() {
-    if (this.data.processing) return;
+    if (this.data.processing || this.data.opening || this.data.adjusting)
+      return;
     this.setData({
       angle: 0,
       ratio: 0,
@@ -221,14 +270,130 @@ Page({
     this.apply();
   },
   positionX(e) {
-    if (this.data.processing) return;
-    this.setData({ positionX: e.detail.value });
-    this.apply();
+    this.finishPosition("X", e);
   },
   positionY(e) {
-    if (this.data.processing) return;
-    this.setData({ positionY: e.detail.value });
+    this.finishPosition("Y", e);
+  },
+  previewPositionX(e) {
+    this.previewPosition("X", e);
+  },
+  previewPositionY(e) {
+    this.previewPosition("Y", e);
+  },
+  previewPosition(axis, e) {
+    if (this.data.processing || this.data.opening || this._unloaded) return;
+    const value = Math.max(0, Math.min(100, Number(e.detail.value) || 0));
+    if (!this.data.adjusting)
+      this.setData({
+        adjusting: true,
+        resultPath: "",
+        resultSize: "",
+        error: "",
+      });
+    this._dragPosition = { axis, value };
+    if (this._cropPosition) this._cropPosition[axis].value = value / 100;
+    else
+      this.setData({ cropFallbackTransform: this.cropTransform(axis, value) });
+  },
+  finishPosition(axis, e) {
+    if (this.data.processing || this.data.opening || this._unloaded) return;
+    this._dragPosition = null;
+    this.setData({
+      ["position" + axis]: Math.max(
+        0,
+        Math.min(100, Number(e.detail.value) || 0),
+      ),
+      adjusting: false,
+    });
     this.apply();
+  },
+  cancelPosition() {
+    if (!this.data.adjusting) return;
+    this._dragPosition = null;
+    this.setData({ adjusting: false });
+    this.apply();
+  },
+  cropTransform(axis, value) {
+    const g = this._cropGeometry || { dx: 0, dy: 0 };
+    const x = axis === "X" ? value : this.data.positionX;
+    const y = axis === "Y" ? value : this.data.positionY;
+    return `transform:translate(${(-g.dx * x) / 100}px,${(-g.dy * y) / 100}px) rotate(${this.data.angle}deg);`;
+  },
+  updateCropPreview() {
+    if (
+      this.data.mode !== "crop" ||
+      !this.data.sourceWidth ||
+      !this.createSelectorQuery ||
+      this._unloaded
+    )
+      return;
+    const version = (this._previewVersion = (this._previewVersion || 0) + 1);
+    this.createSelectorQuery()
+      .select(".local-preview")
+      .boundingClientRect()
+      .exec((rects) => {
+        if (this._unloaded || version !== this._previewVersion || !rects[0])
+          return;
+        const { sourceWidth: sw, sourceHeight: sh, angle, ratio } = this.data;
+        const turned = angle % 180 !== 0;
+        const ow = turned ? sh : sw,
+          oh = turned ? sw : sh;
+        const crop = cropRect(ow, oh, ratio);
+        const scale = Math.min(
+          (rects[0].width - 24) / crop.width,
+          (rects[0].height - 24) / crop.height,
+        );
+        const dx = (ow - crop.width) * scale,
+          dy = (oh - crop.height) * scale;
+        this._cropGeometry = { dx, dy };
+        this.releaseCropMotion();
+        this.setData(
+          {
+            cropFrameStyle: `width:${crop.width * scale}px;height:${crop.height * scale}px;`,
+            cropImageStyle: `width:${sw * scale}px;height:${sh * scale}px;left:${((ow - sw) * scale) / 2}px;top:${((oh - sh) * scale) / 2}px;`,
+            cropFallbackTransform: this.cropTransform(),
+            cropPreviewReady: true,
+            canMoveX: dx > 0.5,
+            canMoveY: dy > 0.5,
+          },
+          () => {
+            if (this._unloaded || version !== this._previewVersion) return;
+            if (!wx.worklet || !wx.worklet.shared || !this.applyAnimatedStyle)
+              return;
+            const x = wx.worklet.shared(this.data.positionX / 100);
+            const y = wx.worklet.shared(this.data.positionY / 100);
+            this._cropPosition = { X: x, Y: y };
+            this.applyAnimatedStyle(
+              ".crop-source",
+              () => {
+                "worklet";
+                return {
+                  transform: `translate(${-dx * x.value}px,${-dy * y.value}px) rotate(${angle}deg)`,
+                };
+              },
+              {},
+              (result) => {
+                const id =
+                  typeof result === "number"
+                    ? result
+                    : result && result.styleId;
+                if (id === undefined || id === null) return;
+                if (this._unloaded || version !== this._previewVersion) {
+                  if (this.clearAnimatedStyle)
+                    this.clearAnimatedStyle(".crop-source", [id]);
+                } else this._cropStyleId = id;
+              },
+            );
+          },
+        );
+      });
+  },
+  releaseCropMotion() {
+    if (this._cropStyleId !== undefined && this.clearAnimatedStyle)
+      this.clearAnimatedStyle(".crop-source", [this._cropStyleId]);
+    this._cropStyleId = undefined;
+    this._cropPosition = null;
   },
   snapshot() {
     return {
@@ -259,11 +424,16 @@ Page({
         !this._unloaded &&
         this.data.sourcePath === snapshot.sourcePath &&
         this.data.resultPath === snapshot.resultPath
-      )
+      ) {
         this.setData({
           sourcePath: saved.sourcePath,
           resultPath: saved.resultPath,
+          displayPath:
+            this.data.displayPath === snapshot.resultPath
+              ? saved.resultPath
+              : this.data.displayPath,
         });
+      }
       return saved;
     } catch (error) {
       if (!this._warned && !this._unloaded) {
@@ -274,8 +444,25 @@ Page({
     }
   },
   async goExport() {
-    if (this.data.processing || !this.data.resultPath || this._opening) return;
+    if (
+      this._unloaded ||
+      this.data.processing ||
+      this.data.adjusting ||
+      !this.data.resultPath ||
+      this._opening
+    )
+      return;
     this._opening = true;
+    this.setData({ opening: true, openingError: "" });
+    let navigating = false;
+    const finish = () => {
+      this._opening = false;
+      if (!this._unloaded) this.setData({ opening: false });
+    };
+    const fail = () => {
+      if (!this._unloaded)
+        this.setData({ openingError: "未能打开下一步，请再次点击重试" });
+    };
     try {
       const draft = await this.persistDraft();
       if (this._unloaded) return;
@@ -283,17 +470,27 @@ Page({
         this.getOpenerEventChannel().emit("adjusted", {
           path: (draft || this.snapshot()).resultPath,
         });
-        wx.navigateBack();
+        navigating = true;
+        wx.navigateBack({ fail, complete: finish });
         return;
       }
       getApp().globalData.exportSession = draft || this.snapshot();
-      wx.navigateTo({ url: "/pages/export/export" });
+      navigating = true;
+      wx.navigateTo({ url: "/pages/export/export", fail, complete: finish });
+    } catch (error) {
+      navigating = false;
+      fail();
     } finally {
-      this._opening = false;
+      if (!navigating) finish();
     }
   },
   makeIdPhoto() {
-    if (!this.data.processing && this.data.resultPath)
+    if (
+      !this.data.processing &&
+      !this.data.opening &&
+      !this.data.adjusting &&
+      this.data.resultPath
+    )
       wx.navigateTo({
         url: `/pages/edit/edit?src=${encodeURIComponent(this.data.resultPath)}`,
       });

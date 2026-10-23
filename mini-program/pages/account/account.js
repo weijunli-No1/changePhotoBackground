@@ -5,16 +5,12 @@ Page({
     nickname: "",
     avatarUrl: "",
     saving: false,
-    reviewPending: false,
     error: "",
     ownerValid: false,
   },
   onLoad() {
     this._owner = app.globalData.openid;
     this._unloaded = false;
-    this._canReview = Boolean(
-      wx.canIUse && wx.canIUse("input.bindnicknamereview"),
-    );
     const cached = profiles.get(this._owner);
     const remote = app.globalData.userInfo || {};
     const sameOwner = remote.openid === this._owner;
@@ -24,7 +20,6 @@ Page({
       "微信用户";
     const avatarUrl =
       (cached && cached.avatarUrl) || (sameOwner && remote.avatar) || "";
-    this._approvedNickname = nickname;
     this.setData({
       nickname,
       avatarUrl,
@@ -41,8 +36,6 @@ Page({
   },
   onUnload() {
     this._unloaded = true;
-    clearTimeout(this._reviewTimer);
-    this._pendingSubmit = "";
   },
   onChooseAvatar(e) {
     if (this._unloaded || this.data.saving || !this.data.ownerValid) return;
@@ -59,37 +52,6 @@ Page({
   nicknameBlur(e) {
     if (this._unloaded || this.data.saving) return;
     this.setData({ nickname: e.detail.value });
-    if (this._canReview && e.detail.value.trim() !== this._approvedNickname)
-      this.waitForReview(e.detail.value.trim());
-  },
-  waitForReview(value) {
-    this._reviewValue = value;
-    this.setData({ reviewPending: true });
-    clearTimeout(this._reviewTimer);
-    this._reviewTimer = setTimeout(() => {
-      if (this._unloaded) return;
-      this._pendingSubmit = "";
-      this.setData({
-        reviewPending: false,
-        error: "昵称检测未完成，请重新选择微信昵称后再保存",
-      });
-    }, 10000);
-  },
-  nicknameReview(e) {
-    if (this._unloaded) return;
-    clearTimeout(this._reviewTimer);
-    const value = this._reviewValue;
-    this.setData({ reviewPending: false });
-    if (!e.detail.pass) {
-      this._pendingSubmit = "";
-      this.setData({ error: "昵称未通过检测，请重新选择后重试" });
-      return;
-    }
-    this._approvedNickname = value;
-    const submitted = this._pendingSubmit;
-    this._pendingSubmit = "";
-    if (submitted && submitted === value && value === this.data.nickname.trim())
-      this.submit({ detail: { value: { nickname: value } } });
   },
   async submit(e) {
     if (this.data.saving || !this.data.ownerValid || this._unloaded) return;
@@ -101,12 +63,6 @@ Page({
       return;
     }
     this.setData({ nickname, error: "" });
-    if (this._canReview && nickname !== this._approvedNickname) {
-      this._pendingSubmit = nickname;
-      this.waitForReview(nickname);
-      if (wx.hideKeyboard) wx.hideKeyboard({ fail() {} });
-      return;
-    }
     this.setData({ saving: true });
     try {
       const saved = await profiles.save(

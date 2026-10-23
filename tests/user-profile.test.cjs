@@ -153,11 +153,7 @@ function editor() {
     {
       Page: (v) => (definition = v),
       getApp: () => app,
-      setTimeout,
-      clearTimeout,
       wx: {
-        canIUse: () => true,
-        hideKeyboard() {},
         showToast() {},
         navigateBack() {
           back++;
@@ -181,29 +177,38 @@ function editor() {
   p.onLoad();
   return { p, app, saved, count: () => saves, back: () => back };
 }
-test("使用表单最新昵称，等待微信昵称检测通过后才保存；取消头像不覆盖原图", async () => {
+test("使用表单最新昵称直接保存；重复点击不重复写入，取消头像不覆盖原图", async () => {
   const e = editor();
   e.p.setData({ avatarUrl: "ORIGINAL", nickname: "旧值" });
   e.p.onChooseAvatar({ detail: {} });
   assert.equal(e.p.data.avatarUrl, "ORIGINAL");
-  await e.p.submit({ detail: { value: { nickname: "微信快捷填写的新昵称" } } });
-  assert.equal(e.count(), 0);
-  assert.equal(e.p.data.reviewPending, true);
-  e.p.nicknameReview({ detail: { pass: true } });
-  await new Promise((r) => setImmediate(r));
+  const saving = e.p.submit({
+    detail: { value: { nickname: "微信快捷填写的新昵称" } },
+  });
+  await e.p.submit({ detail: { value: { nickname: "不应重复提交" } } });
+  await saving;
   assert.equal(e.count(), 1);
   assert.equal(e.saved[0].nickname, "微信快捷填写的新昵称");
   assert.equal(e.back(), 1);
   e.p.onUnload();
 });
-test("昵称检测失败不会保存，已退出页面收到检测回调也不会保存", async () => {
+test("页面退出或账号变化后不能提交资料", async () => {
   const e = editor();
-  await e.p.submit({ detail: { value: { nickname: "待检测" } } });
-  e.p.nicknameReview({ detail: { pass: false } });
-  assert.equal(e.count(), 0);
-  assert.match(e.p.data.error, /未通过/);
-  await e.p.submit({ detail: { value: { nickname: "另一个昵称" } } });
   e.p.onUnload();
-  e.p.nicknameReview({ detail: { pass: true } });
+  await e.p.submit({ detail: { value: { nickname: "微信昵称" } } });
   assert.equal(e.count(), 0);
+  const other = editor();
+  other.app.globalData.openid = "bob";
+  other.p.onShow();
+  await other.p.submit({ detail: { value: { nickname: "微信昵称" } } });
+  assert.equal(other.count(), 0);
+  assert.equal(other.back(), 0);
+});
+test("表单昵称为空时保留原资料，不回退旧输入提交", async () => {
+  const e = editor();
+  e.p.setData({ nickname: "原昵称" });
+  await e.p.submit({ detail: { value: { nickname: "" } } });
+  assert.equal(e.count(), 0);
+  assert.match(e.p.data.error, /1—20/);
+  assert.equal(e.p.data.saving, false);
 });

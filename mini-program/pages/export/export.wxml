@@ -106,25 +106,15 @@
       >再次保存到相册</view
     >
   </view>
-  <view wx:if="{{quotaVisible}}" class="quota-mask" bindtap="cancelAd"
-    ><view
-      class="quota-sheet"
-      catchtap="stop"
-      aria-role="dialog"
-      aria-modal="{{true}}"
-      aria-label="今日免费次数已用完"
-      ><view class="sheet-handle"></view
-      ><view class="quota-title">今日免费次数已用完</view
-      ><view class="quota-desc">完整观看视频，增加一次保存机会</view
-      ><view
-        class="primary"
-        bindtap="confirmAd"
-        hover-class="pressed"
-        aria-role="button"
-        >看视频，继续保存</view
-      ><view class="link" bindtap="cancelAd" aria-role="button"
-        >稍后再说</view
-      ></view
-    ></view
+  <motion-sheet
+    id="quotaSheet"
+    visible="{{quotaVisible}}"
+    label="今日免费次数已用完"
+    bind:confirm="confirmAd"
+    bind:dismiss="cancelAd"
+    ><view class="sheet-handle"></view
+    ><view class="quota-title">今日免费次数已用完</view
+    ><view class="quota-desc">完整观看视频，增加一次保存机会</view
+    ><text slot="confirm">看视频，继续保存</text></motion-sheet
   >
 </view>

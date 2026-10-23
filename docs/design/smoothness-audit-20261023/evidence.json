@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-23",
+  "fixtures": "Generated sample portrait; mock HTTP only; no real save, login, ads or album writes",
+  "findings": {
+    "editorColorPanel": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 140,
+        "right": 375,
+        "bottom": 537.1000061035156,
+        "width": 375,
+        "height": 397.1000061035156
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 537,
+        "right": 375,
+        "bottom": 716,
+        "width": 375,
+        "height": 179
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 716,
+        "right": 375,
+        "bottom": 812,
+        "width": 375,
+        "height": 96
+      }
+    ],
+    "editorAdjustPanel": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 140,
+        "right": 375,
+        "bottom": 547.1000061035156,
+        "width": 375,
+        "height": 407.1000061035156
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 547,
+        "right": 375,
+        "bottom": 716,
+        "width": 375,
+        "height": 169
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 716,
+        "right": 375,
+        "bottom": 812,
+        "width": 375,
+        "height": 96
+      }
+    ],
+    "sameColorReprocess": [
+      {
+        "processing": true
+      },
+      {
+        "processing": false,
+        "resultPath": "http://usr/photo-1792718030225-wp8ge.png"
+      }
+    ],
+    "cropReprocessStart": {
+      "processing": true,
+      "resultPath": "",
+      "displayPath": "/assets/images/sample-portrait.png"
+    },
+    "openExportWait": {
+      "opening": true,
+      "processing": false,
+      "disabled": false
+    },
+    "profileReturn": {
+      "usageKnown": false,
+      "usageBusy": true,
+      "remaining": 3
+    },
+    "faqExpanded": "photo"
+  }
+}

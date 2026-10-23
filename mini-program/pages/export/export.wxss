@@ -133,24 +133,6 @@
   font-size: 26rpx;
   color: var(--sg-muted);
 }
-.quota-mask {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 11000;
-  background: rgba(12, 26, 20, 0.3);
-  display: flex;
-  align-items: flex-end;
-}
-.quota-sheet {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 18rpx 36rpx calc(16rpx + env(safe-area-inset-bottom));
-  background: var(--sg-surface);
-  border-radius: 32rpx 32rpx 0 0;
-}
 .sheet-handle {
   width: 64rpx;
   height: 7rpx;

@@ -16,7 +16,14 @@
       >
       <view wx:if="{{featuredTool}}" class="feature">
         <view class="feature-copy"
-          ><view class="feature-title">{{featuredTool.featured.title}}</view
+          ><view class="feature-title"
+            ><block wx:if="{{featuredTool.featured.titleLines}}"
+              ><view
+                wx:for="{{featuredTool.featured.titleLines}}"
+                wx:key="*this"
+                >{{item}}</view
+              ></block
+            ><text wx:else>{{featuredTool.featured.title}}</text></view
           ><view class="feature-note"
             >{{featuredTool.featured.description}}</view
           ><view
@@ -28,8 +35,21 @@
             >{{featuredTool.featured.action}}</view
           ></view
         >
+        <view
+          wx:if="{{featuredTool.featured.photos.length}}"
+          class="feature-fan"
+          aria-hidden="{{true}}"
+          ><view
+            wx:for="{{featuredTool.featured.photos}}"
+            wx:key="id"
+            class="feature-card feature-card-{{item.id}}"
+            ><image
+              src="{{item.src}}"
+              class="feature-portrait"
+              mode="aspectFill" /></view
+        ></view>
         <image
-          wx:if="{{featuredTool.featured.image}}"
+          wx:elif="{{featuredTool.featured.image}}"
           src="{{featuredTool.featured.image}}"
           class="feature-photo"
           mode="aspectFill"

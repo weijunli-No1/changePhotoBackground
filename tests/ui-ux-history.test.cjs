@@ -19,6 +19,8 @@ function historyPage(request) {
       },
       getApp: () => app,
       require(name) {
+        if (name.endsWith("/skyline-motion"))
+          return require("../mini-program/utils/skyline-motion");
         if (name.endsWith("/api"))
           return { request, unwrap: (value) => value.data };
         if (name.endsWith("/drafts")) return { list: () => [] };

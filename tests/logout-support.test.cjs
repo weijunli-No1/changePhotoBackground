@@ -35,6 +35,8 @@ function pageFixture(file, app, deps = {}, wx = {}) {
     getApp: () => app,
     wx,
     require: (name) => {
+      if (name.endsWith("/skyline-motion"))
+        return require("../mini-program/utils/skyline-motion");
       const key = name.split("/").pop();
       if (key === "tool-catalog")
         return require("../mini-program/utils/tool-catalog");

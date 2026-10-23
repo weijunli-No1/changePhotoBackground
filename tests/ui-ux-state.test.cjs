@@ -73,6 +73,8 @@ test("恢复蓝底草稿后换色失败，显示照片与保存底色保持一�
   };
   const p = page("pages/edit/edit.js", {
     require: (name) => {
+      if (name.endsWith("/skyline-motion"))
+        return require("../mini-program/utils/skyline-motion");
       if (name.endsWith("/files"))
         return { call: async () => ({}), readBase64: async () => "ALPHA" };
       if (name.endsWith("/drafts")) return { get: () => draft };
@@ -99,6 +101,8 @@ test("配额查询失败显示可重试状态，重试后展示真实剩余次�
   const p = page("pages/profile/profile.js", {
     getApp: () => app,
     require: (name) => {
+      if (name.endsWith("/skyline-motion"))
+        return require("../mini-program/utils/skyline-motion");
       if (name.endsWith("/api"))
         return {
           unwrap: (r) => r,

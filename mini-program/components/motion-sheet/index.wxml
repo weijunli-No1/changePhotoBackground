@@ -1,0 +1,34 @@
+<view
+  wx:if="{{rendered}}"
+  class="motion-overlay {{fallback && motionOpen ? 'motion-fallback-open' : ''}}"
+>
+  <view class="motion-scrim" bindtap="dismiss"></view>
+  <view
+    class="motion-panel"
+    catchtap="stop"
+    aria-role="dialog"
+    aria-modal="{{true}}"
+    aria-label="{{label}}"
+  >
+    <slot></slot>
+    <view class="motion-actions"
+      ><view
+        class="motion-primary"
+        bindtap="confirm"
+        aria-role="button"
+        aria-disabled="{{closing}}"
+        hover-class="pressed"
+      >
+        <slot name="confirm"></slot></view
+      ><view
+        class="motion-cancel"
+        bindtap="dismiss"
+        aria-role="button"
+        aria-disabled="{{closing}}"
+        hover-class="pressed"
+      >
+        稍后再说
+      </view></view
+    >
+  </view>
+</view>

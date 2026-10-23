@@ -11,7 +11,7 @@
   align-items: center;
   padding: 16rpx 16rpx calc(12rpx + env(safe-area-inset-bottom));
   background: #fff;
-  border-top: 1rpx solid #e7ece8;
+  border-top: 1rpx solid #e3eaf7;
 }
 .tab-item {
   flex: 1;
@@ -20,14 +20,14 @@
   align-items: center;
   justify-content: center;
   min-height: 84rpx;
-  color: #7c8580;
+  color: #5b6b82;
   font-size: 22rpx;
 }
 .tab-item text {
   margin-top: 4rpx;
 }
 .active {
-  color: #174e45;
+  color: #2563eb;
   font-weight: 600;
 }
 .tab-pressed {

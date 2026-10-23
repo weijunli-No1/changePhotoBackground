@@ -7,24 +7,15 @@
         >先看看常见问题，也可以直接联系微信客服。</view
       >
       <view class="faq-heading">常见问题</view>
-      <view wx:for="{{faqs}}" wx:key="id" class="faq-item">
-        <button
-          class="faq-question"
-          bindtap="toggleFaq"
-          data-id="{{item.id}}"
-          hover-class="pressed"
-          aria-expanded="{{expanded === item.id}}"
-        >
-          <text class="faq-label">{{item.title}}</text>
-          <t-icon
-            name="{{expanded === item.id ? 'chevron-up' : 'chevron-down'}}"
-            size="30rpx"
-          />
-        </button>
-        <view wx:if="{{expanded === item.id}}" class="faq-answer"
-          >{{item.answer}}</view
-        >
-      </view>
+      <faq-item
+        wx:for="{{faqs}}"
+        wx:key="id"
+        title="{{item.title}}"
+        answer="{{item.answer}}"
+        expanded="{{expanded === item.id}}"
+        data-id="{{item.id}}"
+        bind:toggle="toggleFaq"
+      />
       <view class="feedback-note"
         >联系时请描述操作步骤、出现的提示和手机型号，方便定位问题。</view
       >

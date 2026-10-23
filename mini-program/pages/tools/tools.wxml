@@ -18,11 +18,25 @@
           class="tool-canvas"
         ></canvas
         ><image
-          wx:if="{{sourcePath}}"
-          src="{{resultPath || sourcePath}}"
+          wx:if="{{sourcePath && !(mode === 'crop' && cropPreviewReady)}}"
+          src="{{displayPath || sourcePath}}"
           mode="aspectFit"
           class="local-image"
-        /><view wx:else class="upload-local"
+        /><view
+          wx:if="{{sourcePath && mode === 'crop' && cropPreviewReady}}"
+          class="crop-frame"
+          style="{{cropFrameStyle}}"
+          ><image
+            class="crop-source"
+            src="{{sourcePath}}"
+            mode="scaleToFill"
+            style="{{cropImageStyle}}{{cropFallbackTransform}}" /><view
+            class="crop-guide"
+            ><view class="crop-guide-v first"></view
+            ><view class="crop-guide-v second"></view
+            ><view class="crop-guide-h first"></view
+            ><view class="crop-guide-h second"></view></view></view
+        ><view wx:if="{{!sourcePath}}" class="upload-local"
           ><t-icon name="image-add" size="72rpx" /><text>选择一张照片</text
           ><text class="small muted">照片在本机处理</text></view
         ><view wx:if="{{processing}}" class="tool-processing"
@@ -46,7 +60,7 @@
               class="choice {{quality === item.value ? 'active' : ''}}"
               data-quality="{{item.value}}"
               aria-checked="{{quality === item.value}}"
-              aria-disabled="{{processing}}"
+              aria-disabled="{{processing || opening}}"
               bindtap="setQuality"
               aria-role="radio"
               >{{item.label}}</view
@@ -59,7 +73,7 @@
               class="choice {{maxEdge === item ? 'active' : ''}}"
               data-edge="{{item}}"
               aria-checked="{{maxEdge === item}}"
-              aria-disabled="{{processing}}"
+              aria-disabled="{{processing || opening}}"
               bindtap="setEdge"
               aria-role="radio"
               >{{item}} px</view
@@ -77,7 +91,7 @@
               class="ratio-choice {{ratio === item.value ? 'active' : ''}}"
               data-index="{{index}}"
               aria-checked="{{ratio === item.value}}"
-              aria-disabled="{{processing}}"
+              aria-disabled="{{processing || opening}}"
               bindtap="setRatio"
               aria-role="radio"
               >{{item.name}}</view
@@ -91,23 +105,29 @@
           ><block wx:if="{{ratio}}"
             ><block wx:if="{{canMoveX}}"
               ><view class="slider-label"
-                ><text>左右构图</text><text>{{positionX}}%</text></view
+                ><text>左右构图</text
+                ><text>{{adjusting ? '实时预览' : positionX + '%'}}</text></view
               ><slider
-                disabled="{{processing}}"
+                disabled="{{processing || opening}}"
                 min="0"
                 max="100"
                 value="{{positionX}}"
-                activeColor="#174e45"
+                activeColor="{{accentColor}}"
+                bindchanging="previewPositionX"
+                bindtouchcancel="cancelPosition"
                 bindchange="positionX" /></block
             ><block wx:if="{{canMoveY}}"
               ><view class="slider-label"
-                ><text>上下构图</text><text>{{positionY}}%</text></view
+                ><text>上下构图</text
+                ><text>{{adjusting ? '实时预览' : positionY + '%'}}</text></view
               ><slider
-                disabled="{{processing}}"
+                disabled="{{processing || opening}}"
                 min="0"
                 max="100"
                 value="{{positionY}}"
-                activeColor="#174e45"
+                activeColor="{{accentColor}}"
+                bindchanging="previewPositionY"
+                bindtouchcancel="cancelPosition"
                 bindchange="positionY" /></block></block
           ><view class="setting-hint"
             >保留原图，输出为 JPEG，最长边不超过2560 px。</view
@@ -125,6 +145,9 @@
           ></view
         >
       </view>
+      <view wx:if="{{openingError}}" class="error-inline" aria-role="alert"
+        >{{openingError}}</view
+      >
       <view wx:if="{{error}}" class="error-inline" aria-role="alert"
         >{{error}}</view
       >
@@ -141,13 +164,13 @@
   >
   <view class="footer-actions"
     ><view
-      class="primary {{processing || !resultPath ? 'disabled' : ''}}"
-      aria-disabled="{{processing || !resultPath}}"
+      class="primary {{processing || opening || adjusting || !resultPath ? 'disabled' : ''}}"
+      aria-disabled="{{processing || opening || adjusting || !resultPath}}"
       bindtap="goExport"
       hover-class="pressed"
       aria-role="button"
-      >{{processing ? '正在处理…' : returnToEditor ? '应用到证件照' :
-      '预览并保存'}}</view
+      >{{opening ? '正在准备…' : adjusting ? '松手生成照片' : processing ?
+      '正在处理…' : returnToEditor ? '应用到证件照' : '预览并保存'}}</view
     ></view
   >
 </view>

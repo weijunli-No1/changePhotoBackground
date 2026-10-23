@@ -61,11 +61,6 @@
 .input-note {
   font-size: 24rpx;
 }
-.review-note {
-  margin-top: 24rpx;
-  font-size: 26rpx;
-  color: var(--sg-brand);
-}
 .error-inline {
   margin-top: 24rpx;
 }

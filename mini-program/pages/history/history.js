@@ -1,3 +1,4 @@
+const { createMotion } = require("../../utils/skyline-motion");
 const app = getApp();
 const api = require("../../utils/api");
 const drafts = require("../../utils/drafts");
@@ -14,11 +15,25 @@ Page({
     error: "",
     loadError: "",
   },
+  onReady() {
+    this._motion = createMotion(this, wx);
+    this.updateTabMotion();
+  },
+  updateTabMotion() {
+    if (this._motion)
+      this._motion.indicator(
+        ".segment",
+        ".segment-item.active",
+        ".works-indicator",
+      );
+  },
   onShow() {
     if (this.getTabBar && this.getTabBar()) this.getTabBar().init();
     this._unloaded = false;
     if (["drafts", "cloud"].includes(app.globalData.requestedWorksTab)) {
-      this.setData({ tab: app.globalData.requestedWorksTab });
+      this.setData({ tab: app.globalData.requestedWorksTab }, () =>
+        this.updateTabMotion(),
+      );
       delete app.globalData.requestedWorksTab;
     }
     if (this._historyOwner !== app.globalData.openid) {
@@ -39,10 +54,15 @@ Page({
   },
   onUnload() {
     this._unloaded = true;
+    if (this._motion) this._motion.dispose();
   },
   selectTab(e) {
     const tab = e.currentTarget.dataset.tab;
-    this.setData({ tab, error: "" });
+    if (!["drafts", "cloud"].includes(tab) || tab === this.data.tab) return;
+    this.setData({ tab, error: "" }, () => {
+      this.updateTabMotion();
+      if (this._motion) this._motion.fade(".works-panel");
+    });
     if (tab === "cloud") this.fetchHistoryList();
     else
       this.setData({

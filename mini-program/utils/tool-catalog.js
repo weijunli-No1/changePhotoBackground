@@ -20,7 +20,12 @@ const tools = [
       title: "证件照，轻松准备",
       description: "选规格、换底色、六寸排版",
       action: "开始制作",
-      image: "/assets/images/sample-portrait.png",
+      image: "/assets/images/sample-female-smile.jpg",
+      titleLines: ["证件照，", "轻松准备"],
+      photos: [
+        { id: "male", src: "/assets/images/sample-male-apricot.jpg" },
+        { id: "female", src: "/assets/images/sample-female-smile.jpg" },
+      ],
     },
   },
   {

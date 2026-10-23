@@ -35,6 +35,8 @@ function load(file, globals = {}) {
 function editor(api, files = {}) {
   return load("pages/edit/edit.js", {
     require: (name) => {
+      if (name.endsWith("/skyline-motion"))
+        return require("../mini-program/utils/skyline-motion");
       if (name.endsWith("/api")) return api;
       if (name.endsWith("/files")) return files;
       if (name.endsWith("/drafts"))
@@ -153,6 +155,8 @@ test("新照片读取失败后无法导出旧结果，读取期间不能再改�
     transformCalls = 0;
   const p = load("pages/tools/tools.js", {
     require: (name) => {
+      if (name.endsWith("/skyline-motion"))
+        return require("../mini-program/utils/skyline-motion");
       if (name.endsWith("/files"))
         return { call: () => new Promise((_, r) => (fail = r)) };
       if (name.endsWith("/drafts")) return {};

@@ -19,7 +19,10 @@
         ><t-icon name="close-circle-filled" size="32rpx" /></view
     ></view>
     <scroll-view class="catalog-tabs" scroll-x show-scrollbar="{{false}}"
-      ><view class="category-row" aria-role="tablist"
+      ><view
+        class="category-row {{motionTabsReady ? 'motion-tabs' : ''}}"
+        aria-role="tablist"
+        ><view class="catalog-indicator"></view
         ><view
           class="category-tab {{category === 'all' ? 'selected' : ''}}"
           data-id="all"

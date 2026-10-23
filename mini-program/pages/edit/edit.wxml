@@ -56,7 +56,10 @@
       ><view class="size-change"
         >更改规格<t-icon name="chevron-right" size="28rpx" /></view
     ></view>
-    <view class="editor-tabs" aria-role="tablist"
+    <view
+      class="editor-tabs {{motionTabsReady ? 'motion-tabs' : ''}}"
+      aria-role="tablist"
+      ><view class="editor-indicator"></view
       ><view
         class="editor-tab {{panel !== 'adjust' ? 'active' : ''}}"
         data-panel="color"
@@ -73,57 +76,64 @@
         >裁剪构图</view
       ></view
     >
-    <view wx:if="{{panel !== 'adjust'}}" class="color-row">
-      <view
-        class="swatch-item"
-        wx:for="{{presetColors}}"
-        wx:key="value"
-        data-color="{{item.value}}"
-        bindtap="selectColor"
-        aria-role="radio"
-        aria-label="{{item.name}}"
-        aria-checked="{{currentBgColor === item.value && !custom}}"
-        aria-disabled="{{processing}}"
+    <view class="panel-content">
+      <view wx:if="{{panel !== 'adjust'}}" class="color-row">
+        <view
+          class="swatch-item"
+          wx:for="{{presetColors}}"
+          wx:key="value"
+          data-color="{{item.value}}"
+          bindtap="selectColor"
+          aria-role="radio"
+          aria-label="{{item.name}}"
+          aria-checked="{{currentBgColor === item.value && !custom}}"
+          aria-disabled="{{opening}}"
+          ><view
+            class="swatch {{currentBgColor === item.value && !custom ? 'selected' : ''}}"
+            style="background-color:{{item.value}}"
+            ><t-icon
+              wx:if="{{currentBgColor === item.value && !custom}}"
+              name="check"
+              size="34rpx"
+              color="{{item.value === '#FFFFFF' ? 'var(--sg-brand)' : '#FFFFFF'}}" /></view
+          ><text
+            class="swatch-name {{currentBgColor === item.value && !custom ? 'chosen' : ''}}"
+            >{{item.name}}</text
+          ></view
+        >
+        <view
+          class="swatch-item"
+          bindtap="showCustomColor"
+          aria-role="radio"
+          aria-label="自定义底色"
+          aria-checked="{{custom}}"
+          ><view
+            class="swatch custom-swatch {{custom ? 'selected' : ''}}"
+            style="background-color:{{custom ? currentBgColor : ''}}"
+            ><t-icon
+              name="{{custom ? 'check' : 'palette'}}"
+              size="36rpx" /></view
+          ><text class="swatch-name {{custom ? 'chosen' : ''}}"
+            >自定义</text
+          ></view
+        >
+      </view>
+      <view wx:else class="adjust-row"
         ><view
-          class="swatch {{currentBgColor === item.value && !custom ? 'selected' : ''}}"
-          style="background-color:{{item.value}}"
-          ><t-icon
-            wx:if="{{currentBgColor === item.value && !custom}}"
-            name="check"
-            size="34rpx"
-            color="{{item.value === '#FFFFFF' ? '#174E45' : '#FFFFFF'}}" /></view
-        ><text
-          class="swatch-name {{currentBgColor === item.value && !custom ? 'chosen' : ''}}"
-          >{{item.name}}</text
-        ></view
-      >
-      <view
-        class="swatch-item"
-        bindtap="showCustomColor"
-        aria-role="radio"
-        aria-label="自定义底色"
-        aria-checked="{{custom}}"
+          class="secondary adjust-button"
+          bindtap="adjustPhoto"
+          aria-role="button"
+          ><t-icon name="cut" size="34rpx" /><text>裁剪与旋转</text></view
         ><view
-          class="swatch custom-swatch {{custom ? 'selected' : ''}}"
-          style="background-color:{{custom ? currentBgColor : ''}}"
-          ><t-icon name="{{custom ? 'check' : 'palette'}}" size="36rpx" /></view
-        ><text class="swatch-name {{custom ? 'chosen' : ''}}"
-          >自定义</text
+          class="secondary adjust-button"
+          bindtap="reselect"
+          aria-role="button"
+          ><t-icon name="refresh" size="34rpx" /><text>重选照片</text></view
         ></view
       >
     </view>
-    <view wx:else class="adjust-row"
-      ><view
-        class="secondary adjust-button"
-        bindtap="adjustPhoto"
-        aria-role="button"
-        ><t-icon name="cut" size="34rpx" /><text>裁剪与旋转</text></view
-      ><view
-        class="secondary adjust-button"
-        bindtap="reselect"
-        aria-role="button"
-        ><t-icon name="refresh" size="34rpx" /><text>重选照片</text></view
-      ></view
+    <view wx:if="{{openingError}}" class="editor-error" aria-role="alert"
+      >{{openingError}}</view
     >
     <view wx:if="{{error}}" class="editor-error" aria-role="alert"
       >{{error}}</view
@@ -147,12 +157,13 @@
   </view>
   <view class="footer-actions"
     ><view
-      class="primary {{processing || !resultPath ? 'disabled' : ''}}"
-      aria-disabled="{{processing || !resultPath}}"
+      class="primary {{processing || opening || !resultPath ? 'disabled' : ''}}"
+      aria-disabled="{{processing || opening || !resultPath}}"
       bindtap="goExport"
       hover-class="pressed"
       aria-role="button"
-      >{{processing ? '正在处理照片…' : '预览并保存'}}</view
+      >{{opening ? '正在准备…' : processing ? '正在处理照片…' :
+      '预览并保存'}}</view
     ></view
   >
   <spec-picker

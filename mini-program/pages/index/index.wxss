@@ -28,15 +28,17 @@
   padding: 28rpx;
   border-radius: 24rpx;
   background: var(--sg-canvas);
+  min-height: 364rpx;
+  box-sizing: border-box;
 }
 .feature-copy {
   flex: 1;
   min-width: 0;
 }
 .feature-title {
-  font-size: 32rpx;
+  font-size: 42rpx;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.35;
 }
 .feature-note {
   font-size: 23rpx;
@@ -165,5 +167,47 @@
 @media (prefers-color-scheme: dark) {
   .feature-button {
     color: #10251b;
+  }
+}
+
+.feature-fan {
+  position: relative;
+  width: 296rpx;
+  height: 300rpx;
+  margin-left: 12rpx;
+  flex-shrink: 0;
+}
+.feature-card {
+  position: absolute;
+  width: 164rpx;
+  height: 244rpx;
+  box-sizing: border-box;
+  border: 6rpx solid #fff;
+  background: #fff;
+  border-radius: 14rpx;
+  overflow: hidden;
+  transform-origin: 50% 100%;
+  box-shadow: 0 10rpx 24rpx rgba(37, 99, 235, 0.12);
+}
+.feature-card-male {
+  left: 36rpx;
+  bottom: 12rpx;
+  transform: rotate(-12deg);
+  z-index: 1;
+}
+.feature-card-female {
+  right: 24rpx;
+  bottom: 28rpx;
+  transform: rotate(10deg);
+  z-index: 2;
+}
+.feature-portrait {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  .feature-card {
+    box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.24);
   }
 }

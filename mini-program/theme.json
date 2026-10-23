@@ -2,17 +2,17 @@
   "light": {
     "navBgColor": "#FFFFFF",
     "navTextStyle": "black",
-    "tabBarColor": "#656b68",
-    "tabBarSelectedColor": "#174E45",
+    "tabBarColor": "#5B6B82",
+    "tabBarSelectedColor": "#2563EB",
     "tabBarBgColor": "#FFFFFF",
     "tabBarBorderStyle": "black",
     "pageBgColor": "#FFFFFF",
-    "homeIcon": "assets/icons/home.png",
-    "homeActiveIcon": "assets/icons/home-active.png",
-    "historyIcon": "assets/icons/history.png",
-    "historyActiveIcon": "assets/icons/history-active.png",
-    "userIcon": "assets/icons/user.png",
-    "userActiveIcon": "assets/icons/user-active.png"
+    "homeIcon": "assets/icons/home-youth.png",
+    "homeActiveIcon": "assets/icons/home-active-youth.png",
+    "historyIcon": "assets/icons/history-youth.png",
+    "historyActiveIcon": "assets/icons/history-active-youth.png",
+    "userIcon": "assets/icons/user-youth.png",
+    "userActiveIcon": "assets/icons/user-active-youth.png"
   },
   "dark": {
     "navBgColor": "#121212",

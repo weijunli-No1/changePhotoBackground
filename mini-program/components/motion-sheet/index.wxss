@@ -1,0 +1,82 @@
+.motion-overlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 11000;
+  display: flex;
+  align-items: flex-end;
+}
+.motion-scrim {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(10, 25, 20, 0.34);
+  opacity: 0;
+}
+.motion-panel {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18rpx 36rpx calc(16rpx + env(safe-area-inset-bottom));
+  border-radius: 32rpx 32rpx 0 0;
+  background: var(--sg-surface, #fff);
+  color: var(--sg-text, #1e293b);
+  transform: translateY(100%);
+}
+.motion-actions .motion-primary,
+.motion-actions .motion-cancel {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  margin: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  border-radius: 14rpx;
+  line-height: 1.5;
+  padding: 16rpx 24rpx;
+}
+.motion-primary {
+  background: var(--sg-brand, #2563eb);
+  color: #fff;
+  font-weight: 600;
+}
+.motion-cancel {
+  margin-top: 8rpx;
+  color: var(--sg-brand, #2563eb);
+  background: transparent;
+  font-size: 26rpx;
+  font-weight: 400;
+}
+.motion-primary::after,
+.motion-cancel::after {
+  border: 0;
+}
+.pressed {
+  opacity: 0.75;
+}
+.motion-fallback-open .motion-scrim {
+  opacity: 1;
+}
+.motion-fallback-open .motion-panel {
+  transform: translateY(0);
+}
+@media (prefers-color-scheme: dark) {
+  .motion-panel {
+    background: #1c1c1e;
+    color: #f2f2f4;
+  }
+  .motion-primary {
+    background: #78cbb4;
+    color: #10251b;
+  }
+  .motion-cancel {
+    color: #78cbb4;
+  }
+}

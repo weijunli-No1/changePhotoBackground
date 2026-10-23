@@ -26,15 +26,17 @@
 }
 .tool-processing {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(238, 241, 242, 0.85);
+  bottom: 16rpx;
+  left: 24rpx;
+  right: auto;
+  padding: 12rpx 20rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  background: rgba(239, 246, 255, 0.96);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #174e45;
+  color: var(--sg-brand);
 }
 .file-summary {
   display: flex;
@@ -131,4 +133,51 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.crop-frame {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+.crop-source {
+  position: absolute;
+  transform-origin: center center;
+  max-width: none;
+}
+.crop-guide {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+.crop-guide-v,
+.crop-guide-h {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.45);
+}
+.crop-guide-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.crop-guide-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+.crop-guide-v.first {
+  left: 33.333%;
+}
+.crop-guide-v.second {
+  left: 66.667%;
+}
+.crop-guide-h.first {
+  top: 33.333%;
+}
+.crop-guide-h.second {
+  top: 66.667%;
 }

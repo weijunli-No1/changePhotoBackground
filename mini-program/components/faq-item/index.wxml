@@ -1,0 +1,17 @@
+<view class="faq-item"
+  ><view
+    class="faq-question"
+    bindtap="toggle"
+    hover-class="pressed"
+    aria-role="button"
+    aria-expanded="{{expanded}}"
+  >
+    <view class="faq-label">{{title}}</view
+    ><view class="faq-arrow {{expanded && !motionReady ? 'arrow-open' : ''}}"
+      ><t-icon name="chevron-down" size="30rpx" /></view></view
+  ><view
+    class="faq-reveal {{expanded && !motionReady ? 'reveal-open' : ''}}"
+    aria-hidden="{{!expanded}}"
+    ><view class="faq-answer">{{answer}}</view></view
+  ></view
+>

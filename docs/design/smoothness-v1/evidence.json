@@ -1,0 +1,205 @@
+{
+  "crop": {
+    "mode": "crop",
+    "sourcePath": "http://usr/qa-smooth-source.png",
+    "resultPath": "http://usr/local-1792719387364-thb80.jpg",
+    "displayPath": "http://usr/local-1792719387364-thb80.jpg",
+    "processing": false,
+    "opening": false,
+    "openingError": "",
+    "adjusting": false,
+    "cropFrameStyle": "width:221px;height:221px;",
+    "cropImageStyle": "width:221px;height:309.4px;left:0px;top:0px;",
+    "cropFallbackTransform": "transform:translate(0px,-44.2px) rotate(0deg);",
+    "cropPreviewReady": true,
+    "error": "",
+    "errorRecovery": "retry",
+    "quality": 85,
+    "maxEdge": 2048,
+    "angle": 0,
+    "ratio": 1,
+    "ratioName": "1:1",
+    "positionX": 50,
+    "positionY": 50,
+    "sourceSize": "276 KB",
+    "resultSize": "38 KB",
+    "sourceWidth": 400,
+    "sourceHeight": 560,
+    "canMoveX": false,
+    "canMoveY": true,
+    "width": 400,
+    "height": 400,
+    "returnToEditor": false,
+    "ratios": [
+      {
+        "name": "原比例",
+        "value": 0
+      },
+      {
+        "name": "1:1",
+        "value": 1
+      },
+      {
+        "name": "3:4",
+        "value": 0.75
+      },
+      {
+        "name": "4:3",
+        "value": 1.3333333333
+      },
+      {
+        "name": "9:16",
+        "value": 0.5625
+      }
+    ],
+    "edges": [
+      1280,
+      2048,
+      2560
+    ],
+    "qualityOptions": [
+      {
+        "value": 85,
+        "label": "清晰优先"
+      },
+      {
+        "value": 65,
+        "label": "均衡压缩"
+      },
+      {
+        "value": 40,
+        "label": "体积优先"
+      }
+    ],
+    "__webviewId__": 65,
+    "needsCanvas": false
+  },
+  "cropRects": [
+    [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 18,
+        "top": 99.0999984741211,
+        "right": 357,
+        "bottom": 344.0999984741211,
+        "width": 339,
+        "height": 245
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 77,
+        "top": 111.0999984741211,
+        "right": 298,
+        "bottom": 332.0999984741211,
+        "width": 221,
+        "height": 221
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 77,
+        "top": 22.69999885559082,
+        "right": 298,
+        "bottom": 332.0999927520752,
+        "width": 221,
+        "height": 309.3999938964844
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 709.5999755859375,
+        "right": 375,
+        "bottom": 812.0999755859375,
+        "width": 375,
+        "height": 102.5
+      }
+    ]
+  ],
+  "editorColorRects": [
+    [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 140,
+        "right": 375,
+        "bottom": 535.1000061035156,
+        "width": 375,
+        "height": 395.1000061035156
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 535.0999755859375,
+        "right": 375,
+        "bottom": 716.0999755859375,
+        "width": 375,
+        "height": 181
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 18,
+        "top": 632.0999755859375,
+        "right": 357,
+        "bottom": 712.0999755859375,
+        "width": 339,
+        "height": 80
+      }
+    ]
+  ],
+  "editorAdjustRects": [
+    [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 140,
+        "right": 375,
+        "bottom": 535.1000061035156,
+        "width": 375,
+        "height": 395.1000061035156
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 535.0999755859375,
+        "right": 375,
+        "bottom": 716.0999755859375,
+        "width": 375,
+        "height": 181
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 18,
+        "top": 632.0999755859375,
+        "right": 357,
+        "bottom": 712.0999755859375,
+        "width": 339,
+        "height": 80
+      }
+    ]
+  ],
+  "libraryMotionReady": true,
+  "worksMotionReady": true,
+  "faq": {
+    "motionReady": true,
+    "title": "照片制作失败，怎么办？",
+    "answer": "先检查网络，再使用单人、正面、面部清晰的照片重试。避免脸部被头发、帽子或其他物体遮挡。编辑内容会尽量保留为本机草稿，可在“作品”中继续。",
+    "expanded": true
+  },
+  "sheet": {
+    "rendered": true,
+    "closing": false,
+    "fallback": false,
+    "motionOpen": false,
+    "visible": true,
+    "label": "今日免费次数已用完"
+  }
+}

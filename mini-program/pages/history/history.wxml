@@ -5,7 +5,8 @@
     show-scrollbar="{{false}}"
     ><view class="page-content works-content">
       <view class="works-title">我的作品</view
-      ><view class="segment"
+      ><view class="segment {{motionTabsReady ? 'motion-tabs' : ''}}"
+        ><view class="works-indicator"></view
         ><view
           class="segment-item {{tab === 'drafts' ? 'active' : ''}}"
           data-tab="drafts"
@@ -22,115 +23,118 @@
           >云端证件照</view
         ></view
       >
-      <view wx:if="{{error}}" class="error-inline works-notice">{{error}}</view>
-      <block wx:if="{{tab === 'drafts'}}"
-        ><view class="drafts-helper"
-          ><view class="works-helper">最近8份草稿保存在这台设备。</view
-          ><view
-            wx:if="{{drafts.length}}"
-            class="clear-drafts"
-            bindtap="clearDrafts"
-            aria-role="button"
-            hover-class="pressed"
-            >清理全部</view
-          ></view
-        ><view wx:for="{{drafts}}" wx:key="id" class="draft-work"
-          ><image
-            src="{{item.resultPath || item.sourcePath}}"
-            class="work-thumb"
-            mode="aspectFill"
-            data-id="{{item.id}}"
-            bindtap="resume" /><view
-            class="work-copy"
-            data-id="{{item.id}}"
-            bindtap="resume"
-            aria-role="button"
-            ><view class="work-name">{{item.title}}</view
-            ><view class="small muted">{{item.sizeName || '继续处理照片'}}</view
-            ><view class="draft-updated">{{item.updatedLabel}}</view
-            ><view class="resume-label">继续编辑</view></view
-          ><view
-            class="delete-target"
-            data-id="{{item.id}}"
-            bindtap="removeDraft"
-            aria-label="删除草稿"
-            aria-role="button"
-            ><t-icon name="delete" size="36rpx" /></view></view
-        ><view wx:if="{{!drafts.length}}" class="empty-state"
-          ><view class="empty-icon"><t-icon name="edit" size="52rpx" /></view
-          ><view class="empty-title">从第一张照片开始</view
-          ><view class="empty-desc">编辑中的照片会自动保留为草稿。</view
-          ><view class="primary" bindtap="goToIndex" aria-role="button"
-            >去制作照片</view
-          ></view
-        ></block
-      >
-      <block wx:else
-        ><view class="works-helper"
-          >云端记录定期清理，重要照片请保存到手机。</view
-        ><view
-          wx:if="{{hasLogin && loadError && historyList.length}}"
-          class="refresh-error"
-          ><text>{{loadError}}</text
-          ><view
-            class="retry-link"
-            bindtap="retryHistory"
-            hover-class="pressed"
-            aria-role="button"
-            >重新加载</view
-          > </view
-        ><view wx:if="{{!hasLogin}}" class="empty-state"
-          ><view class="empty-icon"><t-icon name="cloud" size="52rpx" /></view
-          ><view class="empty-title">登录后查看云端作品</view
-          ><view class="empty-desc">本地草稿不受登录状态影响。</view
-          ><view
-            class="primary {{loggingIn ? 'disabled' : ''}}"
-            aria-disabled="{{loggingIn}}"
-            bindtap="login"
-            aria-role="button"
-            >{{loggingIn ? '正在登录…' : '微信登录'}}</view
-          ></view
-        ><view
-          wx:elif="{{isLoading && !historyList.length}}"
-          class="empty-state muted"
-          >正在加载作品…</view
-        ><view
-          wx:elif="{{loadError && !historyList.length}}"
-          class="empty-state"
-          ><view class="empty-icon"><t-icon name="cloud" size="52rpx" /></view
-          ><view class="empty-title">暂时无法加载作品</view
-          ><view class="empty-desc">{{loadError}}</view
-          ><view
-            class="primary"
-            bindtap="retryHistory"
-            hover-class="pressed"
-            aria-role="button"
-            >重新加载</view
-          ></view
-        ><view wx:elif="{{!historyList.length}}" class="empty-state"
-          ><view class="empty-icon"><t-icon name="image" size="52rpx" /></view
-          ><view class="empty-title">还没有云端作品</view
-          ><view class="empty-desc">保存过的电子证件照会出现在这里。</view
-          ><view class="primary" bindtap="goToIndex" aria-role="button"
-            >制作证件照</view
-          ></view
-        ><view wx:else class="cloud-list"
-          ><view class="cloud-work" wx:for="{{historyList}}" wx:key="id"
+      <view class="works-panel">
+        <view wx:if="{{error}}" class="error-inline works-notice"
+          >{{error}}</view
+        >
+        <block wx:if="{{tab === 'drafts'}}"
+          ><view class="drafts-helper"
+            ><view class="works-helper">最近8份草稿保存在这台设备。</view
+            ><view
+              wx:if="{{drafts.length}}"
+              class="clear-drafts"
+              bindtap="clearDrafts"
+              aria-role="button"
+              hover-class="pressed"
+              >清理全部</view
+            ></view
+          ><view wx:for="{{drafts}}" wx:key="id" class="draft-work"
             ><image
-              src="{{item.photoUrl}}"
-              class="cloud-photo"
-              mode="aspectFit"
-              data-url="{{item.photoUrl}}"
-              bindtap="previewImage" /><view class="cloud-meta"
-              ><text>{{item.timeStr}}</text
-              ><view
-                class="delete-target"
-                data-id="{{item.id}}"
-                bindtap="onDelete"
-                aria-label="删除记录"
-                aria-role="button"
-                ><t-icon
-                  name="delete"
-                  size="34rpx" /></view></view></view></view
-      ></block> </view></scroll-view
+              src="{{item.resultPath || item.sourcePath}}"
+              class="work-thumb"
+              mode="aspectFill"
+              data-id="{{item.id}}"
+              bindtap="resume" /><view
+              class="work-copy"
+              data-id="{{item.id}}"
+              bindtap="resume"
+              aria-role="button"
+              ><view class="work-name">{{item.title}}</view
+              ><view class="small muted"
+                >{{item.sizeName || '继续处理照片'}}</view
+              ><view class="draft-updated">{{item.updatedLabel}}</view
+              ><view class="resume-label">继续编辑</view></view
+            ><view
+              class="delete-target"
+              data-id="{{item.id}}"
+              bindtap="removeDraft"
+              aria-label="删除草稿"
+              aria-role="button"
+              ><t-icon name="delete" size="36rpx" /></view></view
+          ><view wx:if="{{!drafts.length}}" class="empty-state"
+            ><view class="empty-icon"><t-icon name="edit" size="52rpx" /></view
+            ><view class="empty-title">从第一张照片开始</view
+            ><view class="empty-desc">编辑中的照片会自动保留为草稿。</view
+            ><view class="primary" bindtap="goToIndex" aria-role="button"
+              >去制作照片</view
+            ></view
+          ></block
+        >
+        <block wx:else
+          ><view class="works-helper"
+            >云端记录定期清理，重要照片请保存到手机。</view
+          ><view
+            wx:if="{{hasLogin && loadError && historyList.length}}"
+            class="refresh-error"
+            ><text>{{loadError}}</text
+            ><view
+              class="retry-link"
+              bindtap="retryHistory"
+              hover-class="pressed"
+              aria-role="button"
+              >重新加载</view
+            > </view
+          ><view wx:if="{{!hasLogin}}" class="empty-state"
+            ><view class="empty-icon"><t-icon name="cloud" size="52rpx" /></view
+            ><view class="empty-title">登录后查看云端作品</view
+            ><view class="empty-desc">本地草稿不受登录状态影响。</view
+            ><view
+              class="primary {{loggingIn ? 'disabled' : ''}}"
+              aria-disabled="{{loggingIn}}"
+              bindtap="login"
+              aria-role="button"
+              >{{loggingIn ? '正在登录…' : '微信登录'}}</view
+            ></view
+          ><view
+            wx:elif="{{isLoading && !historyList.length}}"
+            class="empty-state muted"
+            >正在加载作品…</view
+          ><view
+            wx:elif="{{loadError && !historyList.length}}"
+            class="empty-state"
+            ><view class="empty-icon"><t-icon name="cloud" size="52rpx" /></view
+            ><view class="empty-title">暂时无法加载作品</view
+            ><view class="empty-desc">{{loadError}}</view
+            ><view
+              class="primary"
+              bindtap="retryHistory"
+              hover-class="pressed"
+              aria-role="button"
+              >重新加载</view
+            ></view
+          ><view wx:elif="{{!historyList.length}}" class="empty-state"
+            ><view class="empty-icon"><t-icon name="image" size="52rpx" /></view
+            ><view class="empty-title">还没有云端作品</view
+            ><view class="empty-desc">保存过的电子证件照会出现在这里。</view
+            ><view class="primary" bindtap="goToIndex" aria-role="button"
+              >制作证件照</view
+            ></view
+          ><view wx:else class="cloud-list"
+            ><view class="cloud-work" wx:for="{{historyList}}" wx:key="id"
+              ><image
+                src="{{item.photoUrl}}"
+                class="cloud-photo"
+                mode="aspectFit"
+                data-url="{{item.photoUrl}}"
+                bindtap="previewImage" /><view class="cloud-meta"
+                ><text>{{item.timeStr}}</text
+                ><view
+                  class="delete-target"
+                  data-id="{{item.id}}"
+                  bindtap="onDelete"
+                  aria-label="删除记录"
+                  aria-role="button"
+                  ><t-icon
+                    name="delete"
+                    size="34rpx" /></view></view></view></view></block></view></view></scroll-view
 ></view>

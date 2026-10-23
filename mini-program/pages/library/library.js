@@ -1,3 +1,4 @@
+const { createMotion } = require("../../utils/skyline-motion");
 const catalog = require("../../utils/tool-catalog");
 const launcher = require("../../utils/tool-launcher");
 const { sizes } = require("../../utils/photo-specs");
@@ -19,6 +20,8 @@ Page({
     this._focusRequested = options.focus === "1";
   },
   onReady() {
+    this._motion = createMotion(this, wx);
+    this.updateCategoryMotion();
     if (this._focusRequested) this.setData({ searchFocused: true });
   },
   onHide() {
@@ -26,14 +29,30 @@ Page({
   },
   onUnload() {
     this._unloaded = true;
+    if (this._motion) this._motion.dispose();
+  },
+  updateCategoryMotion() {
+    if (this._motion)
+      this._motion.indicator(
+        ".category-row",
+        ".category-tab.selected",
+        ".catalog-indicator",
+      );
   },
   updateResults(query, category) {
-    this.setData({
-      query,
-      category,
-      groups: catalog.grouped(query, category),
-      entryError: "",
-    });
+    const switched = category !== this.data.category;
+    this.setData(
+      {
+        query,
+        category,
+        groups: catalog.grouped(query, category),
+        entryError: "",
+      },
+      () => {
+        this.updateCategoryMotion();
+        if (switched && this._motion) this._motion.fade(".catalog-body");
+      },
+    );
   },
   search(e) {
     this.updateResults(e.detail.value, this.data.category);

@@ -1,10 +1,10 @@
 :host {
-  --brand: #174e45;
+  --brand: #2563eb;
   --surface: #fff;
-  --text: #17221f;
-  --muted: #626b66;
-  --line: #e9edeb;
-  --soft: #f3f6f5;
+  --text: #1e293b;
+  --muted: #5b6b82;
+  --line: #e3eaf7;
+  --soft: #f4f7ff;
 }
 .spec-overlay {
   position: fixed;

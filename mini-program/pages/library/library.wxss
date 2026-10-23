@@ -118,3 +118,18 @@
 .catalog-error {
   margin-top: 24rpx;
 }
+
+.category-row {
+  position: relative;
+}
+.catalog-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  height: 4rpx;
+  background: var(--sg-brand);
+  opacity: 0;
+}
+.motion-tabs .category-tab.selected {
+  border-color: transparent;
+}

@@ -1,3 +1,4 @@
+const { createMotion } = require("../../utils/skyline-motion");
 const api = require("../../utils/api");
 const files = require("../../utils/files");
 const drafts = require("../../utils/drafts");
@@ -9,6 +10,8 @@ Page({
     resultPath: "",
     comparing: false,
     processing: false,
+    opening: false,
+    openingError: "",
     status: "",
     error: "",
     errorRecovery: "retry",
@@ -98,12 +101,25 @@ Page({
         });
     }
   },
+  onReady() {
+    this._motion = createMotion(this, wx);
+    this.updatePanelMotion();
+  },
+  updatePanelMotion() {
+    if (this._motion)
+      this._motion.indicator(
+        ".editor-tabs",
+        ".editor-tab.active",
+        ".editor-indicator",
+      );
+  },
   onHide() {
-    this.persistDraft();
+    if (!this.data.opening) this.persistDraft();
   },
   onUnload() {
     this.persistDraft();
     this._unloaded = true;
+    if (this._motion) this._motion.dispose();
     this._seq++;
     this._colorSeq++;
     clearTimeout(this._colorTimer);
@@ -112,17 +128,23 @@ Page({
   },
   setPanel(e) {
     const panel = e.currentTarget.dataset.panel;
-    if (panel === "size" && this._mattingBusy) return;
-    this.setData({ panel });
+    if (panel === "size" && (this._mattingBusy || this.data.opening)) return;
+    if (panel === this.data.panel) return;
+    this.setData({ panel }, () => {
+      this.updatePanelMotion();
+      if (this._motion) this._motion.fade(".panel-content");
+    });
     if (panel === "size") this.setData({ specVisible: true });
   },
   showSpecs() {
-    if (!this._mattingBusy) this.setData({ specVisible: true });
+    if (!this._mattingBusy && !this.data.opening)
+      this.setData({ specVisible: true });
   },
   closeSpecs() {
     this.setData({ specVisible: false });
   },
   selectSpec(e) {
+    if (this.data.opening) return;
     const size = e.detail;
     this.setData({ specVisible: false, panel: "color" });
     if (
@@ -137,6 +159,7 @@ Page({
   async processTransparentImage() {
     if (!this.data.sourcePath || this._unloaded) return;
     clearTimeout(this._colorTimer);
+    this._queuedColor = "";
     const seq = ++this._seq;
     this._colorSeq++;
     this._mattingBusy = true;
@@ -184,15 +207,34 @@ Page({
         });
     } finally {
       if (seq === this._seq) {
+        if (this._mattingBusy) this._activeTask = null;
         this._mattingBusy = false;
-        this._activeTask = null;
       }
     }
   },
   async changeBackgroundColor(color) {
     if (!this._transparent || this._unloaded) return;
+    // 同色成功结果可复用；失败后的同色操作仍允许重试。
+    if (color === this._requestedColor && this.data.processing) return;
+    if (color === this._appliedColor && this.data.resultPath) {
+      this._colorSeq++;
+      if (this._activeTask && this._activeTask.abort) this._activeTask.abort();
+      this._activeTask = null;
+      this._requestedColor = "";
+      this._failedColor = "";
+      this.setData({
+        processing: false,
+        currentBgColor: color,
+        status: "",
+        error: "",
+      });
+      return;
+    }
     const seq = ++this._colorSeq,
       sourceSeq = this._seq;
+    if (this._activeTask && this._activeTask.abort) this._activeTask.abort();
+    this._activeTask = null;
+    this._requestedColor = color;
     this._failedColor = "";
     this.setData({
       processing: true,
@@ -211,7 +253,9 @@ Page({
             data: { base64Image: this._transparent, color },
           },
           (task) => {
-            this._activeTask = task;
+            if (seq === this._colorSeq && sourceSeq === this._seq)
+              this._activeTask = task;
+            else if (task && task.abort) task.abort();
           },
         ),
       );
@@ -224,6 +268,7 @@ Page({
         return;
       }
       this._activeTask = null;
+      this._requestedColor = "";
       this._appliedColor = color;
       this.setData({
         resultPath: path,
@@ -239,6 +284,7 @@ Page({
         sourceSeq === this._seq
       ) {
         this._activeTask = null;
+        this._requestedColor = "";
         this._failedColor = color;
         this.setData({
           processing: false,
@@ -253,30 +299,52 @@ Page({
     }
   },
   selectColor(e) {
-    if (this._mattingBusy) return;
+    if (this._mattingBusy || this.data.opening) return;
     clearTimeout(this._colorTimer);
     this.setData({ custom: false });
-    this.changeBackgroundColor(e.currentTarget.dataset.color);
+    this.queueColor(e.currentTarget.dataset.color);
+  },
+  queueColor(color) {
+    if (
+      this.data.processing &&
+      (this._queuedColor === color || this._requestedColor === color)
+    )
+      return;
+    clearTimeout(this._colorTimer);
+    this._queuedColor = "";
+    // 立即更新选中态，但合并短时间内连续点选产生的请求。
+    if (color === this._appliedColor && this.data.resultPath)
+      return this.changeBackgroundColor(color);
+    this._colorSeq++;
+    if (this._activeTask && this._activeTask.abort) this._activeTask.abort();
+    this._activeTask = null;
+    this._requestedColor = "";
+    this._queuedColor = color;
+    this._failedColor = color;
+    this.setData({
+      currentBgColor: color,
+      processing: true,
+      status: "正在合成背景",
+      error: "",
+    });
+    this._colorTimer = setTimeout(() => {
+      this._queuedColor = "";
+      this.changeBackgroundColor(color);
+    }, 140);
   },
   showCustomColor() {
-    if (this._transparent && !this._mattingBusy)
+    if (this._transparent && !this._mattingBusy && !this.data.opening)
       this.setData({ colorPickerVisible: true });
   },
   closeCustomColor() {
     this.setData({ colorPickerVisible: false });
   },
   customColor(e) {
-    if (!this._transparent || this._mattingBusy) return;
+    if (!this._transparent || this._mattingBusy || this.data.opening) return;
     const color = e.detail.value;
     if (!/^#[a-fA-F0-9]{6}$/.test(color)) return;
-    this.setData({
-      custom: true,
-      processing: true,
-      status: "正在合成背景",
-      error: "",
-    });
-    clearTimeout(this._colorTimer);
-    this._colorTimer = setTimeout(() => this.changeBackgroundColor(color), 240);
+    this.setData({ custom: true });
+    this.queueColor(color);
   },
   compareStart() {
     this.setData({ comparing: true });
@@ -294,6 +362,8 @@ Page({
     this._mattingBusy = false;
     this._failedColor = this._transparent ? this.data.currentBgColor : "";
     clearTimeout(this._colorTimer);
+    this._queuedColor = "";
+    this._requestedColor = "";
     if (this._activeTask && this._activeTask.abort) this._activeTask.abort();
     this._activeTask = null;
     const color = this._appliedColor || this.data.currentBgColor;
@@ -315,7 +385,7 @@ Page({
     return this.processTransparentImage();
   },
   async reselect() {
-    if (this.data.processing) return;
+    if (this.data.processing || this.data.opening) return;
     try {
       const res = await files.call("chooseMedia", {
         count: 1,
@@ -333,7 +403,8 @@ Page({
     }
   },
   adjustPhoto() {
-    if (this.data.processing || !this.data.sourcePath) return;
+    if (this.data.processing || this.data.opening || !this.data.sourcePath)
+      return;
     wx.navigateTo({
       url: `/pages/tools/tools?mode=crop&src=${encodeURIComponent(this.data.sourcePath)}&returnToEditor=1`,
       success: (res) => {
@@ -388,15 +459,41 @@ Page({
     }
   },
   async goExport() {
-    if (this._opening || this.data.processing || !this.data.resultPath) return;
+    if (
+      this._unloaded ||
+      this._opening ||
+      this.data.processing ||
+      !this.data.resultPath
+    )
+      return;
     this._opening = true;
+    this.setData({ opening: true, openingError: "" });
+    let navigating = false;
     try {
       const draft = await this.persistDraft();
       if (this._unloaded) return;
       getApp().globalData.exportSession = draft || this.snapshot();
-      wx.navigateTo({ url: "/pages/export/export" });
+      navigating = true;
+      wx.navigateTo({
+        url: "/pages/export/export",
+        fail: () => {
+          if (!this._unloaded)
+            this.setData({ openingError: "保存页未能打开，请再次点击重试" });
+        },
+        complete: () => {
+          this._opening = false;
+          if (!this._unloaded) this.setData({ opening: false });
+        },
+      });
+    } catch (error) {
+      navigating = false;
+      if (!this._unloaded)
+        this.setData({ openingError: "保存页未能打开，请再次点击重试" });
     } finally {
-      this._opening = false;
+      if (!navigating) {
+        this._opening = false;
+        if (!this._unloaded) this.setData({ opening: false });
+      }
     }
   },
 });
