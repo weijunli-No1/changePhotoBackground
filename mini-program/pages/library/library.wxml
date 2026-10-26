@@ -104,5 +104,6 @@
     current-height="{{size.height}}"
     bind:select="selectSpec"
     bind:close="closeSpecs"
+    bind:browse="browseSpecs"
   />
 </view>

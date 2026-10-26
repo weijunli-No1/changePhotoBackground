@@ -40,6 +40,7 @@ public class LogAspect {
         // 接收到请求，记录请求内容
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes != null ? attributes.getRequest() : null;
+        boolean watermarkImage = request != null && request.getRequestURI().endsWith("/api/photo/watermark");
 
         if (request != null) {
             // 打印请求相关参数
@@ -65,7 +66,7 @@ public class LogAspect {
                 arguments[i] = args[i];
             }
             try {
-                log.info("Request Args   : {}", JSON.toJSONString(arguments));
+                log.info("Request Args   : {}", watermarkImage ? "[watermark parameters omitted]" : JSON.toJSONString(arguments));
             } catch (Exception e) {
                 log.info("Request Args   : [Unserializable]");
             }
@@ -86,7 +87,7 @@ public class LogAspect {
             // 打印出参
             long endTime = System.currentTimeMillis();
             try {
-                log.info("Response Args  : {}", JSON.toJSONString(result));
+                log.info("Response Args  : {}", watermarkImage ? "[image response omitted]" : JSON.toJSONString(result));
             } catch (Exception e) {
                 log.info("Response Args  : [Unserializable]");
             }

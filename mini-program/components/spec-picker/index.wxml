@@ -101,6 +101,7 @@
         >{{error}}</view
       >
     </view>
+    <view wx:if="{{showCatalog && !keyboardHeight}}" class="spec-catalog-link" bindtap="browse" aria-role="button">查看考试与全部规格<t-icon name="chevron-right" size="28rpx" /></view>
     <view class="spec-footer">
       <view
         class="custom-confirm {{closing ? 'confirm-disabled' : ''}}"

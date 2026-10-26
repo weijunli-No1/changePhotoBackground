@@ -27,6 +27,33 @@ public class PythonApiServiceImpl implements PythonApiService {
     @Value("${python-api.base-url}")
     private String baseUrl;
 
+    @Override
+    public Map<String, Object> watermark(MultipartFile file, String text, int size, double opacity,
+                                         int angle, String color, int space, int dpi) {
+        // Python /watermark 的样式参数是 query，图片、文字和DPI为 multipart。
+        String url = baseUrl.replaceAll("/+$", "") + "/watermark?size=" + size
+                + "&opacity=" + opacity + "&angle=" + angle + "&color="
+                + color.replace("#", "%23")
+                + "&space=" + space;
+        try (HttpResponse response = HttpRequest.post(url).timeout(60000)
+                .form("input_image", file.getBytes(), "watermark-input.jpg")
+                .form("text", text).form("dpi", dpi).execute()) {
+            if (!response.isOk()) throw new IllegalStateException("水印服务暂不可用，请重试");
+            Map<String, Object> result = JSON.parseObject(response.body(), MAP_TYPE_REFERENCE);
+            Object status = result == null ? null : result.get("status");
+            if (result == null || Boolean.FALSE.equals(status) || Integer.valueOf(0).equals(status)
+                    || !(result.get("image_base64") instanceof String)
+                    || ((String) result.get("image_base64")).isEmpty())
+                throw new IllegalStateException("水印生成失败，请重试");
+            return result;
+        } catch (IllegalStateException error) {
+            throw error;
+        } catch (Exception error) {
+            log.warn("Python水印服务调用失败: {}", error.getClass().getSimpleName());
+            throw new IllegalStateException("水印处理失败，请稍后重试");
+        }
+    }
+
     /**
      * 调用 Python 服务生成人像抠图结果。
      */

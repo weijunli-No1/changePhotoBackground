@@ -1,0 +1,125 @@
+<view class="page-wrap">
+  <navigation-bar
+    title="{{selectOnly ? '更改照片规格' : '规格与制作方式'}}"
+    show-back="{{true}}"
+  />
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
+    <view class="detail-body">
+      <block wx:if="{{spec}}">
+        <view class="detail-title">{{spec.name}}</view>
+        <view class="detail-subtitle">{{spec.sizeRule}}</view>
+        <block wx:if="{{!selectOnly}}">
+          <view class="creation-title">选择制作方式</view>
+          <view class="creation-modes" aria-role="radiogroup">
+            <view
+              class="creation-mode {{mode === 'smart' ? 'selected' : ''}}"
+              data-mode="smart"
+              bindtap="setMode"
+              aria-role="radio"
+              aria-checked="{{mode === 'smart'}}"
+              aria-disabled="{{choosing}}"
+            >
+              <view class="creation-copy"
+                ><view class="creation-name">智能制作 / 换底色</view
+                ><view class="creation-note"
+                  >自动抠图，可选红、蓝、白底</view
+                ></view
+              >
+              <t-icon
+                name="{{mode === 'smart' ? 'check-circle-filled' : 'circle'}}"
+                size="38rpx"
+              />
+            </view>
+            <view
+              wx:if="{{spec.category !== 'common'}}"
+              class="creation-mode {{mode === 'original' ? 'selected' : ''}}"
+              data-mode="original"
+              bindtap="setMode"
+              aria-role="radio"
+              aria-checked="{{mode === 'original'}}"
+              aria-disabled="{{choosing}}"
+            >
+              <view class="creation-copy"
+                ><view class="creation-name">原图尺寸适配</view
+                ><view class="creation-note"
+                  >只改尺寸与体积，保留原背景</view
+                ></view
+              >
+              <t-icon
+                name="{{mode === 'original' ? 'check-circle-filled' : 'circle'}}"
+                size="38rpx"
+              />
+            </view>
+          </view>
+          <view class="detail-explanation"
+            >{{mode === 'smart' ?
+            '下一步可换底色。如报名要求不得修图，请使用合规原照进行尺寸适配。' :
+            '请准备底色、着装与人像均符合报名要求的证件原照。'}}</view
+          >
+        </block>
+        <view wx:else class="detail-explanation"
+          >沿用当前照片和底色，按此规格重新制作，无需再次选图。</view
+        >
+        <view class="dimension-banner"
+          ><view
+            ><view class="dimension-caption">输出宽度</view
+            ><view class="dimension-number">{{spec.width}}px</view></view
+          ><view class="dimension-divider"></view
+          ><view
+            ><view class="dimension-caption">输出高度</view
+            ><view class="dimension-number">{{spec.height}}px</view></view
+          ></view
+        >
+        <view class="dimension-note">{{spec.dimensionLabel}}</view>
+        <view class="requirement-list">
+          <view class="requirement-row"
+            ><text>照片格式</text
+            ><text class="requirement-value">{{spec.format}}</text></view
+          >
+          <view class="requirement-row"
+            ><text>背景颜色</text
+            ><text class="requirement-value">{{spec.background}}</text></view
+          >
+          <view class="requirement-row"
+            ><text>文件大小</text
+            ><text class="requirement-value">{{spec.fileRule}}</text></view
+          >
+        </view>
+        <view
+          class="requirements-toggle"
+          bindtap="toggleRequirements"
+          aria-role="button"
+          aria-expanded="{{expanded}}"
+          ><text
+            >{{expanded ? '收起详细要求与来源' :
+            '查看详细要求与官方来源'}}</text
+          ><t-icon
+            name="{{expanded ? 'chevron-up' : 'chevron-down'}}"
+            size="32rpx"
+        /></view>
+        <block wx:if="{{expanded}}">
+          <view class="notice detail-notice">{{spec.notice}}</view>
+          <view wx:if="{{spec.sourceUrl}}" class="source-section"
+            ><view class="source-label">依据：{{spec.sourceLabel}}</view
+            ><view class="source-date">核对日期 {{spec.reviewedAt}}</view
+            ><view class="source-link" bindtap="source" aria-role="button"
+              >复制官方来源链接<t-icon name="link" size="30rpx" /></view
+          ></view>
+        </block>
+      </block>
+      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
+        >{{error}}</view
+      >
+    </view>
+  </scroll-view>
+  <view class="footer-actions">
+    <view
+      class="primary {{choosing || !spec ? 'disabled' : ''}}"
+      bindtap="start"
+      aria-role="button"
+      aria-disabled="{{choosing || !spec}}"
+      >{{choosing ? '正在打开照片…' : selectOnly ? '使用此规格' : mode ===
+      'smart' ? '选照片，智能换底色' : '选原照，适配尺寸'}}</view
+    >
+  </view>
+</view>

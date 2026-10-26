@@ -1,0 +1,131 @@
+{
+  "verificationPhase": "Early baseline before branded-preview and quota changes; use brand-evidence.json, quality-evidence.json and ux-final-evidence.json for final behavior.",
+  "count": 36,
+  "cetSearch": 2,
+  "empty": 0,
+  "qualification": 23,
+  "source": {
+    "width": 400,
+    "height": 560
+  },
+  "outputs": [
+    {
+      "spec": "national-civil",
+      "width": 295,
+      "height": 413,
+      "size": "40 KB"
+    },
+    {
+      "spec": "cpa",
+      "width": 178,
+      "height": 220,
+      "size": "19 KB"
+    },
+    {
+      "spec": "ncre",
+      "width": 144,
+      "height": 192,
+      "size": "20 KB"
+    },
+    {
+      "spec": "postgraduate",
+      "width": 399,
+      "height": 532,
+      "size": "58 KB"
+    }
+  ],
+  "export": {
+    "path": "pages/export/export",
+    "local": true,
+    "note": "请核对底色、人像和官方审核要求。以报名系统要求为准"
+  },
+  "opacity": 40,
+  "advanced": true,
+  "watermarkRects": [
+    {
+      "id": "",
+      "dataset": {},
+      "left": 18,
+      "top": 95,
+      "right": 357,
+      "bottom": 315.1000061035156,
+      "width": 339,
+      "height": 220.10000610351562
+    },
+    {
+      "id": "",
+      "dataset": {},
+      "left": 0,
+      "top": 709.5999755859375,
+      "right": 375,
+      "bottom": 812.0999755859375,
+      "width": 375,
+      "height": 102.5
+    },
+    {
+      "id": "",
+      "dataset": {},
+      "left": 20,
+      "top": 722.0999755859375,
+      "right": 355.1000061035156,
+      "bottom": 766.0999755859375,
+      "width": 335.1000061035156,
+      "height": 44
+    }
+  ],
+  "errors": [],
+  "jpegVerification": [
+    {
+      "spec": "postgraduate",
+      "format": "JPEG",
+      "size": [
+        399,
+        532
+      ],
+      "dpi": [
+        300,
+        300
+      ],
+      "bytes": 59101
+    },
+    {
+      "spec": "national-civil",
+      "format": "JPEG",
+      "size": [
+        295,
+        413
+      ],
+      "dpi": [
+        300,
+        300
+      ],
+      "bytes": 41317
+    },
+    {
+      "spec": "ncre",
+      "format": "JPEG",
+      "size": [
+        144,
+        192
+      ],
+      "dpi": [
+        300,
+        300
+      ],
+      "bytes": 20480
+    },
+    {
+      "spec": "cpa",
+      "format": "JPEG",
+      "size": [
+        178,
+        220
+      ],
+      "dpi": [
+        300,
+        300
+      ],
+      "bytes": 19428
+    }
+  ]
+}

@@ -18,4 +18,7 @@ public interface PythonApiService {
      * 调用 Python 生成排版照接口 (generate_layout_photos)
      */
     Map<String, Object> generateLayoutPhotos(String base64Image, Integer height, Integer width);
+
+    Map<String, Object> watermark(MultipartFile file, String text, int size, double opacity,
+                                  int angle, String color, int space, int dpi);
 }

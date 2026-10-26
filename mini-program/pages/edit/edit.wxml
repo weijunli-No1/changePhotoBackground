@@ -19,11 +19,13 @@
     ></view
   >
   <view class="studio">
+    <canvas wx:if="{{needsCanvas}}" type="2d" id="toolCanvas" class="brand-canvas"></canvas>
     <image
       wx:if="{{sourcePath}}"
       class="studio-photo"
-      src="{{comparing ? sourcePath : (resultPath || sourcePath)}}"
+      src="{{comparing ? sourcePath : (previewPath || sourcePath)}}"
       mode="aspectFit"
+      show-menu-by-longpress="{{!comparing && !!previewPath}}"
     />
     <view wx:else class="studio-empty"
       ><t-icon name="image-add" size="64rpx" /><text
@@ -156,7 +158,7 @@
     >
   </view>
   <view class="footer-actions"
-    ><view
+    ><view class="preview-watermark-note">预览含“拾光小相”水印，正常保存可获取无水印照片</view><view
       class="primary {{processing || opening || !resultPath ? 'disabled' : ''}}"
       aria-disabled="{{processing || opening || !resultPath}}"
       bindtap="goExport"
@@ -172,6 +174,7 @@
     current-height="{{size.height}}"
     bind:select="selectSpec"
     bind:close="closeSpecs"
+    bind:browse="browseSpecs"
   />
   <t-color-picker
     visible="{{colorPickerVisible}}"

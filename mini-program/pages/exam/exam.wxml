@@ -1,0 +1,123 @@
+<view class="page-wrap">
+  <navigation-bar title="考试照片适配" show-back="{{true}}" />
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}"
+    ><view class="exam-body">
+      <view class="exam-name">{{spec.name || '考试照片'}}</view
+      ><view class="exam-subtitle">{{spec.dimensionLabel}}</view>
+      <view class="exam-preview"
+        ><canvas
+          wx:if="{{needsCanvas}}"
+          type="2d"
+          id="toolCanvas"
+          class="brand-canvas"
+        ></canvas
+        ><image
+          wx:if="{{previewPath && !adjusting}}"
+          src="{{previewPath}}"
+          mode="aspectFit"
+          class="exam-photo"
+          show-menu-by-longpress="{{true}}"
+        /><view
+          wx:elif="{{sourcePath && cropReady}}"
+          class="exam-crop-frame"
+          style="{{frameStyle}}"
+          ><image
+            class="exam-original"
+            src="{{sourcePath}}"
+            mode="scaleToFill"
+            style="{{imageStyle}}{{positionStyle}}"
+            show-menu-by-longpress="{{false}}" /></view
+        ><image
+          wx:elif="{{sourcePath}}"
+          src="{{sourcePath}}"
+          mode="aspectFit"
+          class="exam-photo"
+          show-menu-by-longpress="{{false}}"
+        /><view wx:if="{{processing}}" class="exam-loading"
+          ><view class="loading-spinner"></view><text>正在适配原图…</text></view
+        ></view
+      >
+      <view class="exam-summary"
+        >{{resultPath ? resultWidth + ' × ' + resultHeight + ' px · JPEG · ' +
+        resultSize : '使用符合要求的原照，保留真实相貌'}}</view
+      >
+      <view class="notice"
+        >底色要求：{{spec.background}}。本机只处理尺寸和体积，不换底色、不美颜。照片内容仍需人工核对。</view
+      >
+      <view wx:if="{{cropReady}}" class="compose-label"
+        >{{canMoveX || canMoveY ? "调整裁剪位置" : "构图已匹配"}}</view
+      ><view
+        wx:if="{{!canMoveX && !canMoveY && cropReady}}"
+        class="compose-hint"
+        >原图比例与规格一致，无需移动裁剪位置。</view
+      ><block wx:if="{{canMoveX}}">
+        <view class="slider-label"
+          ><text>左右</text><text>{{positionX}}%</text></view
+        ><slider
+          active-color="{{accentColor}}"
+          value="{{positionX}}"
+          data-axis="X"
+          bindchanging="move"
+          bindchange="moveEnd"
+          bindtouchcancel="cancelMove"
+          disabled="{{processing || opening || !canMoveX}}"
+          min="0"
+          max="100"
+          block-size="24"
+          aria-label="左右裁剪位置"
+        /> </block
+      ><block wx:if="{{canMoveY}}"
+        ><view class="slider-label"
+          ><text>上下</text><text>{{positionY}}%</text></view
+        ><slider
+          active-color="{{accentColor}}"
+          value="{{positionY}}"
+          data-axis="Y"
+          bindchanging="move"
+          bindchange="moveEnd"
+          bindtouchcancel="cancelMove"
+          disabled="{{processing || opening || !canMoveY}}"
+          min="0"
+          max="100"
+          block-size="24"
+          aria-label="上下裁剪位置"
+        /> </block
+      ><view wx:if="{{error}}" class="error-inline" aria-role="alert"
+        >{{error}}</view
+      >
+      <view class="exam-links"
+        ><view
+          wx:if="{{sourcePath}}"
+          class="link"
+          bindtap="smartPhoto"
+          aria-role="button"
+          aria-disabled="{{processing || opening}}"
+          >智能换底色</view
+        ><view
+          class="link"
+          bindtap="choosePhoto"
+          aria-role="button"
+          aria-disabled="{{processing || opening}}"
+          >更换原照</view
+        ><view
+          wx:if="{{error && sourcePath}}"
+          class="link"
+          bindtap="process"
+          aria-role="button"
+          >重新适配</view
+        ></view
+      >
+    </view></scroll-view
+  >
+  <view class="footer-actions"
+    ><view class="preview-watermark-note"
+      >预览含小程序水印，正常保存可获取无水印照片</view
+    ><view
+      class="primary {{processing || opening || adjusting || !resultPath ? 'disabled' : ''}}"
+      bindtap="goExport"
+      aria-role="button"
+      aria-disabled="{{processing || opening || adjusting || !resultPath}}"
+      >{{processing ? '正在适配…' : opening ? '正在准备…' : '预览并保存'}}</view
+    ></view
+  >
+</view>

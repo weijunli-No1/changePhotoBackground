@@ -9,7 +9,11 @@
     "pages/document/document",
     "pages/account/account",
     "pages/support/support",
-    "pages/library/library"
+    "pages/library/library",
+    "pages/specs/specs",
+    "pages/spec-detail/spec-detail",
+    "pages/exam/exam",
+    "pages/watermark/watermark"
   ],
   "subpackages": [],
   "window": {

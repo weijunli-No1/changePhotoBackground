@@ -35,6 +35,7 @@ function pageFixture(file, app, deps = {}, wx = {}) {
     getApp: () => app,
     wx,
     require: (name) => {
+        if (name.endsWith('/brand-preview')) return { create: async (_page, source) => 'BRANDED:' + source };
       if (name.endsWith("/skyline-motion"))
         return require("../mini-program/utils/skyline-motion");
       const key = name.split("/").pop();

@@ -24,6 +24,14 @@ Page({
   onUnload() {
     this._unloaded = true;
   },
+  draftImageError(e) {
+    if (
+      !this._unloaded &&
+      this.data.draft &&
+      this.data.draft.id === e.currentTarget.dataset.id
+    )
+      this.setData({ draft: { ...this.data.draft, thumbnailMissing: true } });
+  },
   openLibrary(e) {
     if (this._openingLibrary) return;
     this._openingLibrary = true;

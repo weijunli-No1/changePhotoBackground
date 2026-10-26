@@ -1,0 +1,103 @@
+<view class="page-wrap specs-page">
+  <navigation-bar title="选择照片规格" show-back="{{true}}" />
+  <view class="spec-search-wrap">
+    <view class="spec-search"
+      ><t-icon name="search" size="36rpx" /><input
+        value="{{query}}"
+        bindinput="search"
+        placeholder="搜索考试、证件或尺寸"
+        maxlength="60"
+        confirm-type="search"
+        aria-label="搜索考试、证件或尺寸" /><view
+        wx:if="{{query}}"
+        class="clear-query"
+        bindtap="clearSearch"
+        aria-role="button"
+        aria-label="清空搜索"
+        ><t-icon name="close-circle-filled" size="32rpx" /></view
+    ></view>
+    <scroll-view class="spec-categories" scroll-x show-scrollbar="{{false}}"
+      ><view class="spec-category-row"
+        ><view
+          wx:for="{{categories}}"
+          wx:key="id"
+          class="spec-category {{category === item.id ? 'active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="selectCategory"
+          aria-role="tab"
+          aria-selected="{{category === item.id}}"
+          >{{item.name}}</view
+        ></view
+      ></scroll-view
+    >
+  </view>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    show-scrollbar="{{false}}"
+    scroll-top="{{scrollTop}}"
+  >
+    <view class="spec-list">
+      <view wx:if="{{query}}" class="result-count">找到 {{count}} 项规格</view>
+      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
+        >{{error}}</view
+      >
+      <view
+        wx:for="{{groups}}"
+        wx:for-item="group"
+        wx:key="id"
+        class="spec-group"
+        ><view class="group-heading">{{group.name}}</view
+        ><view class="spec-rows"
+          ><view
+            wx:for="{{group.items}}"
+            wx:key="id"
+            class="spec-row"
+            data-id="{{item.id}}"
+            bindtap="showDetail"
+            hover-class="pressed"
+            aria-role="button"
+            aria-label="{{item.name + '，' + item.dimensionLabel}}"
+            ><view class="spec-row-copy"
+              ><view class="spec-row-name">{{item.name}}</view
+              ><view class="spec-row-note">{{item.dimensionLabel}}</view
+              ><view class="spec-row-note background-note"
+                >{{item.background}}</view
+              ></view
+            ><t-icon name="chevron-right" size="32rpx" /></view></view
+      ></view>
+      <view wx:if="{{!count}}" class="empty-state"
+        ><view class="empty-title">没有找到这个考试</view
+        ><view class="empty-desc"
+          >试试“国考”“四六级”“一建”，或按报名要求自定义尺寸。</view
+        ><view
+          wx:if="{{category !== 'all'}}"
+          class="secondary"
+          bindtap="broadenSearch"
+          aria-role="button"
+          >在全部分类搜索</view
+        ><view
+          wx:else
+          class="secondary"
+          bindtap="clearSearch"
+          aria-role="button"
+          >清空搜索</view
+        ></view
+      >
+    </view>
+  </scroll-view>
+  <view class="footer-actions"
+    ><view class="secondary custom-entry" bindtap="custom" aria-role="button"
+      ><t-icon name="add" size="36rpx" /><text>自定义尺寸</text></view
+    ></view
+  >
+  <spec-picker
+    show-catalog="{{false}}"
+    visible="{{specVisible}}"
+    title="常用与自定义尺寸"
+    current-width="{{selectedSize.width}}"
+    current-height="{{selectedSize.height}}"
+    bind:select="selectCustom"
+    bind:close="closeSpecs"
+  />
+</view>

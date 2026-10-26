@@ -82,7 +82,7 @@ async function transform(page, source, options = {}) {
   ctx.rotate((angle * Math.PI) / 180);
   ctx.drawImage(image, -info.width / 2, -info.height / 2, info.width, info.height);
   if (typeof canvas.toDataURL === 'function') {
-    const dataUrl = canvas.toDataURL('image/jpeg', options.quality || 0.9);
+    const dataUrl = canvas.toDataURL(options.fileType === 'png' ? 'image/png' : 'image/jpeg', options.quality || 0.9);
     const path = await writeBase64(
       dataUrl,
       'local',
@@ -99,7 +99,7 @@ async function transform(page, source, options = {}) {
         height: canvas.height,
         destWidth: canvas.width,
         destHeight: canvas.height,
-        fileType: 'jpg',
+        fileType: options.fileType === 'png' ? 'png' : 'jpg',
         quality: options.quality || 0.9,
         success: (res) => {
           clearTimeout(timer);
@@ -115,4 +115,4 @@ async function transform(page, source, options = {}) {
   });
   return { path: result.tempFilePath, width: canvas.width, height: canvas.height };
 }
-module.exports = { cropRect, transform };
+module.exports = { cropRect, transform, getCanvas };

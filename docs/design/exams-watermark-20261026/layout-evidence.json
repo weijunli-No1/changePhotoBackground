@@ -1,0 +1,98 @@
+[
+  {
+    "name": "specs",
+    "rects": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 465.6000061035156,
+        "right": 320,
+        "bottom": 568.1000061035156,
+        "width": 320,
+        "height": 102.5
+      },
+      null
+    ]
+  },
+  {
+    "name": "detail",
+    "rects": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 465.6000061035156,
+        "right": 320,
+        "bottom": 568.1000061035156,
+        "width": 320,
+        "height": 102.5
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 20,
+        "top": 478.1000061035156,
+        "right": 300.1000061035156,
+        "bottom": 522.1000061035156,
+        "width": 280.1000061035156,
+        "height": 44
+      }
+    ]
+  },
+  {
+    "name": "watermark",
+    "rects": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "width": 320,
+        "height": 568
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 0,
+        "top": 465.6000061035156,
+        "right": 320,
+        "bottom": 568.1000061035156,
+        "width": 320,
+        "height": 102.5
+      },
+      {
+        "id": "",
+        "dataset": {},
+        "left": 20,
+        "top": 478.1000061035156,
+        "right": 300.1000061035156,
+        "bottom": 522.1000061035156,
+        "width": 280.1000061035156,
+        "height": 44
+      }
+    ]
+  }
+]

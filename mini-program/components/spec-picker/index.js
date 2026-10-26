@@ -8,6 +8,7 @@ Component({
     currentWidth: Number,
     currentHeight: Number,
     title: { type: String, value: "选择照片规格" },
+    showCatalog: { type: Boolean, value: true },
   },
   data: {
     sizes,
@@ -39,6 +40,7 @@ Component({
   },
   methods: {
     stop() {},
+    browse() { if (!this.data.closing) this.hideSheet('browse'); },
     updateWindow() {
       const info = wx.getWindowInfo
         ? wx.getWindowInfo()

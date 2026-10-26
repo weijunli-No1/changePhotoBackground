@@ -1,0 +1,17 @@
+{
+  "standard": {
+    "width": 178,
+    "height": 220,
+    "type": "jpeg"
+  },
+  "preview": {
+    "width": 400,
+    "height": 494,
+    "type": "jpeg"
+  },
+  "crop": {
+    "width": 400,
+    "height": 560,
+    "type": "png"
+  }
+}

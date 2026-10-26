@@ -36,6 +36,21 @@ module.exports = {
   closeSpecs() {
     this.setData({ specVisible: false });
   },
+  browseSpecs() {
+    if (this._openingTool || this._choosing || this._unloaded) return;
+    this.setData({ specVisible: false });
+    this._openingTool = true;
+    wx.navigateTo({
+      url: "/pages/specs/specs",
+      fail: () => {
+        if (!this._unloaded)
+          this.setData({ entryError: "规格目录未能打开，请重试" });
+      },
+      complete: () => {
+        this._openingTool = false;
+      },
+    });
+  },
   async selectSpec(e) {
     if (this._choosing || this._openingTool) return;
     let size;

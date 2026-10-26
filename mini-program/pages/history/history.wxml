@@ -40,11 +40,21 @@
             ></view
           ><view wx:for="{{drafts}}" wx:key="id" class="draft-work"
             ><image
-              src="{{item.resultPath || item.sourcePath}}"
+              wx:if="{{!item.thumbnailMissing}}"
+              src="{{item.displayPath || item.sourcePath}}"
               class="work-thumb"
               mode="aspectFill"
               data-id="{{item.id}}"
+              binderror="draftImageError"
               bindtap="resume" /><view
+              wx:else
+              class="work-thumb thumb-fallback"
+              data-id="{{item.id}}"
+              bindtap="resume"
+              aria-role="button"
+              aria-label="继续编辑草稿"
+              ><t-icon name="image" size="44rpx" /></view
+            ><view
               class="work-copy"
               data-id="{{item.id}}"
               bindtap="resume"
@@ -53,6 +63,8 @@
               ><view class="small muted"
                 >{{item.sizeName || '继续处理照片'}}</view
               ><view class="draft-updated">{{item.updatedLabel}}</view
+              ><view wx:if="{{item.thumbnailMissing}}" class="small muted"
+                >预览暂不可用，可尝试继续编辑</view
               ><view class="resume-label">继续编辑</view></view
             ><view
               class="delete-target"
@@ -72,7 +84,7 @@
         >
         <block wx:else
           ><view class="works-helper"
-            >云端记录定期清理，重要照片请保存到手机。</view
+            >这里是已通过保存次数校验的无水印成品，可直接查看下载。云端记录定期清理，请及时保存到手机。</view
           ><view
             wx:if="{{hasLogin && loadError && historyList.length}}"
             class="refresh-error"

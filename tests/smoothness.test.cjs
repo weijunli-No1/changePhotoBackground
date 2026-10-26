@@ -11,6 +11,7 @@ function load(
 ) {
   const filename = path.resolve(__dirname, "../mini-program", file);
   const realRequire = createRequire(filename);
+  deps = { 'brand-preview': { create: async (_page, source) => 'BRANDED:' + source }, ...deps };
   let def;
   vm.runInNewContext(
     fs.readFileSync(filename, "utf8"),

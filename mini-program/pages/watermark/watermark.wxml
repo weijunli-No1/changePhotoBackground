@@ -1,0 +1,214 @@
+<view class="page-wrap">
+  <navigation-bar title="照片加水印" show-back="{{true}}" />
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}"
+    ><view class="watermark-body">
+      <view
+        wx:if="{{checkingService || !serviceReady}}"
+        class="service-notice"
+        aria-role="status"
+        ><view
+          >{{checkingService ? '正在检查水印服务…' : '水印生成暂未开放'}}</view
+        ><view class="service-note"
+          >{{checkingService ? '可先选择照片，预览水印样式。' :
+          '现在可在本机预览样式；服务开放后即可生成和保存。'}}</view
+        ><view
+          wx:if="{{!checkingService}}"
+          class="service-retry"
+          bindtap="checkService"
+          aria-role="button"
+          >重新检查</view
+        ></view
+      >
+      <view
+        class="watermark-stage"
+        bindtap="{{!sourcePath ? 'choosePhoto' : ''}}"
+        aria-role="{{sourcePath ? 'img' : 'button'}}"
+        aria-label="{{sourcePath ? '水印效果预览' : '选择要加水印的照片'}}"
+      >
+        <view
+          wx:if="{{sourcePath}}"
+          class="watermark-frame"
+          style="{{previewStyle}}"
+          ><image
+            class="watermark-image"
+            src="{{resultPath || sourcePath}}"
+            mode="aspectFit"
+          /><view
+            wx:if="{{!resultPath}}"
+            class="watermark-overlay"
+            style="{{textStyle}}"
+            ><view
+              wx:for="{{rows}}"
+              wx:for-item="row"
+              wx:key="*this"
+              class="watermark-line"
+              style="{{rowStyle}}"
+              ><text
+                wx:for="{{columns}}"
+                wx:key="*this"
+                style="{{spacingStyle}}"
+                >{{text || '水印文字'}}</text
+              ></view
+            ></view
+          ></view
+        >
+        <view wx:else class="watermark-empty"
+          ><t-icon name="image-add" size="72rpx" /><view>选择一张照片</view
+          ><view class="small muted"
+            >生成时上传云端处理，支持10 MB以内图片</view
+          ></view
+        >
+        <view wx:if="{{processing}}" class="watermark-processing"
+          ><view class="loading-spinner"></view
+          ><text>正在生成水印照片…</text></view
+        >
+      </view>
+      <view class="preview-caption"
+        >{{resultPath ? '已生成 · ' + width + ' × ' + height + ' px · ' +
+        resultSize : '样式预览仅供参考，以生成后的图片为准'}}</view
+      >
+      <view class="watermark-input-row"
+        ><text>水印文字</text
+        ><input
+          value="{{text}}"
+          bindinput="input"
+          maxlength="60"
+          disabled="{{processing || opening}}"
+          placeholder="输入水印文字"
+          aria-label="水印文字"
+      /></view>
+      <scroll-view
+        class="watermark-templates"
+        scroll-x
+        show-scrollbar="{{false}}"
+        ><view class="template-row"
+          ><view
+            wx:for="{{templates}}"
+            wx:key="*this"
+            class="template-choice {{text === item ? 'selected' : ''}}"
+            data-index="{{index}}"
+            bindtap="template"
+            aria-role="button"
+            aria-disabled="{{processing || opening}}"
+            >{{item}}</view
+          ></view
+        ></scroll-view
+      >
+      <view class="watermark-slider"
+        ><text>透明度</text
+        ><slider
+          active-color="{{accentColor}}"
+          value="{{opacity}}"
+          data-key="opacity"
+          bindchanging="slider"
+          bindchange="slider"
+          disabled="{{processing || opening}}"
+          min="10"
+          max="70"
+          block-size="24"
+          aria-label="水印透明度"
+        /><text class="slider-value">{{opacity}}%</text></view
+      >
+      <view class="watermark-slider"
+        ><text>字号</text
+        ><slider
+          active-color="{{accentColor}}"
+          value="{{size}}"
+          data-key="size"
+          bindchanging="slider"
+          bindchange="slider"
+          disabled="{{processing || opening}}"
+          min="16"
+          max="100"
+          block-size="24"
+          aria-label="水印字号"
+        /><text class="slider-value">{{size}}</text></view
+      >
+      <view class="watermark-direction"
+        ><text>方向</text
+        ><view
+          class="direction-choice {{angle === 30 ? 'selected' : ''}}"
+          data-angle="30"
+          bindtap="direction"
+          aria-role="radio"
+          aria-checked="{{angle === 30}}"
+          >斜向</view
+        ><view
+          class="direction-choice {{angle === 0 ? 'selected' : ''}}"
+          data-angle="0"
+          bindtap="direction"
+          aria-role="radio"
+          aria-checked="{{angle === 0}}"
+          >水平</view
+        ></view
+      >
+      <view
+        class="advanced-toggle"
+        bindtap="toggleAdvanced"
+        aria-role="button"
+        aria-expanded="{{advanced}}"
+        ><text>更多样式</text
+        ><t-icon
+          name="{{advanced ? 'chevron-up' : 'chevron-down'}}"
+          size="32rpx"
+      /></view>
+      <block wx:if="{{advanced}}"
+        ><view class="color-choices"
+          ><view
+            wx:for="{{colors}}"
+            wx:key="value"
+            class="color-choice {{color === item.value ? 'selected' : ''}}"
+            data-color="{{item.value}}"
+            bindtap="setColor"
+            aria-role="radio"
+            aria-checked="{{color === item.value}}"
+            >{{item.name}}</view
+          ></view
+        ><view class="watermark-slider"
+          ><text>间距</text
+          ><slider
+            active-color="{{accentColor}}"
+            value="{{space}}"
+            data-key="space"
+            bindchanging="slider"
+            bindchange="slider"
+            disabled="{{processing || opening}}"
+            min="10"
+            max="100"
+            block-size="24"
+            aria-label="水印间距"
+          /><text class="slider-value">{{space}}</text></view
+        ></block
+      >
+      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
+        >{{error}}</view
+      >
+      <view class="watermark-actions"
+        ><view
+          wx:if="{{sourcePath && !processing}}"
+          class="link"
+          bindtap="choosePhoto"
+          aria-role="button"
+          >更换照片</view
+        ><view
+          wx:if="{{processing}}"
+          class="link"
+          bindtap="cancel"
+          aria-role="button"
+          >取消处理</view
+        ></view
+      >
+    </view></scroll-view
+  >
+  <view class="footer-actions"
+    ><view
+      class="primary {{processing || opening || !sourcePath || !text || (!resultPath && (!serviceReady || checkingService)) ? 'disabled' : ''}}"
+      bindtap="primary"
+      aria-role="button"
+      aria-disabled="{{processing || opening || !sourcePath || !text || (!resultPath && (!serviceReady || checkingService))}}"
+      >{{processing ? '正在生成…' : opening ? '正在准备…' : resultPath ?
+      '预览并保存' : checkingService ? '正在检查服务…' : !serviceReady ?
+      '生成服务暂未开放' : '生成水印照片'}}</view
+    ></view
+  >
+</view>

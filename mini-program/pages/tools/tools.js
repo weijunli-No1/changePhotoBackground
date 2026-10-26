@@ -188,8 +188,9 @@ Page({
         ratio: this.data.mode === "crop" ? this.data.ratio : 0,
         x: this.data.positionX / 100,
         y: this.data.positionY / 100,
-        quality: this.data.mode === "compress" ? this.data.quality / 100 : 0.95,
-        maxEdge: this.data.mode === "compress" ? this.data.maxEdge : 2560,
+        quality: this.data.mode === "compress" ? this.data.quality / 100 : 1,
+        fileType: this.data.mode === "crop" ? "png" : "jpg",
+        maxEdge: this.data.mode === "compress" ? this.data.maxEdge : 4096,
       });
       const size = await files.fileSize(result.path);
       if (this._unloaded) return;

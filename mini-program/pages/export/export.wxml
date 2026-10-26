@@ -1,17 +1,38 @@
 <view class="page-wrap export-page">
   <navigation-bar title="预览与保存" show-back="{{true}}" />
+  <canvas
+    wx:if="{{needsCanvas}}"
+    type="2d"
+    id="toolCanvas"
+    class="brand-canvas"
+  ></canvas>
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
     <view class="export-body">
       <view class="export-preview"
-        ><image src="{{previewPath}}" mode="aspectFit" class="export-photo"
-      /></view>
+        ><image
+          wx:if="{{previewPath}}"
+          src="{{previewPath}}"
+          mode="aspectFit"
+          class="export-photo"
+          show-menu-by-longpress="{{true}}"
+          binderror="previewError"
+          bindtap="previewImage"
+        /><view wx:if="{{previewPreparing}}" class="muted">正在准备预览…</view
+        ><view wx:if="{{unavailable || previewFailed}}" class="muted"
+          >{{unavailable ? '照片文件暂不可用' :
+          '预览加载失败，可重新加载'}}</view
+        ></view
+      >
       <view class="export-spec"
-        >{{sizeName}}{{!local ? ' · ' + colorName : ''}}</view
+        >{{sizeName}}{{allowLayout ? ' · ' + colorName : ''}}</view
       >
       <view wx:if="{{actualWidth}}" class="export-dimensions"
         >实际图片 {{actualWidth}} × {{actualHeight}} px</view
       >
-      <block wx:if="{{!local}}">
+      <view wx:if="{{previewCaption}}" class="export-note"
+        >{{previewCaption}}</view
+      >
+      <block wx:if="{{allowLayout}}">
         <view class="format-title">选择保存格式</view>
         <view class="export-options" aria-role="radiogroup">
           <view
@@ -61,14 +82,19 @@
         <view wx:if="{{action === 'layout'}}" class="export-note"
           >上图为单张预览，保存时生成实际六寸排版图。</view
         >
-        <view class="usage-note"
+      </block>
+      <block wx:if="{{!local}}"
+        ><view wx:if="{{outputNote}}" class="export-note">{{outputNote}}</view
+        ><view class="preview-watermark-note"
+          >预览与长按保存含“拾光小相”水印；下方保存按钮可获取无水印照片。</view
+        ><view class="usage-note"
           >{{quotaKnown ? (unlimited ? '今天可不限次数保存' : '今日剩余 ' +
           remaining + ' 次保存机会') :
-          '每日5次免费保存，超出后可观看视频增加次数'}}</view
+          '每日5次免费无水印保存，超出后可观看视频增加次数'}}</view
         >
       </block>
       <view wx:else class="export-note local-note"
-        >本地处理的照片直接保存，不占用证件照次数。</view
+        >{{outputNote || '本地处理的照片直接保存，不占用证件照次数。'}}</view
       >
       <view wx:if="{{saved}}" class="notice success-note" aria-role="status"
         ><t-icon name="check-circle-filled" size="34rpx" /><view
@@ -85,16 +111,17 @@
   </scroll-view>
   <view class="footer-actions">
     <view
-      class="primary {{busy || !previewPath ? 'disabled' : ''}}"
-      aria-disabled="{{busy || !previewPath}}"
+      class="primary {{busy || previewPreparing || (!previewPath && !unavailable && !previewFailed) ? 'disabled' : ''}}"
+      aria-disabled="{{busy || previewPreparing || (!previewPath && !unavailable && !previewFailed)}}"
       bindtap="primaryAction"
       hover-class="pressed"
       aria-role="button"
       ><view wx:if="{{busy}}" class="loading-spinner"></view
       ><text
-        >{{busy ? (savingStage || '正在保存…') : saved ? '完成，返回首页' :
-        local ? '保存到相册' : action === 'layout' ? '保存六寸排版' :
-        '保存电子照片'}}</text
+        >{{busy ? (savingStage || '正在保存…') : unavailable ? '返回编辑' :
+        previewPreparing ? '正在准备预览…' : previewFailed ? '重新加载预览' :
+        saved ? '完成，返回首页' : local ? '保存到相册' : action === 'layout' ?
+        '保存六寸排版' : '保存无水印照片'}}</text
       ></view
     >
     <view
@@ -106,6 +133,13 @@
       >再次保存到相册</view
     >
   </view>
+  <view
+    wx:if="{{previewFailed && !busy}}"
+    class="save-again"
+    bindtap="returnToEdit"
+    aria-role="button"
+    >返回编辑</view
+  >
   <motion-sheet
     id="quotaSheet"
     visible="{{quotaVisible}}"

@@ -217,6 +217,8 @@ page {
   height: 44rpx;
   position: relative;
 }
+.brand-canvas { position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.preview-watermark-note { color: var(--sg-muted); font-size: 22rpx; line-height: 1.6; text-align: center; margin-bottom: 12rpx; }
 .crop-line-a {
   position: absolute;
   left: 12rpx;

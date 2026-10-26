@@ -8,6 +8,7 @@ App({
     rewardedVideoAdUnitIdOverride: "adunit-8643a04d0caed362", // 当前版本指定广告位，避免线上旧配置覆盖
     defaultRewardedVideoAdUnitId: "",
     rewardedVideoAdUnitId: "",
+    watermarkEnabled: false,
   },
 
   onLaunch: function () {
@@ -28,6 +29,12 @@ App({
         method: "GET",
         timeout: 8000,
         success: (res) => {
+          this.globalData.watermarkEnabled = Boolean(
+            res.data &&
+            res.data.code === 200 &&
+            res.data.data &&
+            res.data.data.watermarkEnabled === true,
+          );
           if (res.data && res.data.code === 200 && res.data.data) {
             this.globalData.rewardedVideoAdUnitId =
               res.data.data.rewardedVideoAdUnitId || "";
@@ -35,6 +42,7 @@ App({
         },
         fail: () => {
           this.globalData.rewardedVideoAdUnitId = "";
+          this.globalData.watermarkEnabled = false;
         },
         complete: () => resolve(),
       }),

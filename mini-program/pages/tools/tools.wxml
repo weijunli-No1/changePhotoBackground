@@ -130,7 +130,7 @@
                 bindtouchcancel="cancelPosition"
                 bindchange="positionY" /></block></block
           ><view class="setting-hint"
-            >保留原图，输出为 JPEG，最长边不超过2560 px。</view
+            >保留原图，裁剪输出为 PNG，最长边不超过4096 px。</view
           ></block
         >
         <view class="local-links"

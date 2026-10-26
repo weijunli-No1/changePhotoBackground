@@ -40,6 +40,13 @@
   border-radius: 12rpx;
   margin-right: 24rpx;
 }
+.thumb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sg-muted);
+  flex-shrink: 0;
+}
 .work-copy {
   flex: 1;
 }

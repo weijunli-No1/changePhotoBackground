@@ -1,0 +1,119 @@
+.specs-page {
+  background: var(--sg-soft);
+}
+.spec-search-wrap {
+  padding: 24rpx 36rpx 0;
+  background: var(--sg-bg);
+  flex-shrink: 0;
+}
+.spec-search {
+  display: flex;
+  align-items: center;
+  min-height: 88rpx;
+  border-radius: 20rpx;
+  background: var(--sg-soft);
+  padding-left: 24rpx;
+  color: var(--sg-muted);
+}
+.spec-search input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 16rpx;
+  font-size: 28rpx;
+  color: var(--sg-text);
+}
+.clear-query {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spec-categories {
+  height: 104rpx;
+  white-space: nowrap;
+  margin-top: 12rpx;
+}
+.spec-category-row {
+  display: inline-flex;
+  height: 104rpx;
+}
+.spec-category {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-right: 36rpx;
+  font-size: 28rpx;
+  color: var(--sg-muted);
+  border-bottom: 4rpx solid transparent;
+  box-sizing: border-box;
+}
+.spec-category.active {
+  color: var(--sg-brand);
+  border-color: var(--sg-brand);
+  font-weight: 600;
+}
+.spec-list {
+  padding: 0 36rpx 36rpx;
+}
+.spec-group {
+  margin-top: 32rpx;
+}
+.group-heading {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+.spec-rows {
+  padding: 0 24rpx;
+  border-radius: 20rpx;
+  background: var(--sg-surface);
+}
+.spec-row {
+  display: flex;
+  align-items: center;
+  min-height: 128rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--sg-line);
+  box-sizing: border-box;
+}
+.spec-row:last-child {
+  border-bottom: 0;
+}
+.spec-row-copy {
+  flex: 1;
+  min-width: 0;
+  padding-right: 16rpx;
+}
+.spec-row-name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.spec-row-note {
+  font-size: 24rpx;
+  color: var(--sg-muted);
+  margin-top: 8rpx;
+  line-height: 1.5;
+}
+.background-note {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+}
+.spec-row t-icon {
+  color: var(--sg-muted);
+  flex-shrink: 0;
+}
+.custom-entry {
+  color: var(--sg-brand);
+  background: var(--sg-brand-soft);
+  border: 1rpx solid var(--sg-brand);
+}
+.custom-entry text {
+  margin-left: 12rpx;
+}
+.result-count {
+  color: var(--sg-muted);
+  font-size: 24rpx;
+  margin-top: 24rpx;
+}

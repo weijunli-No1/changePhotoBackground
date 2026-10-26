@@ -265,3 +265,4 @@
     border-color: #f39c90;
   }
 }
+.spec-catalog-link { min-height: 44px; display: flex; align-items: center; justify-content: center; color: var(--sg-brand); font-size: 26rpx; flex-shrink: 0; }

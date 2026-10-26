@@ -204,6 +204,7 @@ function editPage({
         definition = value;
       },
       require: (name) => {
+        if (name.endsWith('/brand-preview')) return { create: async (_page, source) => 'BRANDED:' + source };
         if (name === '../../utils/api')
           return {
             request: (route, options = {}) =>

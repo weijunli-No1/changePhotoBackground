@@ -1,0 +1,16 @@
+{
+  "note": "沿用项目演示图，处理请求由页面实例桩记录，未调用后端",
+  "pages": [
+    {
+      "route": "pages/edit/edit",
+      "source": "/assets/images/sample-female-smile.jpg",
+      "size": {
+        "name": "注册会计师考试",
+        "width": 178,
+        "height": 220,
+        "specId": "cpa"
+      },
+      "applied": "cpa"
+    }
+  ]
+}

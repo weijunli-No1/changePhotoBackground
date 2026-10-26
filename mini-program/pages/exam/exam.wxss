@@ -1,0 +1,81 @@
+.exam-body {
+  padding: 24rpx 36rpx 36rpx;
+}
+.exam-name {
+  font-size: 36rpx;
+  font-weight: 600;
+}
+.exam-subtitle {
+  color: var(--sg-muted);
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+.exam-preview {
+  position: relative;
+  height: 480rpx;
+  margin-top: 24rpx;
+  background: var(--sg-canvas);
+  overflow: hidden;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.exam-photo {
+  height: 100%;
+  width: 100%;
+}
+.exam-loading {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sg-soft);
+  color: var(--sg-brand);
+}
+.exam-loading text {
+  margin-left: 16rpx;
+}
+.exam-summary {
+  color: var(--sg-muted);
+  font-size: 24rpx;
+  text-align: center;
+  margin: 16rpx 0 24rpx;
+}
+.compose-label {
+  font-weight: 600;
+  margin-top: 28rpx;
+}
+.compose-hint {
+  color: var(--sg-muted);
+  font-size: 26rpx;
+  line-height: 1.6;
+  margin-top: 16rpx;
+}
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26rpx;
+  margin-top: 20rpx;
+}
+.slider-label text:last-child {
+  color: var(--sg-muted);
+}
+.exam-links {
+  display: flex;
+  justify-content: space-around;
+}
+
+.exam-crop-frame {
+  position: relative;
+  overflow: hidden;
+}
+.exam-original {
+  position: absolute;
+  left: 0;
+  top: 0;
+}

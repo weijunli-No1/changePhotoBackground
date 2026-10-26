@@ -56,6 +56,15 @@ Page({
     this._unloaded = true;
     if (this._motion) this._motion.dispose();
   },
+  draftImageError(e) {
+    if (this._unloaded) return;
+    const id = e.currentTarget.dataset.id;
+    this.setData({
+      drafts: this.data.drafts.map((item) =>
+        item.id === id ? { ...item, thumbnailMissing: true } : item,
+      ),
+    });
+  },
   selectTab(e) {
     const tab = e.currentTarget.dataset.tab;
     if (!["drafts", "cloud"].includes(tab) || tab === this.data.tab) return;
@@ -137,7 +146,8 @@ Page({
     else this.setData({ error: "暂时无法打开这份草稿" });
   },
   async clearDrafts() {
-    if (this._clearingDrafts || !this.data.drafts.length) return;
+    if (this._clearingDrafts || this._removingDraft || !this.data.drafts.length)
+      return;
     this._clearingDrafts = true;
     try {
       const res = await call("showModal", {
@@ -160,19 +170,27 @@ Page({
     }
   },
   async removeDraft(e) {
+    if (this._removingDraft || this._clearingDrafts || this._unloaded) return;
     const id = e.currentTarget.dataset.id;
-    const res = await call("showModal", {
-      title: "删除本地草稿",
-      content: "删除后无法继续编辑此草稿，手机相册和云端作品不受影响。",
-      confirmText: "删除",
-      confirmColor: "#ac4939",
-    });
-    if (res.confirm) {
-      await drafts.remove(id);
-      if (!this._unloaded)
-        this.setData({
-          drafts: drafts.list().map((item) => catalog.presentDraft(item)),
-        });
+    this._removingDraft = true;
+    try {
+      const res = await call("showModal", {
+        title: "删除本地草稿",
+        content: "删除后无法继续编辑此草稿，手机相册和云端作品不受影响。",
+        confirmText: "删除",
+        confirmColor: "#ac4939",
+      });
+      if (res.confirm && !this._unloaded) {
+        await drafts.remove(id);
+        if (!this._unloaded)
+          this.setData({
+            drafts: drafts.list().map((item) => catalog.presentDraft(item)),
+          });
+      }
+    } catch (error) {
+      if (!this._unloaded) this.setData({ error: "草稿未能删除，请重试" });
+    } finally {
+      this._removingDraft = false;
     }
   },
   previewImage(e) {
@@ -180,24 +198,27 @@ Page({
     wx.previewImage({ urls: [url], current: url });
   },
   async onDelete(e) {
-    if (this._deleting) return;
-    const id = e.currentTarget.dataset.id;
-    const res = await call("showModal", {
-      title: "删除云端记录",
-      content: "此操作删除历史列表中的记录，已保存到手机相册的照片不受影响。",
-      confirmText: "删除",
-      confirmColor: "#ac4939",
-    });
-    if (!res.confirm) return;
+    if (this._deleting || this._unloaded) return;
     this._deleting = true;
+    const owner = app.globalData.openid;
+    const id = e.currentTarget.dataset.id;
     try {
+      const res = await call("showModal", {
+        title: "删除云端记录",
+        content: "此操作删除历史列表中的记录，已保存到手机相册的照片不受影响。",
+        confirmText: "删除",
+        confirmColor: "#ac4939",
+      });
+      if (!res.confirm || this._unloaded || app.globalData.openid !== owner)
+        return;
       api.unwrap(await api.request(`/api/history/${id}`, { method: "DELETE" }));
-      if (!this._unloaded) {
+      if (!this._unloaded && app.globalData.openid === owner) {
         wx.showToast({ title: "已删除", icon: "success" });
         this.fetchHistoryList();
       }
     } catch (error) {
-      if (!this._unloaded) this.setData({ error: error.message });
+      if (!this._unloaded && app.globalData.openid === owner)
+        this.setData({ error: error.message || "记录未能删除，请重试" });
     } finally {
       this._deleting = false;
     }

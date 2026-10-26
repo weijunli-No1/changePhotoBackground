@@ -8,7 +8,7 @@ const tools = [
     id: "idphoto",
     name: "制作证件照",
     draftName: "证件照草稿",
-    description: "常用规格与六寸排版",
+    description: "考试报名、常用规格与六寸排版",
     category: "portrait",
     keywords: ["一寸", "二寸", "证件照", "排版", "打印", "照片尺寸"],
     icon: "user",
@@ -18,7 +18,7 @@ const tools = [
     mode: "idphoto",
     featured: {
       title: "证件照，轻松准备",
-      description: "选规格、换底色、六寸排版",
+      description: "考试报名、换底色、六寸排版",
       action: "开始制作",
       image: "/assets/images/sample-female-smile.jpg",
       titleLines: ["证件照，", "轻松准备"],
@@ -39,6 +39,43 @@ const tools = [
     entry: { type: "portrait" },
     resumePage: "/pages/edit/edit",
     quick: true,
+  },
+  {
+    id: "exam",
+    name: "考试报名照",
+    draftName: "考试照片草稿",
+    category: "portrait",
+    description: "国考、四六级、考研等考试规格",
+    keywords: [
+      "国考",
+      "省考",
+      "四六级",
+      "考研",
+      "教资",
+      "报名",
+      "考试",
+      "注会",
+      "法考",
+      "计算机",
+      "普通话",
+    ],
+    icon: "education",
+    local: true,
+    entry: { type: "page", url: "/pages/specs/specs" },
+    resumePage: "/pages/exam/exam",
+    mode: "exam",
+  },
+  {
+    id: "watermark",
+    name: "照片加水印",
+    draftName: "水印照片草稿",
+    category: "image",
+    description: "添加文字、调整透明度与方向",
+    keywords: ["水印", "文字", "用途", "复印", "报名"],
+    icon: "edit",
+    entry: { type: "page", url: "/pages/watermark/watermark" },
+    resumePage: "/pages/watermark/watermark",
+    mode: "watermark",
   },
   {
     id: "compress",
@@ -146,6 +183,11 @@ function presentDraft(draft, now = Date.now()) {
   }
   return {
     ...draft,
+    displayPath:
+      draft.previewPath ||
+      (["idphoto", "exam"].includes(draft.mode)
+        ? draft.sourcePath
+        : draft.resultPath || draft.sourcePath),
     title: tool ? tool.draftName || `${tool.name}草稿` : "本地作品草稿",
     updatedLabel,
   };

@@ -17,6 +17,10 @@ function load(file, globals = {}) {
       setTimeout,
       clearTimeout,
       ...globals,
+      require: (name) => name.endsWith('/brand-preview')
+        ? { create: async (_page, source) => 'BRANDED:' + source }
+        : name.endsWith('/exam-image') ? require('../mini-program/utils/exam-image')
+        : (globals.require || createRequire(filename))(name),
     },
     { filename },
   );
@@ -56,7 +60,7 @@ test("按用途搜索支持大小写及多关键词，并保持分类约束和�
   assert.equal(catalog.findTools("正方形")[0].id, "crop");
   assert.equal(catalog.findTools("压缩", "portrait").length, 0);
   assert.equal(catalog.grouped("不存在的功能").length, 0);
-  assert.equal(catalog.findTools("  ").length, 4);
+  assert.equal(catalog.findTools("  ").length, 6);
 });
 test("新文档类别可通过注册接入目录，未启用工具不会出现在搜索或入口", async () => {
   catalog.categories.push({ id: "document", name: "文档工具" });
@@ -168,7 +172,7 @@ test("目录组合筛选后可清空或恢复全部，不留下死胡同", () =>
   assert.equal(p.data.groups.length, 0);
   p.clearSearch();
   assert.equal(p.data.category, "portrait");
-  assert.equal(p.data.groups[0].tools.length, 2);
+  assert.equal(p.data.groups[0].tools.length, 3);
   p.resetSearch();
   assert.equal(p.data.category, "all");
   assert.equal(p.data.groups.length, 2);
@@ -181,6 +185,7 @@ test("保存后的主要操作完成返回，次要重复保存仍走原缓存�
     saves = 0;
   p.backToTools = () => finishes++;
   p.saveCurrent = () => saves++;
+  p.setData({ previewPath: 'BRANDED' });
   p.primaryAction();
   assert.equal(saves, 1);
   p.setData({ saved: true });

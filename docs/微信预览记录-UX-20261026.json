@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-26",
+  "appid": "wx0656800976d3244f",
+  "result": "WeChat CLI preview succeeded (exit 0)",
+  "packageBytes": 854307,
+  "sourceFingerprint": "0cdb2311a03f15a5e59f12c675ebee7a8674e3a28e99776b7dd3cf58e3935eb4",
+  "fingerprintScope": "mini-program source and assets, excludes node_modules/miniprogram_npm/project.private.config.json",
+  "backendDeployed": false,
+  "localBackendStarted": false,
+  "apiBaseUrl": "https://www.myhaibin.top/new-api",
+  "qr": "design/wechat-preview-ux-polish-20261026.png",
+  "frontendTests": 108,
+  "backendTests": 4,
+  "report": "UI-UX走查与修复-20261026.md"
+}

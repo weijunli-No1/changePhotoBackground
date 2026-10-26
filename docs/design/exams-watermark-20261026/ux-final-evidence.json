@@ -1,0 +1,16 @@
+{
+  "invalid": {
+    "unavailable": true,
+    "button": "返回编辑",
+    "recovered": "pages/index/index"
+  },
+  "preview": {
+    "failedButton": "重新加载预览",
+    "recovered": true,
+    "failed": false
+  },
+  "cloud": {
+    "tab": "cloud",
+    "hasLogin": false
+  }
+}

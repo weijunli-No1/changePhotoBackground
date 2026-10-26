@@ -31,6 +31,7 @@ public class AppConfigController {
     public Result<Map<String, Object>> getAppConfig() {
         Map<String, Object> config = new HashMap<>();
         config.put(KEY_REWARDED_VIDEO_AD_UNIT_ID, wxMaConfiguration.getRewardedAdUnitId());
+        config.put("watermarkEnabled", true);
         return Result.success(config);
     }
 }

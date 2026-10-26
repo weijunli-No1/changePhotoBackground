@@ -2,12 +2,15 @@ const { createMotion } = require("../../utils/skyline-motion");
 const api = require("../../utils/api");
 const files = require("../../utils/files");
 const drafts = require("../../utils/drafts");
-const { sizes, validateSize } = require("../../utils/photo-specs");
+const { sizes, validateSize, getSpec } = require("../../utils/photo-specs");
+const brandPreview = require("../../utils/brand-preview");
+const { prepare: prepareExam } = require("../../utils/exam-image");
 Page({
   data: {
     toolId: "idphoto",
     sourcePath: "",
     resultPath: "",
+    previewPath: "",
     comparing: false,
     processing: false,
     opening: false,
@@ -33,6 +36,9 @@ Page({
     this._colorSeq = 0;
     this._draftId = options.draft || drafts.createId();
     const draft = options.draft ? drafts.get(options.draft) : null;
+    this._examSpec = getSpec(draft ? draft.specId : options.spec);
+    if (this._examSpec && this._examSpec.category === "common")
+      this._examSpec = null;
     this.setData({
       toolId:
         (draft && draft.toolId === "background") ||
@@ -73,6 +79,15 @@ Page({
         if (draft.resultPath && this._transparent) {
           try {
             await files.call("getImageInfo", { src: draft.resultPath });
+            let previewPath = draft.previewPath || "";
+            try {
+              if (!previewPath) throw Error("missing");
+              await files.call("getImageInfo", { src: previewPath });
+            } catch (error) {
+              previewPath = await brandPreview.create(this, draft.resultPath);
+            }
+            if (this._unloaded) return;
+            this.setData({ previewPath });
             this._appliedColor = draft.bgColor || "#FFFFFF";
             return;
           } catch (error) {
@@ -143,17 +158,38 @@ Page({
   closeSpecs() {
     this.setData({ specVisible: false });
   },
+  browseSpecs() {
+    if (this.data.processing || this.data.opening) return;
+    this.setData({ specVisible: false });
+    wx.navigateTo({
+      url: "/pages/specs/specs?select=1",
+      success: (res) =>
+        res.eventChannel.on("selected", (value) => {
+          if (!this._unloaded && value.size)
+            this.selectSpec({ detail: value.size });
+        }),
+      fail: () => {
+        if (!this._unloaded)
+          this.setData({ error: "规格目录未能打开，请重试" });
+      },
+    });
+  },
   selectSpec(e) {
-    if (this.data.opening) return;
+    if (this.data.opening || this._mattingBusy || this._unloaded) return;
     const size = e.detail;
-    this.setData({ specVisible: false, panel: "color" });
-    if (
+    const selected = getSpec(size.specId);
+    const examSpec =
+      selected && selected.category !== "common" ? selected : null;
+    const sameRules =
+      ((this._examSpec && this._examSpec.id) || "") ===
+      ((examSpec && examSpec.id) || "");
+    const sameDimensions =
       size.width === this.data.size.width &&
-      size.height === this.data.size.height
-    )
-      return;
-    if (this._mattingBusy) return;
+      size.height === this.data.size.height;
+    this._examSpec = examSpec;
+    this.setData({ specVisible: false, panel: "color" });
     this.setData({ size });
+    if (sameRules && sameDimensions) return;
     this.processTransparentImage();
   },
   async processTransparentImage() {
@@ -262,9 +298,23 @@ Page({
       if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq)
         return;
       if (!data || data.status === false) throw new Error("换底色失败，请重试");
-      const path = await files.writeBase64(data.image_base64, "photo");
+      let path = await files.writeBase64(data.image_base64, "photo");
       if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq) {
         files.removeTemp(path);
+        return;
+      }
+      const previewSource = path;
+      if (this._examSpec) {
+        const adapted = await prepareExam(this, path, this._examSpec, {
+          x: 50,
+          y: 50,
+        });
+        path = adapted.path;
+      }
+      const previewPath = await brandPreview.create(this, previewSource);
+      if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq) {
+        files.removeTemp(path);
+        files.removeTemp(previewPath);
         return;
       }
       this._activeTask = null;
@@ -272,6 +322,7 @@ Page({
       this._appliedColor = color;
       this.setData({
         resultPath: path,
+        previewPath,
         currentBgColor: color,
         processing: false,
         status: "",
@@ -423,6 +474,9 @@ Page({
       toolId: this.data.toolId,
       sourcePath: this.data.sourcePath,
       resultPath: this.data.resultPath,
+      previewPath: this.data.previewPath,
+      requiresQuota: true,
+      specId: this._examSpec ? this._examSpec.id : "",
       transparentPath: this._transparentPath || "",
       width: this.data.size.width,
       height: this.data.size.height,
@@ -445,6 +499,7 @@ Page({
         this.setData({
           sourcePath: saved.sourcePath,
           resultPath: saved.resultPath,
+          previewPath: saved.previewPath,
         });
         if (this._transparentPath === snapshot.transparentPath)
           this._transparentPath = saved.transparentPath;

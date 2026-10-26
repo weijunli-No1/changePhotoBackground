@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-26",
+  "appid": "wx0656800976d3244f",
+  "result": "WeChat CLI preview succeeded (exit 0)",
+  "packageBytes": 847330,
+  "sourceFingerprint": "b9609de43511e7172fbe898ce6c88eea9942c28d143f1b4aa0bc8faec33f9711",
+  "backendDeployed": false,
+  "localBackendStarted": false,
+  "apiBaseUrl": "https://www.myhaibin.top/new-api",
+  "qr": "design/wechat-preview-exams-watermark-20261026.png",
+  "frontendTests": 101,
+  "backendTests": 4
+}

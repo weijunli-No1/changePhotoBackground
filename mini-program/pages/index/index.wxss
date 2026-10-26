@@ -128,6 +128,13 @@
   border-radius: 8rpx;
   flex-shrink: 0;
 }
+.thumb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sg-muted);
+  background: var(--sg-bg);
+}
 .draft-copy {
   flex: 1;
   min-width: 0;

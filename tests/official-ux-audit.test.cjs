@@ -20,6 +20,10 @@ function load(file, globals = {}) {
       setTimeout,
       clearTimeout,
       ...globals,
+      require: (name) => name.endsWith('/brand-preview')
+        ? { create: async (_page, source) => 'BRANDED:' + source }
+        : name.endsWith('/exam-image') ? require('../mini-program/utils/exam-image')
+        : (globals.require || createRequire(filename))(name),
     },
     { filename },
   );

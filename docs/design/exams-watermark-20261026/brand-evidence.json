@@ -1,0 +1,27 @@
+{
+  "errors": [],
+  "mainEntry": true,
+  "smart": {
+    "error": "",
+    "resultReady": true,
+    "previewReady": true,
+    "currentBgColor": "#FFFFFF"
+  },
+  "blue": {
+    "error": "",
+    "color": "#638cce",
+    "preview": true
+  },
+  "exam": {
+    "width": 178,
+    "height": 220,
+    "resultSize": "17 KB",
+    "differentPaths": true
+  },
+  "export": {
+    "local": false,
+    "allowLayout": false,
+    "preview": "http://usr/shiguang-drafts/d1793018619022ur1m3u-1793018623884phld-preview.jpg",
+    "previewMatchesBrand": true
+  }
+}
