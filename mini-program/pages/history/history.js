@@ -21,11 +21,9 @@ Page({
   },
   updateTabMotion() {
     if (this._motion)
-      this._motion.indicator(
-        ".segment",
-        ".segment-item.active",
-        ".works-indicator",
-      );
+      this._motion.indicator(".segment", ".segment-item.active", ".works-indicator", {
+        maxWidth: 32,
+      });
   },
   onShow() {
     if (this.getTabBar && this.getTabBar()) this.getTabBar().init();
@@ -82,11 +80,7 @@ Page({
     if (this.data.loggingIn) return;
     this.setData({ loggingIn: true, error: "" });
     try {
-      if (
-        (await app.ensureLogin()) &&
-        !this._unloaded &&
-        app.globalData.openid
-      ) {
+      if ((await app.ensureLogin()) && !this._unloaded && app.globalData.openid) {
         this.setData({ hasLogin: true });
         this.fetchHistoryList();
       }
@@ -106,11 +100,7 @@ Page({
       const list = api.unwrap(
         await api.request("/api/history/list", { data: { openid: owner } }),
       );
-      if (
-        !this._unloaded &&
-        seq === this._historySeq &&
-        app.globalData.openid === owner
-      )
+      if (!this._unloaded && seq === this._historySeq && app.globalData.openid === owner)
         this.setData({
           historyList: (list || []).map((item) => ({
             ...item,
@@ -118,20 +108,12 @@ Page({
           })),
         });
     } catch (error) {
-      if (
-        !this._unloaded &&
-        seq === this._historySeq &&
-        app.globalData.openid === owner
-      )
+      if (!this._unloaded && seq === this._historySeq && app.globalData.openid === owner)
         this.setData({
           loadError: error.message || "作品加载失败，请稍后重试",
         });
     } finally {
-      if (
-        !this._unloaded &&
-        seq === this._historySeq &&
-        app.globalData.openid === owner
-      )
+      if (!this._unloaded && seq === this._historySeq && app.globalData.openid === owner)
         this.setData({ isLoading: false });
     }
   },
@@ -139,21 +121,31 @@ Page({
     return this.fetchHistoryList();
   },
   resume(e) {
+    if (this._openingDraft || this._unloaded) return;
     const item = drafts.get(e.currentTarget.dataset.id);
-    if (!item) return;
+    if (!item) {
+      this.setData({ error: "草稿已不存在，请刷新作品列表", drafts: drafts.list().map((draft) => catalog.presentDraft(draft)) });
+      return;
+    }
     const url = catalog.draftUrl(item);
-    if (url) wx.navigateTo({ url });
+    if (url) {
+      this._openingDraft = true;
+      this.setData({ error: "" });
+      wx.navigateTo({
+        url,
+        fail: () => { if (!this._unloaded) this.setData({ error: "草稿未能打开，请重试" }); },
+        complete: () => { this._openingDraft = false; },
+      });
+    }
     else this.setData({ error: "暂时无法打开这份草稿" });
   },
   async clearDrafts() {
-    if (this._clearingDrafts || this._removingDraft || !this.data.drafts.length)
-      return;
+    if (this._clearingDrafts || this._removingDraft || !this.data.drafts.length) return;
     this._clearingDrafts = true;
     try {
       const res = await call("showModal", {
         title: "清理本地草稿",
-        content:
-          "将删除这台设备上的草稿及草稿图片。云端作品、手机相册和头像昵称会保留。",
+        content: "将删除这台设备上的草稿及草稿图片。云端作品、手机相册和头像昵称会保留。",
         confirmText: "清理",
         confirmColor: "#ac4939",
       });
@@ -209,8 +201,7 @@ Page({
         confirmText: "删除",
         confirmColor: "#ac4939",
       });
-      if (!res.confirm || this._unloaded || app.globalData.openid !== owner)
-        return;
+      if (!res.confirm || this._unloaded || app.globalData.openid !== owner) return;
       api.unwrap(await api.request(`/api/history/${id}`, { method: "DELETE" }));
       if (!this._unloaded && app.globalData.openid === owner) {
         wx.showToast({ title: "已删除", icon: "success" });

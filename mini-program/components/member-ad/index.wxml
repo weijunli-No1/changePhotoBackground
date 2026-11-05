@@ -1,0 +1,4 @@
+<view wx:if="{{allowed && unitId}}" class="ad-slot {{loaded && !failed ? 'ad-slot-ready' : ''}}">
+  <view wx:if="{{loaded && !failed}}" class="ad-label">广告</view>
+  <ad-custom unit-id="{{unitId}}" bind:load="loaded" bind:error="failed" />
+</view>

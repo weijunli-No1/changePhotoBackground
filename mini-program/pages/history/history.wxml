@@ -1,10 +1,11 @@
 <view class="page-wrap"
-  ><navigation-bar title="作品" /><scroll-view
+  ><navigation-bar title="拾光小相" brand="{{true}}" /><scroll-view
     class="page-scroll"
     scroll-y
     show-scrollbar="{{false}}"
     ><view class="page-content works-content">
-      <view class="works-title">我的作品</view
+      <view class="works-heading"><view class="works-title">我的作品</view><view class="new-work" bindtap="goToIndex" aria-role="button" hover-class="pressed"><t-icon name="add" size="30rpx" />新建照片</view></view><view class="campus-mark"></view
+      ><view class="works-subtitle">在这里，接着完成你的照片</view
       ><view class="segment {{motionTabsReady ? 'motion-tabs' : ''}}"
         ><view class="works-indicator"></view
         ><view
@@ -24,12 +25,10 @@
         ></view
       >
       <view class="works-panel">
-        <view wx:if="{{error}}" class="error-inline works-notice"
-          >{{error}}</view
-        >
+        <view wx:if="{{error}}" class="error-inline works-notice">{{error}}</view>
         <block wx:if="{{tab === 'drafts'}}"
           ><view class="drafts-helper"
-            ><view class="works-helper">最近8份草稿保存在这台设备。</view
+            ><view class="works-helper">{{drafts.length ? '本机草稿 · ' + drafts.length + ' / 8' : '最近8份草稿保存在这台设备。'}}</view
             ><view
               wx:if="{{drafts.length}}"
               class="clear-drafts"
@@ -39,11 +38,11 @@
               >清理全部</view
             ></view
           ><view wx:for="{{drafts}}" wx:key="id" class="draft-work"
-            ><image
+            ><view class="draft-main"><image
               wx:if="{{!item.thumbnailMissing}}"
               src="{{item.displayPath || item.sourcePath}}"
               class="work-thumb"
-              mode="aspectFill"
+              mode="aspectFit"
               data-id="{{item.id}}"
               binderror="draftImageError"
               bindtap="resume" /><view
@@ -60,19 +59,26 @@
               bindtap="resume"
               aria-role="button"
               ><view class="work-name">{{item.title}}</view
-              ><view class="small muted"
-                >{{item.sizeName || '继续处理照片'}}</view
+              ><view class="small muted">{{item.sizeName || '继续处理照片'}}</view
               ><view class="draft-updated">{{item.updatedLabel}}</view
               ><view wx:if="{{item.thumbnailMissing}}" class="small muted"
                 >预览暂不可用，可尝试继续编辑</view
-              ><view class="resume-label">继续编辑</view></view
-            ><view
-              class="delete-target"
-              data-id="{{item.id}}"
-              bindtap="removeDraft"
-              aria-label="删除草稿"
-              aria-role="button"
-              ><t-icon name="delete" size="36rpx" /></view></view
+              ></view
+            ></view><view class="work-actions"
+              ><view
+                class="resume-label"
+                data-id="{{item.id}}"
+                bindtap="resume"
+                aria-role="button"
+                hover-class="pressed"
+                >继续编辑<t-icon name="chevron-right" size="24rpx" /></view
+              ><view
+                class="delete-target"
+                data-id="{{item.id}}"
+                bindtap="removeDraft"
+                aria-label="删除草稿"
+                aria-role="button"
+                ><t-icon name="delete" size="30rpx" /><text>删除</text></view></view></view
           ><view wx:if="{{!drafts.length}}" class="empty-state"
             ><view class="empty-icon"><t-icon name="edit" size="52rpx" /></view
             ><view class="empty-title">从第一张照片开始</view
@@ -107,13 +113,9 @@
               aria-role="button"
               >{{loggingIn ? '正在登录…' : '微信登录'}}</view
             ></view
-          ><view
-            wx:elif="{{isLoading && !historyList.length}}"
-            class="empty-state muted"
+          ><view wx:elif="{{isLoading && !historyList.length}}" class="empty-state muted"
             >正在加载作品…</view
-          ><view
-            wx:elif="{{loadError && !historyList.length}}"
-            class="empty-state"
+          ><view wx:elif="{{loadError && !historyList.length}}" class="empty-state"
             ><view class="empty-icon"><t-icon name="cloud" size="52rpx" /></view
             ><view class="empty-title">暂时无法加载作品</view
             ><view class="empty-desc">{{loadError}}</view

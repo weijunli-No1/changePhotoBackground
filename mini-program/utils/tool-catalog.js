@@ -12,6 +12,7 @@ const tools = [
     category: "portrait",
     keywords: ["一寸", "二寸", "证件照", "排版", "打印", "照片尺寸"],
     icon: "user",
+    tone: "blue",
     thumbnail: "/assets/images/sample-portrait.png",
     entry: { type: "portrait" },
     resumePage: "/pages/edit/edit",
@@ -36,6 +37,7 @@ const tools = [
     category: "portrait",
     keywords: ["换背景", "修改背景", "蓝底", "白底", "红底", "换底"],
     icon: "palette",
+    tone: "green",
     entry: { type: "portrait" },
     resumePage: "/pages/edit/edit",
     quick: true,
@@ -60,6 +62,7 @@ const tools = [
       "普通话",
     ],
     icon: "education",
+    tone: "orange",
     local: true,
     entry: { type: "page", url: "/pages/specs/specs" },
     resumePage: "/pages/exam/exam",
@@ -73,6 +76,7 @@ const tools = [
     description: "添加文字、调整透明度与方向",
     keywords: ["水印", "文字", "用途", "复印", "报名"],
     icon: "edit",
+    tone: "orange",
     entry: { type: "page", url: "/pages/watermark/watermark" },
     resumePage: "/pages/watermark/watermark",
     mode: "watermark",
@@ -84,7 +88,8 @@ const tools = [
     description: "调整体积与清晰度",
     category: "image",
     keywords: ["照片", "缩小", "大小", "体积", "kb", "mb", "jpg", "jpeg"],
-    icon: "file-zip",
+    icon: "image",
+    tone: "blue",
     local: true,
     entry: { type: "page", url: "/pages/tools/tools?mode=compress" },
     resumePage: "/pages/tools/tools",
@@ -99,6 +104,7 @@ const tools = [
     category: "image",
     keywords: ["照片", "剪裁", "旋转", "构图", "比例", "正方形"],
     icon: "crop",
+    tone: "orange",
     local: true,
     entry: { type: "page", url: "/pages/tools/tools?mode=crop" },
     resumePage: "/pages/tools/tools",
@@ -118,11 +124,7 @@ function getCategories() {
   );
 }
 function findTools(query = "", category = "all") {
-  const tokens = String(query)
-    .toLowerCase()
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const tokens = String(query).toLowerCase().trim().split(/\s+/).filter(Boolean);
   return available().filter((tool) => {
     const group = categories.find((item) => item.id === tool.category);
     const text = [
@@ -174,8 +176,7 @@ function presentDraft(draft, now = Date.now()) {
   if (Number.isFinite(draft.updatedAt) && draft.updatedAt > 0) {
     const elapsed = Math.max(0, now - draft.updatedAt);
     if (elapsed < 60000) updatedLabel = "刚刚编辑";
-    else if (elapsed < 3600000)
-      updatedLabel = `${Math.floor(elapsed / 60000)}分钟前编辑`;
+    else if (elapsed < 3600000) updatedLabel = `${Math.floor(elapsed / 60000)}分钟前编辑`;
     else {
       const date = new Date(draft.updatedAt);
       updatedLabel = `${date.getMonth() + 1}月${date.getDate()}日编辑`;

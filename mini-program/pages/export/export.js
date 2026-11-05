@@ -1,10 +1,15 @@
 const app = getApp();
+const membership = require("../../utils/membership");
 const api = require("../../utils/api");
 const files = require("../../utils/files");
 const brandPreview = require("../../utils/brand-preview");
 const { createRewardedVideoPlayer } = require("../../utils/rewarded-video");
 Page({
   data: {
+    memberKnown: false,
+    memberLoading: false,
+    memberAvailable: null,
+    isLifetimeMember: false,
     previewPath: "",
     action: "single",
     sizeName: "",
@@ -21,6 +26,7 @@ Page({
     busy: false,
     savingStage: "",
     saved: false,
+    savedPath: "",
     error: "",
     quotaVisible: false,
     quotaKnown: false,
@@ -44,11 +50,9 @@ Page({
     }
     this._session = { ...session };
     const requiresQuota =
-      ["idphoto", "exam"].includes(session.mode) ||
-      session.requiresQuota === true;
+      ["idphoto", "exam"].includes(session.mode) || session.requiresQuota === true;
     this.setData({
-      previewPath:
-        session.previewPath || (requiresQuota ? "" : session.resultPath),
+      previewPath: session.previewPath || (requiresQuota ? "" : session.resultPath),
       previewPreparing: requiresQuota && !session.previewPath,
       previewCaption:
         session.mode === "exam" || session.specId
@@ -61,11 +65,11 @@ Page({
       width: session.width,
       height: session.height,
       colorName:
-        { "#FFFFFF": "白底", "#638cce": "蓝底", "#FF0000": "红底" }[
-          session.bgColor
-        ] || "自定义底色",
+        { "#FFFFFF": "白底", "#638cce": "蓝底", "#FF0000": "红底" }[session.bgColor] ||
+        "自定义底色",
       login: Boolean(app.globalData.openid),
     });
+    this.refreshMembership();
     this.fetchUsage();
     if (requiresQuota && !session.previewPath) {
       this.retryPreview();
@@ -79,6 +83,39 @@ Page({
       .catch(() => {
         if (!this._unloaded) this.markUnavailable();
       });
+  },
+  onShow() {
+    this.refreshMembership();
+  },
+  async refreshMembership() {
+    if (this._unloaded || this._memberRefreshing) return;
+    this._memberRefreshing = true;
+    this.setData({ memberLoading: true });
+    try {
+      const status = await membership.refresh(app);
+      if (!this._unloaded)
+        this.setData({
+          memberAvailable: status.available !== false,
+          memberKnown: status.available !== false,
+          isLifetimeMember: status.isLifetimeMember,
+          unlimited: status.unlimitedSaves || this.data.unlimited,
+        });
+    } catch (_) {
+      // Keep unknown rights distinct from an in-progress request.
+    } finally {
+      this._memberRefreshing = false;
+      if (!this._unloaded) this.setData({ memberLoading: false });
+    }
+  },
+  async retryMembership() {
+    await Promise.all([
+      !this.data.memberKnown ? this.refreshMembership() : Promise.resolve(),
+      !this.data.quotaKnown ? this.fetchUsage() : Promise.resolve(),
+    ]);
+  },
+  openMembership() {
+    this.cancelAd();
+    membership.open();
   },
   markUnavailable() {
     this.setData({
@@ -101,12 +138,7 @@ Page({
     });
   },
   async retryPreview() {
-    if (
-      this._unloaded ||
-      this._previewLoading ||
-      this.data.unavailable ||
-      !this._session
-    )
+    if (this._unloaded || this._previewLoading || this.data.unavailable || !this._session)
       return;
     this._previewLoading = true;
     this.setData({ previewPreparing: true, previewFailed: false, error: "" });
@@ -132,8 +164,15 @@ Page({
     }
   },
   returnToEdit() {
-    if (this.data.busy || this._saveInProgress || this._unloaded) return;
-    wx.navigateBack({ fail: () => this.backToTools() });
+    if (this.data.busy || this._saveInProgress || this._unloaded || this._returning)
+      return;
+    this._returning = true;
+    wx.navigateBack({
+      fail: () => this.backToTools(),
+      complete: () => {
+        this._returning = false;
+      },
+    });
   },
   onUnload() {
     this._unloaded = true;
@@ -142,36 +181,49 @@ Page({
     for (const path of this._layoutPaths || []) files.removeTemp(path);
   },
   selectAction(e) {
-    if (this._saveInProgress) return;
+    const action = e.currentTarget.dataset.action;
+    if (
+      this._saveInProgress ||
+      this.data.busy ||
+      this._unloaded ||
+      !["single", "layout"].includes(action) ||
+      (action === "layout" && !this.data.allowLayout)
+    )
+      return;
     this.setData({
-      action: e.currentTarget.dataset.action,
+      action,
       saved: false,
       error: "",
     });
   },
   previewImage() {
-    if (this.data.previewPath)
+    const path =
+      this.data.saved && this.data.savedPath
+        ? this.data.savedPath
+        : this.data.previewPath;
+    if (path)
       wx.previewImage({
-        urls: [this.data.previewPath],
-        current: this.data.previewPath,
+        urls: [path],
+        current: path,
       });
   },
   async fetchUsage() {
     if (!app.globalData.openid || this.data.local) return;
     try {
+      if (!app.globalData.sessionToken) await app.ensureLogin();
+      const owner = app.globalData.openid;
       const usage = api.unwrap(
         await api.request("/api/user/usage", {
-          data: { openid: app.globalData.openid },
+          data: { openid: owner },
         }),
       );
-      if (!this._unloaded)
+      if (!this._unloaded && owner === app.globalData.openid)
         this.setData({
           quotaKnown: true,
-          remaining: Math.max(
-            0,
-            5 + (usage.adViewCount || 0) - (usage.saveCount || 0),
-          ),
-          unlimited: usage.adViewCount >= 5,
+          remaining: Math.max(0, 5 + (usage.adViewCount || 0) - (usage.saveCount || 0)),
+          unlimited: usage.isLifetimeMember === true || usage.adViewCount >= 5,
+          memberKnown: typeof usage.isLifetimeMember === "boolean",
+          isLifetimeMember: usage.isLifetimeMember === true,
         });
     } catch (error) {
       /* 配额仍由保存接口做最终校验 */
@@ -214,7 +266,7 @@ Page({
     return this.saveImage("layout");
   },
   primaryAction() {
-    if (this.data.busy || this._saveInProgress || this._unloaded) return;
+    if (this.data.busy || this.data.previewPreparing || this._saveInProgress || this._unloaded) return;
     if (this.data.unavailable) return this.returnToEdit();
     if (this.data.previewFailed) return this.retryPreview();
     if (!this.data.saved && !this.data.previewPath) return;
@@ -229,6 +281,7 @@ Page({
       this._saveInProgress ||
       !this._session ||
       this.data.unavailable ||
+      this.data.previewPreparing ||
       this.data.previewFailed
     )
       return;
@@ -258,8 +311,7 @@ Page({
         if (this._cloudResults[cacheKey]) path = this._cloudResults[cacheKey];
         else {
           this.setData({
-            savingStage:
-              action === "layout" ? "正在生成六寸排版…" : "正在保存云端作品…",
+            savingStage: action === "layout" ? "正在生成六寸排版…" : "正在保存云端作品…",
           });
           let result = await this.requestSave(action, snapshot);
           if (this._unloaded) return;
@@ -270,8 +322,7 @@ Page({
               remaining: 0,
               unlimited: false,
             });
-            if (!(await this.watchAdForSave(snapshot.openid)) || this._unloaded)
-              return;
+            if (!(await this.watchAdForSave(snapshot.openid)) || this._unloaded) return;
             this.setData({
               busy: true,
               savingStage:
@@ -282,8 +333,7 @@ Page({
           if (this._unloaded) return;
           const data = api.unwrap(result);
           if (action === "layout") {
-            if (!data || data.status === false)
-              throw new Error("排版生成失败，请重试");
+            if (!data || data.status === false) throw new Error("排版生成失败，请重试");
             path = await files.writeBase64(data.image_base64, "layout");
             this._layoutPaths.push(path);
           }
@@ -294,7 +344,7 @@ Page({
       this.setData({ savingStage: "正在写入手机相册…" });
       await this.saveToAlbum(path);
       if (!this._unloaded) {
-        this.setData({ saved: true });
+        this.setData({ saved: true, savedPath: path });
         this.fetchUsage();
       }
     } catch (error) {
@@ -307,8 +357,7 @@ Page({
   },
   async saveToAlbum(path) {
     await files.saveAlbum(path);
-    if (!this._unloaded)
-      wx.showToast({ title: "已保存到相册", icon: "success" });
+    if (!this._unloaded) wx.showToast({ title: "已保存到相册", icon: "success" });
   },
   showAdDialog() {
     return new Promise((resolve) => {
@@ -328,10 +377,21 @@ Page({
   },
   stop() {},
   async watchAdForSave(openid) {
+    const status = await membership.refresh(app, true);
+    if (this._unloaded || openid !== app.globalData.openid) return false;
+    if (status.isLifetimeMember) return true;
+    const legacyRewards = (state) => state.available === false &&
+      app.globalData.membershipEnabled === false && !membership.getPending(openid);
+    if (!legacyRewards(status) && !membership.canShowAds()) throw new Error("付款状态待确认，请在会员页恢复购买");
     const adUnitId = await app.getRewardedVideoAdUnitId();
     if (this._unloaded) return false;
     if (!adUnitId) throw new Error("广告暂未开放，作品已保留");
     if (!(await this.showAdDialog()) || this._unloaded) return false;
+    // 用户确认期间可能已在其他页面开通会员，播放前再次确认。
+    const latest = await membership.refresh(app, true);
+    if (this._unloaded || openid !== app.globalData.openid) return false;
+    if (latest.isLifetimeMember) return true;
+    if (!legacyRewards(latest) && !membership.canShowAds()) return false;
     this.setData({ busy: true, savingStage: "正在加载视频…" });
     const completed = await this._videoPlayer.play(adUnitId);
     if (!completed || this._unloaded) {

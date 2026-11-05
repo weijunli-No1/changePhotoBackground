@@ -13,6 +13,7 @@ Page({
     specTitle: "选择照片规格",
     size: sizes[0],
     entryError: "",
+    scrollTop: 0,
   },
   ...launcher,
   onLoad(options) {
@@ -37,6 +38,7 @@ Page({
         ".category-row",
         ".category-tab.selected",
         ".catalog-indicator",
+        { maxWidth: 32 },
       );
   },
   updateResults(query, category) {
@@ -46,6 +48,7 @@ Page({
         query,
         category,
         groups: catalog.grouped(query, category),
+        scrollTop: this.data.scrollTop ? 0 : 1,
         entryError: "",
       },
       () => {

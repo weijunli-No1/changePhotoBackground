@@ -1,3 +1,4 @@
+@import "../styles/tokens.wxss";
 :host {
   display: block;
 }
@@ -20,14 +21,14 @@
   align-items: center;
   justify-content: center;
   min-height: 84rpx;
-  color: #5b6b82;
-  font-size: 22rpx;
+  color: var(--sg-muted);
+  font-size: var(--sg-font-caption);
 }
 .tab-item text {
   margin-top: 4rpx;
 }
 .active {
-  color: #2563eb;
+  color: var(--sg-brand);
   font-weight: 600;
 }
 .tab-pressed {
@@ -42,6 +43,6 @@
     color: #ababaf;
   }
   .active {
-    color: #78cbb4;
+    color: var(--sg-brand);
   }
 }

@@ -1,0 +1,54 @@
+<import src="../../templates/campus.wxml" />
+<view class="page-wrap member-page">
+  <navigation-bar title="永久会员" show-back="{{true}}" />
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}" scroll-into-view="{{termsAnchor}}">
+    <view wx:if="{{unavailable}}" class="page-content member-unavailable">
+      <view class="unavailable-icon"><t-icon name="user-vip" size="64rpx" /></view>
+      <view class="unavailable-title">会员暂未开放</view>
+      <view class="unavailable-description">会员开放后，可在这里查看权益与价格。基础功能仍按现有免费规则使用。</view>
+    </view>
+    <view wx:else class="page-content member-content">
+      <view class="member-hero">
+        <template is="campus-track" />
+        <view class="member-hero-top"><view class="member-heading">每一张，都自在保存</view><image class="member-crown" src="/assets/icons/crown-campus.png" mode="aspectFit" aria-hidden="{{true}}" /></view>
+        <view class="member-subtitle">永久会员 · 一次开通，无需续费</view>
+        <view wx:if="{{statusKnown && isMember}}" class="member-badge"><t-icon name="check-circle-filled" size="30rpx" />永久会员已开通</view>
+        <view wx:elif="{{statusKnown}}" class="member-price"><text class="currency">¥</text><text>{{price}}</text><text class="price-once"> / 一次付费</text></view>
+        <view wx:else class="member-status">{{checking ? '正在查询价格与权益…' : '价格与权益待查询'}}</view>
+      </view>
+      <view class="benefits-heading">开通后，你将享有</view>
+      <view class="benefits">
+        <view class="benefit"><view class="benefit-icon"><t-icon name="download" size="40rpx" /></view><view class="benefit-body"><view class="benefit-title">图片无限保存</view><view class="benefit-note">证件照、考试照、六寸排版，不受每日保存次数限制。</view></view></view>
+        <view class="benefit"><view class="benefit-icon"><t-icon name="check-circle" size="40rpx" /></view><view class="benefit-body"><view class="benefit-title">全站免广告</view><view class="benefit-note">去除展示广告，保存时无需观看激励视频。</view></view></view>
+        <view class="benefit"><view class="benefit-icon"><t-icon name="user" size="40rpx" /></view><view class="benefit-body"><view class="benefit-title">权益跟随微信账号</view><view class="benefit-note">同一微信账号重新登录，可恢复已购会员。</view></view></view>
+      </view>
+      <view class="terms" id="member-terms">
+        <view class="terms-heading" bindtap="toggleTerms" aria-role="button" aria-expanded="{{termsExpanded}}" hover-class="pressed"><view class="terms-title">会员服务说明</view><view class="terms-toggle">{{termsExpanded ? '收起' : '查看'}}<t-icon name="{{termsExpanded ? 'chevron-up' : 'chevron-down'}}" size="28rpx" /></view></view>
+        <view class="terms-summary">一次购买，不自动续费。权益在小程序持续运营期间有效。</view>
+        <view wx:if="{{termsExpanded}}" class="terms-body">
+        <view>1. 永久会员为拾光小相当前小程序持续运营期间的账号权益，一次购买，不自动续费。</view>
+        <view>2. 无限保存指取消每日保存次数限制；图片仍按工具所选规格输出，系统安全与合理使用要求仍适用。</view>
+        <view>3. 会员免除小程序内展示广告及激励视频。原有免费本地工具仍可直接保存。</view>
+        <view>4. 会员不延长云端作品保存期限，请及时保存到手机相册。</view>
+        <view>5. 付款后由服务端核实订单并开通，延迟到账可恢复购买；请勿重复付款。</view>
+        <view>6. 退款按平台规则处理；Android 等可联系客服，iOS 通过 Apple 申请。退款确认后对应会员权益失效。</view>
+      </view>
+      </view>
+    </view>
+  </scroll-view>
+  <view wx:if="{{unavailable}}" class="footer-actions">
+    <view class="primary" bindtap="backHome" hover-class="pressed" aria-role="button">返回首页</view>
+  </view>
+  <view wx:else class="footer-actions member-footer">
+    <view wx:if="{{notice}}" class="notice" aria-role="status">{{notice}}</view>
+    <view wx:if="{{error}}" class="error-inline" aria-role="alert">{{error}}</view>
+    <view wx:if="{{!checking && statusKnown && supportError && !isMember}}" class="support-note">{{supportError}}</view>
+    <view wx:if="{{!isMember && statusKnown && purchaseEnabled && !supportError && !pendingOrder}}" class="agreement-row">
+      <view class="agreement-check" bindtap="toggleAgreement" aria-role="checkbox" aria-label="我已阅读并同意会员服务说明" aria-checked="{{agreed}}"><t-icon name="{{agreed ? 'check-circle-filled' : 'circle'}}" size="36rpx" /><text>我已阅读并同意</text></view>
+      <view class="agreement-link" bindtap="showTerms" aria-role="button">《会员服务说明》</view>
+    </view>
+    <button wx:if="{{!isMember || !statusKnown}}" class="primary" bindtap="primaryAction" loading="{{busy || checking}}" disabled="{{busy || checking || (statusKnown && !pendingOrder && (!purchaseEnabled || !!supportError))}}">{{checking ? '正在查询权益…' : busy ? '正在确认订单…' : !statusKnown ? '重试查询' : pendingOrder ? '查询待确认订单' : !purchaseEnabled ? '暂未开放购买' : supportError ? '当前环境暂不支持购买' : '¥' + price + ' 开通永久会员'}}</button>
+    <button wx:if="{{statusKnown && !pendingOrder}}" class="restore" bindtap="restore" disabled="{{busy || checking}}">{{isMember ? '重新同步权益' : '已购买？恢复会员权益'}}</button>
+    <view wx:if="{{!statusKnown && !checking}}" class="support-note">查询成功后显示当前价格和购买状态</view>
+  </view>
+</view>

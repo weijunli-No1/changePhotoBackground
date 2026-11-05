@@ -1,5 +1,7 @@
 <view style="height:{{navHeight}}px;"></view
-><view class="nav-container" style="height:{{navHeight}}px;"
+><view
+  class="nav-container {{inverse ? 'nav-inverse' : ''}}"
+  style="height:{{navHeight}}px;{{bgColor ? 'background:' + bgColor + ';' : ''}}{{titleColor ? 'color:' + titleColor + ';' : ''}}"
   ><view style="height:{{statusBarHeight}}px;"></view
   ><view class="nav-content" style="height:{{contentHeight}}px;"
     ><view
@@ -10,6 +12,10 @@
       aria-label="返回"
       aria-role="button"
       ><t-icon name="chevron-left" size="48rpx" /></view
-    ><text class="nav-title">{{title}}</text></view
+    ><view class="nav-brand"
+      ><view wx:if="{{brand}}" class="nav-logo"
+        ><t-icon name="camera-filled" size="38rpx" /></view
+      ><text class="nav-title">{{title}}</text></view
+    ></view
   ></view
 >

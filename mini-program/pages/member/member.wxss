@@ -1,0 +1,52 @@
+.member-content { padding: 16rpx 36rpx 32rpx; }
+.member-hero { position: relative; overflow: hidden; padding: 32rpx; border-radius: var(--sg-radius-hero); background: var(--sg-blue); color: #fff; }
+.member-hero-top { position: relative; display: flex; align-items: center; justify-content: space-between; }
+.member-heading { font-size: var(--sg-font-section); font-weight: 700; line-height: 1.4; }
+.member-crown { width: 56rpx; height: 56rpx; margin-left: 12rpx; flex-shrink: 0; }
+.member-subtitle { position: relative; margin-top: 12rpx; font-size: var(--sg-font-note); line-height: 1.6; }
+.member-price { position: relative; display: flex; align-items: baseline; font-size: var(--sg-font-metric); font-weight: 700; margin-top: 20rpx; color: var(--sg-yellow); }
+.currency { font-size: var(--sg-font-section); margin-right: 6rpx; }
+.price-once { font-size: var(--sg-font-note); font-weight: 400; color: #fff; margin-left: 6rpx; }
+.member-badge { position: relative; display: flex; align-items: center; margin-top: 24rpx; color: var(--sg-yellow); font-size: var(--sg-font-body); font-weight: 600; }
+.member-badge t-icon { margin-right: 10rpx; }
+.member-status { position: relative; margin-top: 24rpx; font-size: var(--sg-font-body); line-height: 1.8; }
+.benefits-heading { font-size: var(--sg-font-label); font-weight: 600; margin: 28rpx 0 4rpx; }
+.benefits { background: var(--sg-surface); }
+.benefit { display: flex; align-items: flex-start; padding: 24rpx 0; border-bottom: 1rpx solid var(--sg-line); }
+.benefit-icon { display: flex; align-items: center; justify-content: center; width: 64rpx; height: 64rpx; border-radius: var(--sg-radius-control); background: var(--sg-brand-soft); color: var(--sg-brand); margin-right: 20rpx; flex-shrink: 0; }
+.benefit-body { flex: 1; min-width: 0; }
+.benefit-title { font-size: var(--sg-font-label); font-weight: 600; line-height: 1.5; }
+.benefit-note { font-size: var(--sg-font-note); color: var(--sg-muted); line-height: 1.7; margin-top: 6rpx; }
+.terms { margin-top: 16rpx; }
+.terms-heading { min-height: 48px; display: flex; align-items: center; justify-content: space-between; }
+.terms-title { font-size: var(--sg-font-body); font-weight: 600; color: var(--sg-text); }
+.terms-toggle { display: flex; align-items: center; font-size: var(--sg-font-note); color: var(--sg-brand); }
+.terms-toggle t-icon { margin-left: 8rpx; }
+.terms-summary, .terms-body { font-size: var(--sg-font-note); line-height: 1.8; color: var(--sg-muted); }
+.terms-body { margin-top: 20rpx; }
+.terms-body > view { margin-bottom: 16rpx; }
+.member-footer { flex-shrink: 0; padding-top: 12rpx; }
+.member-footer .primary { width: 100%; }
+.member-footer .error-inline, .member-footer .notice { margin: 0 0 12rpx; padding: 16rpx 20rpx; font-size: var(--sg-font-note); line-height: 1.6; }
+.agreement-row { display: flex; align-items: center; flex-wrap: wrap; padding-bottom: 8rpx; font-size: var(--sg-font-note); }
+.agreement-check, .agreement-link { display: flex; align-items: center; min-height: 44px; }
+.agreement-check { color: var(--sg-text); }
+.agreement-check t-icon { color: var(--sg-brand); margin-right: 10rpx; }
+.agreement-link { color: var(--sg-brand); }
+.restore { background: transparent; color: var(--sg-brand); font-size: var(--sg-font-note); min-height: 44px; line-height: 44px; }
+.restore::after { border: 0; }
+.support-note { font-size: var(--sg-font-note); line-height: 1.6; color: var(--sg-muted); text-align: center; margin: 10rpx 0; }
+@media (max-width: 340px) {
+  .member-content { padding-left: 28rpx; padding-right: 28rpx; }
+  .member-heading { font-size: var(--sg-font-section); }
+  .member-hero { padding: 24rpx; }
+  .member-crown { width: 44rpx; height: 44rpx; }
+}
+
+.member-unavailable { padding-top: 80rpx; text-align: center; }
+.unavailable-icon { width: 112rpx; height: 112rpx; border-radius: var(--sg-radius-card); display: flex; align-items: center; justify-content: center; background: var(--sg-soft); color: var(--sg-muted); margin: 0 auto 32rpx; }
+.unavailable-title { font-size: var(--sg-font-title); font-weight: 600; }
+.unavailable-description { font-size: var(--sg-font-body); color: var(--sg-muted); line-height: 1.8; margin-top: 20rpx; }
+
+.restore { margin: 0; padding: 0 24rpx; font-family: var(--sg-font-family); }
+.restore::after { border: 0; }

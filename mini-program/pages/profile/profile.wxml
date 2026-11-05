@@ -1,8 +1,10 @@
-<view class="page-wrap">
-  <navigation-bar title="我的" />
+<import src="../../templates/campus.wxml" />
+<view class="page-wrap profile-page">
+  <navigation-bar title="拾光小相" brand="{{true}}" inverse="{{true}}" />
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
     <view class="page-content profile-content">
-      <view class="profile-intro">
+      <view class="profile-intro"
+        ><template is="campus-track" />
         <view
           class="profile-avatar"
           bindtap="{{hasLogin ? 'editProfile' : 'onLogin'}}"
@@ -17,8 +19,7 @@
             binderror="avatarError" /><t-icon wx:else name="user" size="56rpx"
         /></view>
         <view class="profile-identity"
-          ><view class="profile-name"
-            >{{hasLogin ? nickname : '欢迎使用拾光小相'}}</view
+          ><view class="profile-name">{{hasLogin ? nickname : '欢迎使用拾光小相'}}</view
           ><view
             wx:if="{{hasLogin}}"
             class="profile-edit"
@@ -39,30 +40,58 @@
           ></view
         >
       </view>
-      <view
-        wx:if="{{busy}}"
-        class="cancel-login"
-        bindtap="cancelLogin"
-        aria-role="button"
+      <view wx:if="{{busy}}" class="cancel-login" bindtap="cancelLogin" aria-role="button"
         >取消登录</view
       >
-      <view
-        wx:if="{{error}}"
-        class="error-inline profile-error"
-        aria-role="alert"
+      <view wx:if="{{error}}" class="error-inline profile-error" aria-role="alert"
         >{{error}}</view
       >
-      <view class="usage-card"
-        ><view class="usage-copy"
-          ><view class="usage-title">证件照保存机会</view
-          ><view class="usage-note"
-            >{{hasLogin ? '完整观看视频可增加次数' :
-            '登录后显示今日剩余次数'}}</view
+      <view
+        wx:if="{{memberAvailable === true}}"
+        class="member-card"
+        bindtap="openMembership"
+        hover-class="pressed"
+        aria-role="button"
+      >
+        <image
+          class="member-crown"
+          src="/assets/icons/crown-campus.png"
+          mode="aspectFit"
+          aria-hidden="{{true}}"
+        /><view class="member-copy"
+          ><view class="member-title"
+            >{{!memberKnown ? (memberLoading ? '正在同步会员权益' : '会员权益暂未同步') : isLifetimeMember ? '永久会员 · 已开通'
+            : '拾光永久会员'}}</view
+          >
+          <view class="member-desc"
+            >{{!memberKnown ? '会员状态以当前微信账号为准' : isLifetimeMember ? '无限保存
+            · 全站免广告' : '一次开通，无限保存，免广告'}}</view
           ></view
-        ><view
-          class="usage-value {{!usageKnown && hasLogin || unlimited ? 'usage-text' : ''}}"
-          >{{!hasLogin ? '5 次 / 天' : usageKnown ? (unlimited ? '不限次数' :
-          remaining + ' 次') : usageBusy ? '查询中…' : '暂未获取'}}</view
+        >
+        <view class="member-link"
+          >{{!memberKnown ? '查看' : '查看权益'}}<t-icon
+            name="chevron-right"
+            size="28rpx"
+        /></view>
+      </view>
+      <view class="usage-card"
+        ><view class="usage-main"
+          ><t-icon name="file-image" size="48rpx" /><view class="usage-copy"
+            ><view class="usage-title">证件照保存机会</view
+            ><view class="usage-caption"
+              >{{isLifetimeMember ? '永久会员' : hasLogin ? '今日可用' :
+              '每日免费额度'}}</view
+            ></view
+          ><view
+            class="usage-value {{!usageKnown && hasLogin || unlimited ? 'usage-text' : ''}}"
+            >{{!hasLogin ? '5 次 / 天' : usageKnown ? (unlimited ? '不限次数' : remaining
+            + ' 次') : usageBusy ? '查询中…' : '暂未获取'}}</view
+          ></view
+        ><view class="usage-note"
+          ><t-icon name="info-circle-filled" size="26rpx" /><text
+            >{{isLifetimeMember ? '永久会员，无限保存且免广告' : hasLogin ?
+            '完整观看视频可增加次数' : '登录后显示今日剩余次数'}}</text
+          ></view
         ></view
       >
       <view wx:if="{{hasLogin && usageError}}" class="usage-error"
@@ -76,13 +105,17 @@
         ></view
       >
       <view class="profile-menu">
+        <view wx:if="{{memberAvailable !== true}}" class="menu-row" bindtap="openMembership" hover-class="pressed" aria-role="button">
+          <t-icon name="user-vip" size="36rpx" /><text class="menu-text">永久会员</text>
+          <text class="menu-value">{{memberAvailable === false ? '暂未开放' : memberLoading ? '查询中' : '查看状态'}}</text>
+          <t-icon name="chevron-right" size="28rpx" />
+        </view>
         <view
           class="menu-row"
           bindtap="openDrafts"
           hover-class="pressed"
           aria-role="button"
-          ><t-icon name="file" size="36rpx" /><text class="menu-text"
-            >我的本地草稿</text
+          ><t-icon name="file" size="36rpx" /><text class="menu-text">我的本地草稿</text
           ><text class="menu-value">{{draftCount}}份</text
           ><t-icon name="chevron-right" size="28rpx"
         /></view>
@@ -91,8 +124,7 @@
           bindtap="openSupport"
           hover-class="pressed"
           aria-role="button"
-          ><t-icon name="service" size="36rpx" /><text class="menu-text"
-            >帮助与客服</text
+          ><t-icon name="service" size="36rpx" /><text class="menu-text">帮助与客服</text
           ><t-icon name="chevron-right" size="28rpx"
         /></view>
         <view
@@ -123,9 +155,7 @@
           hover-class="pressed"
         >
           {{loggingOut ? '正在退出…' : '退出登录'}}</button
-        ><view class="logout-note"
-          >退出后，本机草稿和个人资料仍会保留。</view
-        ></view
+        ><view class="logout-note">退出后，本机草稿和个人资料仍会保留。</view></view
       >
     </view>
   </scroll-view>

@@ -4,7 +4,7 @@
     show-back="{{true}}"
   />
   <view wx:if="{{sourcePath}}" class="studio-toolbar"
-    ><view class="studio-caption"
+    ><view class="studio-caption" bindtap="adjustPhoto" hover-class="pressed" aria-role="button"
       ><t-icon name="adjustment" size="32rpx" /><text>调整照片</text></view
     ><view
       class="compare-button"
@@ -19,7 +19,12 @@
     ></view
   >
   <view class="studio">
-    <canvas wx:if="{{needsCanvas}}" type="2d" id="toolCanvas" class="brand-canvas"></canvas>
+    <canvas
+      wx:if="{{needsCanvas}}"
+      type="2d"
+      id="toolCanvas"
+      class="brand-canvas"
+    ></canvas>
     <image
       wx:if="{{sourcePath}}"
       class="studio-photo"
@@ -28,18 +33,21 @@
       show-menu-by-longpress="{{!comparing && !!previewPath}}"
     />
     <view wx:else class="studio-empty"
-      ><t-icon name="image-add" size="64rpx" /><text
-        >请选择一张正面照片</text
-      ></view
+      ><t-icon name="image-add" size="64rpx" /><text>请选择一张正面照片</text></view
     >
-    <view wx:if="{{processing}}" class="processing-cover"
-      ><view class="processing-dot"></view><text>{{status}}</text
-      ><view
-        class="processing-cancel"
-        bindtap="cancelProcessing"
-        aria-role="button"
-        hover-class="pressed"
-        >取消处理</view
+    <view wx:if="{{processing}}" class="processing-cover" aria-role="status"
+      ><view class="processing-card"
+        ><view class="processing-dot"
+          ><t-icon name="loading" size="56rpx" color="var(--sg-brand)" /></view
+        ><text class="processing-title">{{status}}</text
+        ><view class="processing-note">请稍候，可取消本次处理</view
+        ><view
+          class="processing-cancel"
+          bindtap="cancelProcessing"
+          aria-role="button"
+          hover-class="pressed"
+          >取消处理</view
+        ></view
       ></view
     >
   </view>
@@ -52,15 +60,11 @@
       aria-label="{{'更改规格，当前' + size.name + '，' + size.width + '乘' + size.height + '像素'}}"
       ><view class="size-copy"
         ><text class="size-name">{{size.name}}</text
-        ><text class="size-pixels"
-          >{{size.width}} × {{size.height}} px</text
-        ></view
+        ><text class="size-pixels">{{size.width}} × {{size.height}} px</text></view
       ><view class="size-change"
         >更改规格<t-icon name="chevron-right" size="28rpx" /></view
     ></view>
-    <view
-      class="editor-tabs {{motionTabsReady ? 'motion-tabs' : ''}}"
-      aria-role="tablist"
+    <view class="editor-tabs {{motionTabsReady ? 'motion-tabs' : ''}}" aria-role="tablist"
       ><view class="editor-indicator"></view
       ><view
         class="editor-tab {{panel !== 'adjust' ? 'active' : ''}}"
@@ -112,24 +116,14 @@
           ><view
             class="swatch custom-swatch {{custom ? 'selected' : ''}}"
             style="background-color:{{custom ? currentBgColor : ''}}"
-            ><t-icon
-              name="{{custom ? 'check' : 'palette'}}"
-              size="36rpx" /></view
-          ><text class="swatch-name {{custom ? 'chosen' : ''}}"
-            >自定义</text
-          ></view
+            ><t-icon name="{{custom ? 'check' : 'palette'}}" size="36rpx" /></view
+          ><text class="swatch-name {{custom ? 'chosen' : ''}}">自定义</text></view
         >
       </view>
       <view wx:else class="adjust-row"
-        ><view
-          class="secondary adjust-button"
-          bindtap="adjustPhoto"
-          aria-role="button"
+        ><view class="secondary adjust-button" bindtap="adjustPhoto" aria-role="button"
           ><t-icon name="cut" size="34rpx" /><text>裁剪与旋转</text></view
-        ><view
-          class="secondary adjust-button"
-          bindtap="reselect"
-          aria-role="button"
+        ><view class="secondary adjust-button" bindtap="reselect" aria-role="button"
           ><t-icon name="refresh" size="34rpx" /><text>重选照片</text></view
         ></view
       >
@@ -137,35 +131,35 @@
     <view wx:if="{{openingError}}" class="editor-error" aria-role="alert"
       >{{openingError}}</view
     >
-    <view wx:if="{{error}}" class="editor-error" aria-role="alert"
-      >{{error}}</view
+    <view wx:if="{{error}}" class="editor-error error-inline" aria-role="alert"
+      ><t-icon name="error-circle" size="38rpx" /><view
+        ><view class="error-title">{{sourcePath ? '照片处理失败' : '请选择照片'}}</view><view>{{error}}</view></view
+      ></view
     >
     <view wx:if="{{error}}" class="recovery-actions"
-      ><view
-        class="link"
-        bindtap="retry"
-        hover-class="pressed"
-        aria-role="button"
+      ><view class="primary" bindtap="retry" hover-class="pressed" aria-role="button"
         >{{errorRecovery === 'reselect' ? '重新选择照片' : '重试处理'}}</view
       ><view
         wx:if="{{errorRecovery !== 'reselect'}}"
-        class="link"
+        class="secondary recovery-reselect"
         bindtap="reselect"
         hover-class="pressed"
         aria-role="button"
-        >重新选择</view
+        >重新选择照片</view
       ></view
     >
   </view>
-  <view class="footer-actions"
-    ><view class="preview-watermark-note">预览含“拾光小相”水印，正常保存可获取无水印照片</view><view
+  <view class="footer-actions {{error ? 'recovery-footer' : ''}}"
+    ><view class="preview-watermark-note"
+      >{{error ? (sourcePath ? '已保留当前照片与规格' : '选择照片后即可继续制作') : processing ? '处理完成后可预览并保存' :
+      '预览含水印，正常保存可获取无水印照片'}}</view
+    ><view
       class="primary {{processing || opening || !resultPath ? 'disabled' : ''}}"
       aria-disabled="{{processing || opening || !resultPath}}"
       bindtap="goExport"
       hover-class="pressed"
       aria-role="button"
-      >{{opening ? '正在准备…' : processing ? '正在处理照片…' :
-      '预览并保存'}}</view
+      >{{opening ? '正在准备…' : processing ? '正在处理照片…' : '预览并保存'}}</view
     ></view
   >
   <spec-picker

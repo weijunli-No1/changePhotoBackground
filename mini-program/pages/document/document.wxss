@@ -1,14 +1,14 @@
 .doc-scroll {
   flex: 1;
   background-color: var(--td-bg-color-container, #ffffff);
-  padding: 40rpx;
+  padding: 32rpx var(--sg-gutter);
   box-sizing: border-box;
 }
 
 .doc-text {
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
   line-height: 1.8;
-  color: var(--td-font-gray-2, rgba(0, 0, 0, 0.6));
+  color: var(--sg-text);
   white-space: pre-wrap;
   display: block;
 }

@@ -1,0 +1,7 @@
+<view class="icon" style="{{iconStyle}}" bindtap="onTap" aria-hidden="{{true}}"
+  ><image wx:if="{{isImage}}" class="image-icon" src="{{name}}" mode="aspectFit" /><text
+    wx:else
+    class="glyph"
+    >{{glyph}}</text
+  ></view
+>

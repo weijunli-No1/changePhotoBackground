@@ -1,0 +1,6 @@
+<template name="campus-track">
+  <view class="campus-track" aria-hidden="{{true}}"><view class="campus-lane campus-lane-one"></view><view class="campus-lane campus-lane-two"></view><view class="campus-lane campus-lane-three"></view></view>
+</template>
+<template name="campus-spark">
+  <view class="campus-spark" aria-hidden="{{true}}"><view class="campus-spark-one"></view><view class="campus-spark-two"></view></view>
+</template>

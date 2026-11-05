@@ -7,6 +7,7 @@ Page({
     draft: null,
     quickTools: catalog.quickTools(),
     featuredTool: catalog.featuredTool() || null,
+    examTool: catalog.getTool("exam") || null,
     specVisible: false,
     specTitle: "选择照片规格",
     size: sizes[0],
@@ -41,15 +42,12 @@ Page({
         this._openingLibrary = false;
       },
       fail: () => {
-        if (!this._unloaded)
-          this.setData({ entryError: "工具目录暂时无法打开，请重试" });
+        if (!this._unloaded) this.setData({ entryError: "工具目录暂时无法打开，请重试" });
       },
     });
   },
   openTool(e) {
-    this.openToolEntry(
-      e.currentTarget.dataset.id || e.currentTarget.dataset.mode,
-    );
+    this.openToolEntry(e.currentTarget.dataset.id || e.currentTarget.dataset.mode);
   },
   chooseImage() {
     this.startIdPhoto();
@@ -68,8 +66,7 @@ Page({
         this._resuming = false;
       },
       fail: () => {
-        if (!this._unloaded)
-          this.setData({ entryError: "草稿未能打开，请在作品页重试" });
+        if (!this._unloaded) this.setData({ entryError: "草稿未能打开，请在作品页重试" });
       },
     });
   },

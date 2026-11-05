@@ -1,0 +1,25 @@
+{
+  "ordinary": {
+    "checking": false,
+    "isMember": false,
+    "price": "9.90",
+    "purchaseEnabled": false,
+    "error": ""
+  },
+  "member": {
+    "isMember": true,
+    "error": ""
+  },
+  "profile": {
+    "isLifetimeMember": true,
+    "unlimited": true
+  },
+  "ad": {
+    "allowed": false,
+    "unitId": "",
+    "loaded": false,
+    "failed": false,
+    "placement": "home"
+  },
+  "errors": []
+}

@@ -22,6 +22,8 @@ public class UserController {
     private static final Integer UNAUTHORIZED_CODE = 401;
 
     private final UserService userService;
+    private final com.photo.bg.service.MemberSessionService sessions;
+    private final com.photo.bg.service.MembershipService membership;
     private final UserDailyUsageService userDailyUsageService;
 
     /**
@@ -43,11 +45,13 @@ public class UserController {
      * @return 操作结果
      */
     @PostMapping("/recordAd")
-    public Result<Void> recordAd(@RequestParam String openid) {
+    public Result<Void> recordAd(@RequestParam String openid, @RequestHeader(value="Authorization",required=false) String auth) {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
         if (user == null) {
             return Result.error(UNAUTHORIZED_CODE, "用户未登录");
         }
+        sessions.requireOwner(auth, user);
+        if (membership.isMember(user.getId())) return Result.success(null);
         userDailyUsageService.recordAdView(user.getId(), LocalDate.now());
         return Result.success(null);
     }
@@ -59,12 +63,14 @@ public class UserController {
      * @return 当日配额信息
      */
     @GetMapping("/usage")
-    public Result<UserDailyUsage> getUsage(@RequestParam String openid) {
+    public Result<UserDailyUsage> getUsage(@RequestParam String openid, @RequestHeader(value="Authorization",required=false) String auth) {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
         if (user == null) {
             return Result.error(UNAUTHORIZED_CODE, "用户未登录");
         }
+        sessions.requireOwner(auth, user);
         UserDailyUsage usage = userDailyUsageService.getOrCreateUsage(user.getId(), LocalDate.now());
+        usage.setIsLifetimeMember(membership.isMember(user.getId()));
         return Result.success(usage);
     }
 }

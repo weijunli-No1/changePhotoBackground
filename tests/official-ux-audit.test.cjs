@@ -55,6 +55,36 @@ function editor(api, files = {}) {
     },
   });
 }
+test("重新选图立即撤下旧预览，上传失败也只显示本次选择的照片", async () => {
+  let rejectUpload, uploadedSource;
+  const p = editor(
+    { upload: (source) => {
+      uploadedSource = source;
+      return new Promise((_, reject) => { rejectUpload = reject; });
+    } },
+    { call: async () => ({ tempFiles: [{ tempFilePath: "NEW_USER_PHOTO" }] }) },
+  );
+  p._seq = 0;
+  p._colorSeq = 0;
+  p.setData({
+    sourcePath: "OLD_SAMPLE",
+    resultPath: "OLD_SAMPLE_RESULT",
+    previewPath: "OLD_SAMPLE_PREVIEW",
+  });
+  await p.reselect();
+  assert.equal(uploadedSource, "NEW_USER_PHOTO");
+  assert.equal(p.data.sourcePath, "NEW_USER_PHOTO");
+  assert.equal(p.data.previewPath, "");
+  assert.equal(p.data.resultPath, "");
+  assert.equal(p.data.processing, true);
+  rejectUpload(Error("上传连接失败"));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(p.data.processing, false);
+  assert.equal(p.data.sourcePath, "NEW_USER_PHOTO");
+  assert.equal(p.data.previewPath, "");
+  assert.equal(p.data.resultPath, "");
+  assert.match(p.data.error, /上传连接失败/);
+});
 test("制作可以取消，终止上传且丢弃迟到结果，原图仍可重试", async () => {
   let resolve,
     aborts = 0;

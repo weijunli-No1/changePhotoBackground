@@ -5,8 +5,12 @@
   />
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}"
     ><view class="local-body">
+      <view wx:if="{{!sourcePath}}" class="tool-intro">
+        <view class="tool-title">{{mode === 'compress' ? '照片轻一点，分享更方便' : '调整构图，留下刚好的画面'}}</view>
+        <view class="tool-description">{{mode === 'compress' ? '选择照片后调整清晰度和尺寸，预览实际文件大小。' : '选择照片后调整比例、旋转方向和裁剪位置。'}}</view>
+      </view>
       <view
-        class="local-preview"
+        class="local-preview tool-stage"
         bindtap="{{!sourcePath ? 'choosePhoto' : ''}}"
         aria-role="{{sourcePath ? 'img' : 'button'}}"
         aria-label="{{sourcePath ? '照片预览' : '选择照片，在本机处理'}}"
@@ -36,9 +40,9 @@
             ><view class="crop-guide-v second"></view
             ><view class="crop-guide-h first"></view
             ><view class="crop-guide-h second"></view></view></view
-        ><view wx:if="{{!sourcePath}}" class="upload-local"
+        ><view wx:if="{{!sourcePath}}" class="upload-local tool-empty"
           ><t-icon name="image-add" size="72rpx" /><text>选择一张照片</text
-          ><text class="small muted">照片在本机处理</text></view
+          ><text class="tool-description">照片在本机处理，保留原图</text></view
         ><view wx:if="{{processing}}" class="tool-processing"
           ><view class="loading-spinner"></view><text>正在处理…</text></view
         ></view
@@ -60,7 +64,7 @@
               class="choice {{quality === item.value ? 'active' : ''}}"
               data-quality="{{item.value}}"
               aria-checked="{{quality === item.value}}"
-              aria-disabled="{{processing || opening}}"
+              aria-disabled="{{processing || opening || adjusting}}"
               bindtap="setQuality"
               aria-role="radio"
               >{{item.label}}</view
@@ -73,7 +77,7 @@
               class="choice {{maxEdge === item ? 'active' : ''}}"
               data-edge="{{item}}"
               aria-checked="{{maxEdge === item}}"
-              aria-disabled="{{processing || opening}}"
+              aria-disabled="{{processing || opening || adjusting}}"
               bindtap="setEdge"
               aria-role="radio"
               >{{item}} px</view
@@ -91,15 +95,15 @@
               class="ratio-choice {{ratio === item.value ? 'active' : ''}}"
               data-index="{{index}}"
               aria-checked="{{ratio === item.value}}"
-              aria-disabled="{{processing || opening}}"
+              aria-disabled="{{processing || opening || adjusting}}"
               bindtap="setRatio"
               aria-role="radio"
               >{{item.name}}</view
             ></view
           ><view class="rotate-row"
-            ><view class="secondary" bindtap="rotate" aria-role="button"
+            ><view class="secondary" bindtap="rotate" aria-role="button" aria-disabled="{{processing || opening || adjusting}}" hover-class="pressed"
               ><t-icon name="rotate" size="34rpx" /><text>旋转90°</text></view
-            ><view class="secondary" bindtap="reset" aria-role="button"
+            ><view class="secondary" bindtap="reset" aria-role="button" aria-disabled="{{processing || opening || adjusting}}" hover-class="pressed"
               >还原</view
             ></view
           ><block wx:if="{{ratio}}"
@@ -134,24 +138,28 @@
           ></block
         >
         <view class="local-links"
-          ><view class="link" bindtap="choosePhoto" aria-role="button"
+          ><view class="link" bindtap="choosePhoto" aria-role="button" aria-disabled="{{processing || opening || adjusting}}"
             >重新选择</view
           ><view
             wx:if="{{!returnToEditor}}"
             class="link"
             bindtap="makeIdPhoto"
             aria-role="button"
+            aria-disabled="{{processing || opening || adjusting || !resultPath}}"
             >用于制作证件照</view
           ></view
         >
       </view>
+    </view></scroll-view
+  >
+  <view class="footer-actions">
       <view wx:if="{{openingError}}" class="error-inline" aria-role="alert"
         >{{openingError}}</view
       >
       <view wx:if="{{error}}" class="error-inline" aria-role="alert"
         >{{error}}</view
       >
-      <view wx:if="{{error}}" class="recovery-actions"
+      <view wx:if="{{error && sourcePath}}" class="recovery-actions"
         ><view
           class="link"
           bindtap="retry"
@@ -160,17 +168,14 @@
           >{{errorRecovery === 'retry' ? '重试处理' : '重新选择照片'}}</view
         ></view
       >
-    </view></scroll-view
-  >
-  <view class="footer-actions"
-    ><view
-      class="primary {{processing || opening || adjusting || !resultPath ? 'disabled' : ''}}"
-      aria-disabled="{{processing || opening || adjusting || !resultPath}}"
-      bindtap="goExport"
+    <view
+      class="primary {{processing || opening || adjusting || (sourcePath && !resultPath) ? 'disabled' : ''}}"
+      aria-disabled="{{processing || opening || adjusting || (sourcePath && !resultPath)}}"
+      bindtap="primary"
       hover-class="pressed"
       aria-role="button"
       >{{opening ? '正在准备…' : adjusting ? '松手生成照片' : processing ?
-      '正在处理…' : returnToEditor ? '应用到证件照' : '预览并保存'}}</view
+      '正在处理…' : !sourcePath ? '选择照片' : returnToEditor ? '应用到证件照' : '预览并保存'}}</view
     ></view
   >
 </view>

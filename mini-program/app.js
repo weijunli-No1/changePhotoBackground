@@ -3,8 +3,11 @@ const { isValidAdUnitId } = require("./utils/rewarded-video");
 App({
   globalData: {
     userInfo: null,
+    sessionToken: "",
+    nativeAdUnits: {},
+    membershipEnabled: null,
     openid: "",
-    baseUrl: "https://www.myhaibin.top/new-api", // Nginx 照片服务根路径，请求已包含 /api
+    baseUrl: "https://www.myhaibin.top/new-api", // Nginx 公网入口，由服务器转发到远端照片服务；不要填写隧道直连地址
     rewardedVideoAdUnitIdOverride: "adunit-8643a04d0caed362", // 当前版本指定广告位，避免线上旧配置覆盖
     defaultRewardedVideoAdUnitId: "",
     rewardedVideoAdUnitId: "",
@@ -22,6 +25,12 @@ App({
     this.appConfigReady = this.loadRemoteAppConfig();
   },
 
+  onShow() {
+    const membership = require("./utils/membership");
+    membership.invalidate();
+    this.membershipReady = membership.refresh(this).catch(() => null);
+  },
+
   loadRemoteAppConfig: function () {
     return new Promise((resolve) =>
       wx.request({
@@ -36,6 +45,13 @@ App({
             res.data.data.watermarkEnabled === true,
           );
           if (res.data && res.data.code === 200 && res.data.data) {
+            // Older deployed services omit this capability. A failed request
+            // stays unknown and must not be presented as "not launched".
+            this.globalData.membershipEnabled = res.data.data.membershipEnabled === true;
+            this.globalData.nativeAdUnits = {
+              home: res.data.data.homeNativeAdUnitId || "",
+              library: res.data.data.libraryNativeAdUnitId || "",
+            };
             this.globalData.rewardedVideoAdUnitId =
               res.data.data.rewardedVideoAdUnitId || "";
           }
@@ -74,6 +90,8 @@ App({
     wx.removeStorageSync("openid");
     this.cancelLogin();
     this.globalData.openid = "";
+    this.globalData.sessionToken = "";
+    require("./utils/membership").invalidate();
     this.globalData.userInfo = null;
     this.globalData.exportSession = null;
     const pages =
@@ -94,6 +112,8 @@ App({
         page._loginAttempt = (page._loginAttempt || 0) + 1;
         page.setData({
           hasLogin: false,
+          memberKnown: false,
+          isLifetimeMember: false,
           nickname: "",
           avatarUrl: "",
           busy: false,
@@ -148,6 +168,7 @@ App({
                 }
                 this.globalData.openid = data.openid;
                 this.globalData.userInfo = data;
+                this.globalData.sessionToken = data.sessionToken || "";
                 resolve(data);
               } else
                 reject(
@@ -173,7 +194,7 @@ App({
   },
 
   async ensureLogin() {
-    if (this.globalData.openid) return true;
+    if (this.globalData.openid && this.globalData.sessionToken) return true;
     // 在用户发起保存／查看云端作品时建立身份，无需额外的登录确认。
     // wx.login 只换取服务端身份；头像与昵称仍由用户在资料页主动填写。
     await this.doLogin();

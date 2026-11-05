@@ -149,7 +149,7 @@ test('同一草稿的并发保存按调用顺序落盘', async () => {
 test('抠图接口仍使用原路径与 multipart 参数，并识别 Python 的业务失败', async () => {
   let options;
   const api = load('utils/api.js', {
-    getApp: () => ({ globalData: { baseUrl: 'https://example.test/new-api' } }),
+    getApp: () => ({ globalData: { baseUrl: 'https://example.test/shiguang-api' } }),
     wx: {
       uploadFile: (o) => {
         options = o;
@@ -161,7 +161,7 @@ test('抠图接口仍使用原路径与 multipart 参数，并识别 Python 的�
     },
   });
   await assert.rejects(api.upload('tmp-source', { width: 295, height: 413 }), /正面照片/);
-  assert.equal(options.url, 'https://example.test/new-api/api/photo/generate-idphoto');
+  assert.equal(options.url, 'https://example.test/shiguang-api/api/photo/generate-idphoto');
   assert.equal(options.name, 'file');
   assert.equal(options.formData.width, 295);
   assert.equal(options.formData.height, 413);

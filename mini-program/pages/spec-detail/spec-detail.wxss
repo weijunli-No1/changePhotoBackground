@@ -2,13 +2,13 @@
   padding: 24rpx 36rpx 36rpx;
 }
 .detail-title {
-  font-size: 38rpx;
+  font-size: var(--sg-font-title);
   line-height: 1.4;
   font-weight: 600;
 }
 .detail-subtitle {
   color: var(--sg-muted);
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
   margin-top: 12rpx;
 }
 .dimension-banner {
@@ -17,22 +17,22 @@
   justify-content: space-around;
   padding: 20rpx 12rpx;
   background: var(--sg-brand-soft);
-  border-radius: 18rpx;
+  border-radius: var(--sg-radius-control);
   margin-top: 24rpx;
 }
 .dimension-caption {
-  font-size: 26rpx;
+  font-size: var(--sg-font-body);
   color: var(--sg-muted);
   text-align: center;
 }
 .dimension-number {
-  font-size: 40rpx;
+  font-size: var(--sg-font-title);
   font-weight: 600;
   margin-top: 6rpx;
 }
 .dimension-number text {
   display: inline;
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
   margin-left: 4rpx;
 }
 .dimension-divider {
@@ -41,13 +41,13 @@
   background: var(--sg-line);
 }
 .dimension-note {
-  font-size: 24rpx;
+  font-size: var(--sg-font-note);
   color: var(--sg-muted);
   margin: 12rpx 0 20rpx;
 }
 .requirement-list {
   border: 1rpx solid var(--sg-line);
-  border-radius: 18rpx;
+  border-radius: var(--sg-radius-control);
   padding: 0 24rpx;
 }
 .requirement-row {
@@ -64,13 +64,13 @@
 }
 .requirement-row > text:first-child {
   flex-shrink: 0;
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
 }
 .requirement-value {
   color: var(--sg-muted);
   text-align: right;
   margin-left: 28rpx;
-  font-size: 26rpx;
+  font-size: var(--sg-font-body);
 }
 .detail-notice {
   margin-top: 16rpx;
@@ -79,7 +79,7 @@
 .source-label,
 .source-date {
   color: var(--sg-muted);
-  font-size: 24rpx;
+  font-size: var(--sg-font-note);
   line-height: 1.8;
 }
 .detail-explanation {
@@ -90,7 +90,7 @@
 }
 .source-link {
   color: var(--sg-brand);
-  font-size: 26rpx;
+  font-size: var(--sg-font-body);
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -99,7 +99,7 @@
   margin-left: 12rpx;
 }
 .creation-title {
-  font-size: 30rpx;
+  font-size: var(--sg-font-label);
   font-weight: 600;
   margin-top: 28rpx;
 }
@@ -112,7 +112,7 @@
   align-items: center;
   justify-content: space-between;
   border: 1rpx solid var(--sg-line);
-  border-radius: 16rpx;
+  border-radius: var(--sg-radius-control);
   margin-bottom: 12rpx;
   min-height: 44px;
   box-sizing: border-box;
@@ -135,7 +135,7 @@
   justify-content: space-between;
   min-height: 44px;
   margin-top: 16rpx;
-  font-size: 26rpx;
+  font-size: var(--sg-font-body);
   color: var(--sg-brand);
 }
 .creation-mode.selected {
@@ -143,11 +143,11 @@
   background: var(--sg-brand-soft);
 }
 .creation-name {
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
   font-weight: 600;
 }
 .creation-note {
-  font-size: 24rpx;
+  font-size: var(--sg-font-note);
   color: var(--sg-muted);
   margin-top: 8rpx;
 }

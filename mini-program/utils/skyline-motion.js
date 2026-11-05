@@ -46,7 +46,7 @@ function createMotion(host, api) {
       opacity.value = 0.72;
       opacity.value = timing(1, 140);
     },
-    indicator(track, selected, marker) {
+    indicator(track, selected, marker, options = {}) {
       if (!enabled || disposed || !host.createSelectorQuery) return;
       host
         .createSelectorQuery()
@@ -56,8 +56,8 @@ function createMotion(host, api) {
         .boundingClientRect()
         .exec((rects) => {
           if (disposed || !rects[0] || !rects[1]) return;
-          const x = rects[1].left - rects[0].left;
-          const width = rects[1].width;
+          const width = Math.min(rects[1].width, options.maxWidth || rects[1].width);
+          const x = rects[1].left - rects[0].left + (rects[1].width - width) / 2;
           let state = indicators.get(marker);
           if (!state) {
             state = { x: worklet.shared(x), width: worklet.shared(width) };
@@ -85,8 +85,7 @@ function createMotion(host, api) {
     dispose() {
       disposed = true;
       if (host.clearAnimatedStyle)
-        for (const { selector, id } of bindings)
-          host.clearAnimatedStyle(selector, [id]);
+        for (const { selector, id } of bindings) host.clearAnimatedStyle(selector, [id]);
       bindings.length = 0;
       fades.clear();
       indicators.clear();

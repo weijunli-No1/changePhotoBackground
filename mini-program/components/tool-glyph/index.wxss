@@ -1,6 +1,6 @@
 .crop-glyph {
   position: relative;
-  color: var(--sg-brand);
+  color: inherit;
 }
 .crop-stroke-a {
   position: absolute;
@@ -8,8 +8,8 @@
   top: 0;
   width: 64%;
   height: 73%;
-  border-left: 3rpx solid currentColor;
-  border-bottom: 3rpx solid currentColor;
+  border-left: 5rpx solid currentColor;
+  border-bottom: 5rpx solid currentColor;
   border-radius: 0 0 0 3rpx;
   box-sizing: border-box;
 }
@@ -19,8 +19,8 @@
   top: 27%;
   width: 73%;
   height: 64%;
-  border-top: 3rpx solid currentColor;
-  border-right: 3rpx solid currentColor;
+  border-top: 5rpx solid currentColor;
+  border-right: 5rpx solid currentColor;
   border-radius: 0 3rpx 0 0;
   box-sizing: border-box;
 }

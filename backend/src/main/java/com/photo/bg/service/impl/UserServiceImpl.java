@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     private final WxMaService wxMaService;
+    private final com.photo.bg.service.MemberSessionService sessions;
 
     /**
      * 根据微信登录临时凭证进行登录，首次登录自动注册。
@@ -42,6 +43,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 user.setCreateTime(LocalDateTime.now());
                 this.save(user);
             }
+            user.setSessionToken(sessions.issue(user.getId()));
             return user;
         } catch (Exception e) {
             log.error("微信登录失败", e);

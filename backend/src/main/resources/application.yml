@@ -29,6 +29,8 @@ wx:
   miniapp:
     appid: your_wechat_appid
     secret: your_wechat_secret
+    home-native-ad-unit-id: ${WX_HOME_NATIVE_AD_UNIT_ID:}
+    library-native-ad-unit-id: ${WX_LIBRARY_NATIVE_AD_UNIT_ID:}
     # 可通过环境变量覆盖激励视频广告位。
     rewarded-ad-unit-id: ${WX_REWARDED_AD_UNIT_ID:adunit-8643a04d0caed362}
 
@@ -48,3 +50,14 @@ minio:
 nsfw:
   enabled: false
   api-url: http://127.0.0.1:3006/checkImg
+
+# 上线前先执行 database/migrations/20261027_membership.sql。
+membership:
+  enabled: ${MEMBER_ENABLED:false}
+  offer-id: ${WX_VIRTUAL_OFFER_ID:}
+  app-key: ${WX_VIRTUAL_APP_KEY:}
+  product-id: ${WX_MEMBER_PRODUCT_ID:sg_lifetime_vip}
+  price-fen: ${WX_MEMBER_PRICE_FEN:990}
+  ios-enabled: ${WX_MEMBER_IOS_ENABLED:false}
+  push-token: ${WX_MEMBER_PUSH_TOKEN:}
+  push-aes-key: ${WX_MEMBER_PUSH_AES_KEY:}

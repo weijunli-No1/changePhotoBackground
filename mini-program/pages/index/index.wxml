@@ -1,8 +1,13 @@
+<import src="../../templates/campus.wxml" />
 <view class="page-wrap home-page">
-  <navigation-bar title="拾光小相" />
+  <navigation-bar title="拾光小相" brand="{{true}}" />
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
     <view class="home-body">
-      <view class="home-title">今天想处理什么？</view>
+      <view class="home-masthead"
+        ><view class="home-title">青春，正好上镜<template is="campus-spark" /></view
+        ><view class="home-mark"></view
+        ><view class="home-subtitle">照片小事，轻松搞定</view></view
+      >
       <view
         class="home-search"
         bindtap="openLibrary"
@@ -10,31 +15,28 @@
         aria-role="button"
         aria-label="搜索全部工具"
         hover-class="pressed"
-        ><t-icon name="search" size="40rpx" /><text
-          >搜索工具，例如：压缩</text
-        ></view
+        ><t-icon name="search" size="38rpx" /><text>搜索工具，例如：压缩</text></view
       >
       <view wx:if="{{featuredTool}}" class="feature">
-        <view class="feature-copy"
-          ><view class="feature-title"
+        <template is="campus-track" />
+        <view class="feature-copy">
+          <view class="feature-title"
             ><block wx:if="{{featuredTool.featured.titleLines}}"
-              ><view
-                wx:for="{{featuredTool.featured.titleLines}}"
-                wx:key="*this"
+              ><view wx:for="{{featuredTool.featured.titleLines}}" wx:key="*this"
                 >{{item}}</view
               ></block
             ><text wx:else>{{featuredTool.featured.title}}</text></view
-          ><view class="feature-note"
-            >{{featuredTool.featured.description}}</view
-          ><view
+          >
+          <view class="feature-note">考试报名 · 换底色<view></view>六寸排版</view>
+          <view
             class="feature-button"
             bindtap="openToolEntry"
             data-id="{{featuredTool.id}}"
             hover-class="pressed"
             aria-role="button"
-            >{{featuredTool.featured.action}}</view
-          ></view
-        >
+            >{{featuredTool.featured.action}}<t-icon name="arrow-right" size="36rpx"
+          /></view>
+        </view>
         <view
           wx:if="{{featuredTool.featured.photos.length}}"
           class="feature-fan"
@@ -43,10 +45,10 @@
             wx:for="{{featuredTool.featured.photos}}"
             wx:key="id"
             class="feature-card feature-card-{{item.id}}"
-            ><image
-              src="{{item.src}}"
-              class="feature-portrait"
-              mode="aspectFill" /></view
+            ><image src="{{item.src}}" class="feature-portrait" mode="aspectFill" /><view
+              wx:if="{{item.id === 'female'}}"
+              class="photo-tape"
+            ></view></view
         ></view>
         <image
           wx:elif="{{featuredTool.featured.image}}"
@@ -56,10 +58,7 @@
           aria-hidden="{{true}}"
         />
       </view>
-      <view
-        wx:if="{{entryError}}"
-        class="error-inline home-error"
-        aria-role="alert"
+      <view wx:if="{{entryError}}" class="error-inline home-error" aria-role="alert"
         >{{entryError}}</view
       >
       <view class="section-head"
@@ -71,21 +70,33 @@
           aria-role="button"
           >全部工具<t-icon name="chevron-right" size="28rpx" /></view
       ></view>
-      <view class="quick-tools">
-        <view
+      <view class="quick-tools"
+        ><view
           wx:for="{{quickTools}}"
           wx:key="id"
-          class="quick-item"
+          class="quick-item tone-{{item.tone}}"
           data-id="{{item.id}}"
           bindtap="openToolEntry"
           hover-class="pressed"
           aria-role="button"
           aria-label="{{item.name}}"
-          ><tool-glyph name="{{item.icon}}" size="{{48}}" /><text
+          ><tool-glyph name="{{item.icon}}" size="{{64}}" /><text
             >{{item.name}}</text
           ></view
-        >
-      </view>
+        ></view
+      >
+      <view
+        wx:if="{{examTool}}"
+        class="exam-entry"
+        data-id="{{examTool.id}}"
+        bindtap="openToolEntry"
+        aria-role="button"
+        hover-class="pressed"
+        ><tool-glyph name="education" size="{{74}}" /><view class="exam-copy"
+          ><view class="exam-title">考试报名照</view
+          ><view class="exam-note">四六级、考研等常用规格</view></view
+        ><view class="exam-arrow"><t-icon name="chevron-right" size="34rpx" /></view
+      ></view>
       <view class="section-head continue-head"
         ><view class="section-title">继续编辑</view
         ><view
@@ -110,25 +121,25 @@
           mode="aspectFill"
           data-id="{{draft.id}}"
           binderror="draftImageError"
-        /><view
-          wx:else
-          class="draft-thumb thumb-fallback"
-          aria-hidden="{{true}}"
-          ><t-icon name="image" size="40rpx" /></view
-        ><view class="draft-copy"
+        /><view wx:else class="draft-thumb thumb-fallback" aria-hidden="{{true}}"
+          ><t-icon name="image" size="40rpx"
+        /></view>
+        <view class="draft-copy"
           ><view class="draft-title">{{draft.title}}</view
           ><view class="draft-note">{{draft.sizeName || '保存在当前设备'}}</view
           ><view class="draft-note">{{draft.updatedLabel}}</view></view
-        ><t-icon name="chevron-right" size="32rpx" />
+        ><view class="draft-resume"
+          >继续编辑<t-icon name="chevron-right" size="26rpx"
+        /></view>
       </view>
       <view wx:else class="draft-empty"
-        ><view class="empty-draft-icon"
-          ><t-icon name="folder-open" size="42rpx" /></view
+        ><view class="empty-draft-icon"><t-icon name="folder-open" size="48rpx" /></view
         ><view
           ><view class="empty-draft-title">还没有未完成的作品</view
           ><view class="draft-note">开始处理后，会自动保留草稿</view></view
         ></view
       >
+      <member-ad placement="home" />
     </view>
   </scroll-view>
   <spec-picker

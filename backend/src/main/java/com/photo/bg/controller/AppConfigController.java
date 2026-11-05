@@ -32,6 +32,9 @@ public class AppConfigController {
         Map<String, Object> config = new HashMap<>();
         config.put(KEY_REWARDED_VIDEO_AD_UNIT_ID, wxMaConfiguration.getRewardedAdUnitId());
         config.put("watermarkEnabled", true);
+        config.put("membershipEnabled", true);
+        config.put("homeNativeAdUnitId", wxMaConfiguration.getHomeNativeAdUnitId());
+        config.put("libraryNativeAdUnitId", wxMaConfiguration.getLibraryNativeAdUnitId());
         return Result.success(config);
     }
 }

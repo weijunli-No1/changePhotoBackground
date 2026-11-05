@@ -57,7 +57,7 @@ async function create(page, source, options = {}) {
   ctx.font = `500 ${fontSize}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgba(45,65,95,0.28)";
+  ctx.fillStyle = "rgba(45,65,95,0.18)";
   for (let y = -diagonal; y < diagonal; y += fontSize * 3.6)
     for (let x = -diagonal; x < diagonal; x += fontSize * 7)
       ctx.fillText(BRAND, x, y);

@@ -2,9 +2,14 @@ const app = getApp();
 const api = require("../../utils/api");
 const drafts = require("../../utils/drafts");
 const { call } = require("../../utils/files");
+const membership = require("../../utils/membership");
 const profiles = require("../../utils/user-profile");
 Page({
   data: {
+    memberKnown: false,
+    memberLoading: false,
+    memberAvailable: null,
+    isLifetimeMember: false,
     hasLogin: false,
     nickname: "",
     avatarUrl: "",
@@ -29,13 +34,35 @@ Page({
     });
     this.loadIdentity();
     this.fetchUsage();
+    this.refreshMembership();
   },
+  async refreshMembership() {
+    if (this._unloaded || this._memberRefreshing) return;
+    this._memberRefreshing = true;
+    this.setData({ memberLoading: true });
+    try {
+      const status = await membership.refresh(app);
+      if (!this._unloaded) {
+        this.setData({ memberAvailable: status.available !== false, memberKnown: status.available !== false, isLifetimeMember: status.isLifetimeMember, hasLogin: Boolean(app.globalData.openid) });
+        this.loadIdentity();
+        this.fetchUsage();
+      }
+    } catch (_) {
+      // 查询失败后保留未知状态，结束加载提示。
+    } finally {
+      this._memberRefreshing = false;
+      if (!this._unloaded) this.setData({ memberLoading: false });
+    }
+  },
+  openMembership() { membership.open(); },
   syncUsageOwner() {
     const owner = app.globalData.openid || "";
     if (this._usageOwner === owner) return;
     this._usageOwner = owner;
     this._usageSeq = (this._usageSeq || 0) + 1;
     this.setData({
+      memberKnown: false,
+      isLifetimeMember: false,
       usageKnown: false,
       usageBusy: false,
       usageError: "",
@@ -111,6 +138,8 @@ Page({
     const seq = (this._usageSeq = (this._usageSeq || 0) + 1);
     this.setData({ usageBusy: true, usageError: "" });
     try {
+      if (!app.globalData.sessionToken) await app.ensureLogin();
+      if (openid !== app.globalData.openid) return;
       const usage = api.unwrap(
         await api.request("/api/user/usage", { data: { openid } }),
       );
@@ -125,7 +154,9 @@ Page({
             0,
             5 + (usage.adViewCount || 0) - (usage.saveCount || 0),
           ),
-          unlimited: usage.adViewCount >= 5,
+          unlimited: usage.isLifetimeMember === true || usage.adViewCount >= 5,
+          memberKnown: typeof usage.isLifetimeMember === "boolean",
+          isLifetimeMember: usage.isLifetimeMember === true,
         });
     } catch (error) {
       if (

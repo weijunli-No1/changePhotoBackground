@@ -1,26 +1,24 @@
+<import src="../../templates/campus.wxml" />
 <view class="page-wrap export-page">
   <navigation-bar title="预览与保存" show-back="{{true}}" />
-  <canvas
-    wx:if="{{needsCanvas}}"
-    type="2d"
-    id="toolCanvas"
-    class="brand-canvas"
-  ></canvas>
+  <canvas wx:if="{{needsCanvas}}" type="2d" id="toolCanvas" class="brand-canvas"></canvas>
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
-    <view class="export-body">
+    <view class="export-body"
+      ><view wx:if="{{!unavailable && !saved}}" class="export-heading"
+        ><text>这一张，准备好啦</text><template is="campus-spark"
+      /></view>
       <view class="export-preview"
         ><image
           wx:if="{{previewPath}}"
-          src="{{previewPath}}"
+          src="{{saved && savedPath ? savedPath : previewPath}}"
           mode="aspectFit"
-          class="export-photo"
+          class="export-photo {{allowLayout && !(saved && action === 'layout') ? 'portrait-preview' : ''}}"
           show-menu-by-longpress="{{true}}"
           binderror="previewError"
           bindtap="previewImage"
         /><view wx:if="{{previewPreparing}}" class="muted">正在准备预览…</view
         ><view wx:if="{{unavailable || previewFailed}}" class="muted"
-          >{{unavailable ? '照片文件暂不可用' :
-          '预览加载失败，可重新加载'}}</view
+          >{{unavailable ? '照片文件暂不可用' : '预览加载失败，可重新加载'}}</view
         ></view
       >
       <view class="export-spec"
@@ -29,10 +27,8 @@
       <view wx:if="{{actualWidth}}" class="export-dimensions"
         >实际图片 {{actualWidth}} × {{actualHeight}} px</view
       >
-      <view wx:if="{{previewCaption}}" class="export-note"
-        >{{previewCaption}}</view
-      >
-      <block wx:if="{{allowLayout}}">
+      <view wx:if="{{previewCaption}}" class="export-note">{{previewCaption}}</view>
+      <block wx:if="{{allowLayout && !saved}}">
         <view class="format-title">选择保存格式</view>
         <view class="export-options" aria-role="radiogroup">
           <view
@@ -44,10 +40,8 @@
             aria-label="电子照片，单张高清照片"
             bindtap="selectAction"
             hover-class="pressed"
-            ><image
-              src="{{previewPath}}"
-              class="single-thumb"
-              mode="aspectFit" /><view class="format-copy"
+            ><image src="{{previewPath}}" class="single-thumb" mode="aspectFit" /><view
+              class="format-copy"
               ><view class="format-name">电子照片</view
               ><view class="format-note">单张高清照片</view></view
             ><t-icon
@@ -83,33 +77,29 @@
           >上图为单张预览，保存时生成实际六寸排版图。</view
         >
       </block>
-      <block wx:if="{{!local}}"
+      <block wx:if="{{!local && !saved}}"
         ><view wx:if="{{outputNote}}" class="export-note">{{outputNote}}</view
         ><view class="preview-watermark-note"
           >预览与长按保存含“拾光小相”水印；下方保存按钮可获取无水印照片。</view
-        ><view class="usage-note"
-          >{{quotaKnown ? (unlimited ? '今天可不限次数保存' : '今日剩余 ' +
-          remaining + ' 次保存机会') :
-          '每日5次免费无水印保存，超出后可观看视频增加次数'}}</view
+        ><view class="usage-note" bindtap="retryMembership" aria-role="{{memberAvailable !== false && !quotaKnown ? 'button' : 'text'}}"
+          >{{isLifetimeMember ? '永久会员 · 无限保存 · 免广告' : quotaKnown ? (unlimited ? '今天可不限次数保存' : '今日剩余 ' + remaining + ' 次保存机会') : memberAvailable === false ? '每日5次免费保存，超出后可观看视频增加次数' : memberLoading ? '正在查询保存额度…' : '保存额度暂未同步，点此重试'}}</view
         >
       </block>
-      <view wx:else class="export-note local-note"
+      <view wx:elif="{{local && !saved}}" class="export-note local-note"
         >{{outputNote || '本地处理的照片直接保存，不占用证件照次数。'}}</view
       >
-      <view wx:if="{{saved}}" class="notice success-note" aria-role="status"
-        ><t-icon name="check-circle-filled" size="34rpx" /><view
+      <view wx:if="{{saved}}" class="success-note" aria-role="status"
+        ><view class="success-icon"
+          ><t-icon name="check-circle-filled" size="64rpx" /></view
+        ><view
           ><view class="saved-title">已保存到手机相册</view
-          ><view class="saved-detail"
-            >可以返回首页，继续使用其他工具。</view
-          ></view
+          ><view class="saved-detail">这一张，元气满满</view></view
         ></view
-      >
-      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
-        >{{error}}</view
       >
     </view>
   </scroll-view>
   <view class="footer-actions">
+    <view wx:if="{{error}}" class="error-inline save-error" aria-role="alert">{{error}}</view>
     <view
       class="primary {{busy || previewPreparing || (!previewPath && !unavailable && !previewFailed) ? 'disabled' : ''}}"
       aria-disabled="{{busy || previewPreparing || (!previewPath && !unavailable && !previewFailed)}}"
@@ -119,10 +109,17 @@
       ><view wx:if="{{busy}}" class="loading-spinner"></view
       ><text
         >{{busy ? (savingStage || '正在保存…') : unavailable ? '返回编辑' :
-        previewPreparing ? '正在准备预览…' : previewFailed ? '重新加载预览' :
-        saved ? '完成，返回首页' : local ? '保存到相册' : action === 'layout' ?
-        '保存六寸排版' : '保存无水印照片'}}</text
+        previewPreparing ? '正在准备预览…' : previewFailed ? '重新加载预览' : saved ?
+        '返回首页' : action === 'layout' ? '保存六寸排版' : '保存到手机相册'}}</text
       ></view
+    >
+    <view
+      wx:if="{{!busy && !unavailable && !previewFailed}}"
+      class="return-edit"
+      bindtap="returnToEdit"
+      aria-role="button"
+      hover-class="pressed"
+      >返回编辑</view
     >
     <view
       wx:if="{{saved && !busy}}"
@@ -146,9 +143,11 @@
     label="今日免费次数已用完"
     bind:confirm="confirmAd"
     bind:dismiss="cancelAd"
-    ><view class="sheet-handle"></view
-    ><view class="quota-title">今日免费次数已用完</view
+    ><view class="sheet-handle"></view><view class="quota-title">今日免费次数已用完</view
     ><view class="quota-desc">完整观看视频，增加一次保存机会</view
-    ><text slot="confirm">看视频，继续保存</text></motion-sheet
+    ><view wx:if="{{memberAvailable === true}}" class="member-save-link" bindtap="openMembership" aria-role="button"
+      >开通永久会员，免广告无限保存</view
+    >
+    <text slot="confirm">看视频，继续保存</text></motion-sheet
   >
 </view>

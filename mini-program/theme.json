@@ -2,31 +2,31 @@
   "light": {
     "navBgColor": "#FFFFFF",
     "navTextStyle": "black",
-    "tabBarColor": "#5B6B82",
-    "tabBarSelectedColor": "#2563EB",
+    "tabBarColor": "#63718A",
+    "tabBarSelectedColor": "#2358EE",
     "tabBarBgColor": "#FFFFFF",
     "tabBarBorderStyle": "black",
     "pageBgColor": "#FFFFFF",
-    "homeIcon": "assets/icons/home-youth.png",
-    "homeActiveIcon": "assets/icons/home-active-youth.png",
-    "historyIcon": "assets/icons/history-youth.png",
-    "historyActiveIcon": "assets/icons/history-active-youth.png",
-    "userIcon": "assets/icons/user-youth.png",
-    "userActiveIcon": "assets/icons/user-active-youth.png"
+    "homeIcon": "assets/icons/home-campus.png",
+    "homeActiveIcon": "assets/icons/home-active-campus.png",
+    "historyIcon": "assets/icons/history-campus.png",
+    "historyActiveIcon": "assets/icons/history-active-campus.png",
+    "userIcon": "assets/icons/user-campus.png",
+    "userActiveIcon": "assets/icons/user-active-campus.png"
   },
   "dark": {
     "navBgColor": "#121212",
     "navTextStyle": "white",
     "tabBarColor": "#ababaf",
-    "tabBarSelectedColor": "#78CBB4",
+    "tabBarSelectedColor": "#91B4FF",
     "tabBarBgColor": "#1c1c1e",
     "tabBarBorderStyle": "white",
     "pageBgColor": "#121212",
-    "homeIcon": "assets/icons/home-dark.png",
-    "homeActiveIcon": "assets/icons/home-active-dark.png",
-    "historyIcon": "assets/icons/history-dark.png",
-    "historyActiveIcon": "assets/icons/history-active-dark.png",
-    "userIcon": "assets/icons/user-dark.png",
-    "userActiveIcon": "assets/icons/user-active-dark.png"
+    "homeIcon": "assets/icons/home-campus-dark.png",
+    "homeActiveIcon": "assets/icons/home-active-campus-dark.png",
+    "historyIcon": "assets/icons/history-campus-dark.png",
+    "historyActiveIcon": "assets/icons/history-active-campus-dark.png",
+    "userIcon": "assets/icons/user-campus-dark.png",
+    "userActiveIcon": "assets/icons/user-active-campus-dark.png"
   }
 }

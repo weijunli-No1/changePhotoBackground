@@ -2,6 +2,10 @@
   <navigation-bar title="照片加水印" show-back="{{true}}" />
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}"
     ><view class="watermark-body">
+      <view wx:if="{{!sourcePath}}" class="tool-intro">
+        <view class="tool-title">为照片注明使用用途</view>
+        <view class="tool-description">先选照片，再调整水印文字、透明度和方向。</view>
+      </view>
       <view
         wx:if="{{checkingService || !serviceReady}}"
         class="service-notice"
@@ -20,7 +24,7 @@
         ></view
       >
       <view
-        class="watermark-stage"
+        class="watermark-stage tool-stage"
         bindtap="{{!sourcePath ? 'choosePhoto' : ''}}"
         aria-role="{{sourcePath ? 'img' : 'button'}}"
         aria-label="{{sourcePath ? '水印效果预览' : '选择要加水印的照片'}}"
@@ -52,9 +56,9 @@
             ></view
           ></view
         >
-        <view wx:else class="watermark-empty"
+        <view wx:else class="watermark-empty tool-empty"
           ><t-icon name="image-add" size="72rpx" /><view>选择一张照片</view
-          ><view class="small muted"
+          ><view class="tool-description"
             >生成时上传云端处理，支持10 MB以内图片</view
           ></view
         >
@@ -132,6 +136,7 @@
           bindtap="direction"
           aria-role="radio"
           aria-checked="{{angle === 30}}"
+          aria-disabled="{{processing || opening}}" hover-class="pressed"
           >斜向</view
         ><view
           class="direction-choice {{angle === 0 ? 'selected' : ''}}"
@@ -139,6 +144,7 @@
           bindtap="direction"
           aria-role="radio"
           aria-checked="{{angle === 0}}"
+          aria-disabled="{{processing || opening}}" hover-class="pressed"
           >水平</view
         ></view
       >
@@ -161,7 +167,7 @@
             data-color="{{item.value}}"
             bindtap="setColor"
             aria-role="radio"
-            aria-checked="{{color === item.value}}"
+            aria-checked="{{color === item.value}}" aria-disabled="{{processing || opening}}" hover-class="pressed"
             >{{item.name}}</view
           ></view
         ><view class="watermark-slider"
@@ -180,9 +186,6 @@
           /><text class="slider-value">{{space}}</text></view
         ></block
       >
-      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
-        >{{error}}</view
-      >
       <view class="watermark-actions"
         ><view
           wx:if="{{sourcePath && !processing}}"
@@ -190,23 +193,26 @@
           bindtap="choosePhoto"
           aria-role="button"
           >更换照片</view
-        ><view
-          wx:if="{{processing}}"
-          class="link"
-          bindtap="cancel"
-          aria-role="button"
-          >取消处理</view
         ></view
       >
     </view></scroll-view
   >
-  <view class="footer-actions"
+  <view class="footer-actions">
+      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
+        >{{error}}</view
+      >
+    <view
+      wx:if="{{processing}}"
+      class="link cancel-watermark"
+      bindtap="cancel"
+      aria-role="button"
+      >取消处理</view
     ><view
-      class="primary {{processing || opening || !sourcePath || !text || (!resultPath && (!serviceReady || checkingService)) ? 'disabled' : ''}}"
+      class="primary {{processing || opening || (sourcePath && (!text || (!resultPath && (!serviceReady || checkingService)))) ? 'disabled' : ''}}"
       bindtap="primary"
       aria-role="button"
-      aria-disabled="{{processing || opening || !sourcePath || !text || (!resultPath && (!serviceReady || checkingService))}}"
-      >{{processing ? '正在生成…' : opening ? '正在准备…' : resultPath ?
+      aria-disabled="{{processing || opening || (sourcePath && (!text || (!resultPath && (!serviceReady || checkingService))))}}"
+      >{{processing ? '正在生成…' : opening ? '正在准备…' : !sourcePath ? '选择照片' : resultPath ?
       '预览并保存' : checkingService ? '正在检查服务…' : !serviceReady ?
       '生成服务暂未开放' : '生成水印照片'}}</view
     ></view

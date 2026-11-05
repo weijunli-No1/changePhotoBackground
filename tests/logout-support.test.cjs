@@ -24,17 +24,19 @@ function appFixture() {
     App: (v) => (app = v),
     wx,
     getCurrentPages: () => pages,
-    require: () => ({ isValidAdUnitId: () => false }),
+    require: (name) => name.endsWith("/membership") ? require("./helpers/membership-stub.cjs") : ({ isValidAdUnitId: () => false }),
   });
   return { app, wx, storage, login, requests, pages };
 }
 function pageFixture(file, app, deps = {}, wx = {}) {
   let page;
+  if (app.globalData) app.globalData.sessionToken = "fixture-token";
   vm.runInNewContext(fs.readFileSync(path.join(root, file), "utf8"), {
     Page: (v) => (page = v),
     getApp: () => app,
     wx,
     require: (name) => {
+      if (name.endsWith("/membership")) return require("./helpers/membership-stub.cjs");
         if (name.endsWith('/brand-preview')) return { create: async (_page, source) => 'BRANDED:' + source };
       if (name.endsWith("/skyline-motion"))
         return require("../mini-program/utils/skyline-motion");
@@ -51,7 +53,7 @@ function pageFixture(file, app, deps = {}, wx = {}) {
 }
 const response = (openid) => ({
   statusCode: 200,
-  data: { code: 200, data: { openid } },
+  data: { code: 200, data: { openid, sessionToken: "fixture-token" } },
 });
 
 test("保存所需身份直接静默建立，并发复用同一登录，不弹确认或读取头像昵称", async () => {
@@ -94,6 +96,7 @@ function silentExportFixture() {
   env.app.globalData.exportSession = {
     mode: "idphoto",
     resultPath: "photo",
+    previewPath: "BRANDED:photo",
     width: 295,
     height: 413,
     sizeName: "一寸",

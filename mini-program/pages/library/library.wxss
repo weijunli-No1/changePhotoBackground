@@ -1,12 +1,12 @@
 .library-header {
-  padding: 24rpx 40rpx 0;
+  padding: 20rpx 36rpx 0;
   flex-shrink: 0;
 }
 .catalog-search {
   display: flex;
   align-items: center;
   background: var(--sg-soft);
-  border-radius: 20rpx;
+  border-radius: var(--sg-radius-card);
   padding-left: 24rpx;
   min-height: 88rpx;
   color: var(--sg-muted);
@@ -15,7 +15,7 @@
   flex: 1;
   min-width: 0;
   height: 44px;
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
   color: var(--sg-text);
   margin-left: 16rpx;
 }
@@ -32,7 +32,7 @@
   height: 52px;
   min-height: 52px;
   white-space: nowrap;
-  margin-top: 24rpx;
+  margin-top: 16rpx;
 }
 .category-row {
   display: inline-flex;
@@ -43,7 +43,7 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
   margin-right: 44rpx;
   color: var(--sg-muted);
   border-bottom: 4rpx solid transparent;
@@ -54,32 +54,30 @@
   font-weight: 600;
 }
 .catalog-body {
-  padding: 0 40rpx 48rpx;
+  padding: 0 36rpx 40rpx;
 }
 .catalog-group {
-  margin-top: 32rpx;
+  margin-top: 24rpx;
 }
 .catalog-heading {
-  font-size: 34rpx;
+  font-size: var(--sg-font-section);
   font-weight: 600;
   margin-bottom: 12rpx;
 }
 .catalog-tool {
   display: flex;
   align-items: center;
-  padding: 26rpx 0;
+  padding: 18rpx 0;
   border-bottom: 1rpx solid var(--sg-line);
 }
 .catalog-icon {
-  width: 104rpx;
-  height: 104rpx;
-  border-radius: 20rpx;
-  background: var(--sg-soft);
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--sg-radius-card);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 24rpx;
-  color: var(--sg-brand);
   flex-shrink: 0;
 }
 .catalog-portrait {
@@ -93,17 +91,17 @@
   padding-right: 12rpx;
 }
 .catalog-name {
-  font-size: 30rpx;
+  font-size: var(--sg-font-label);
   font-weight: 600;
 }
 .catalog-description {
-  font-size: 24rpx;
+  font-size: var(--sg-font-note);
   line-height: 1.7;
   color: var(--sg-muted);
   margin-top: 8rpx;
 }
 .catalog-local {
-  font-size: 22rpx;
+  font-size: var(--sg-font-caption);
   color: var(--sg-muted);
   margin-top: 6rpx;
 }
@@ -132,4 +130,50 @@
 }
 .motion-tabs .category-tab.selected {
   border-color: transparent;
+}
+
+.catalog-local {
+  display: inline-flex;
+  color: var(--sg-green);
+  background: var(--sg-green-soft);
+  border-radius: var(--sg-radius-small);
+  padding: 2rpx 10rpx;
+}
+
+.category-row {
+  display: flex;
+  width: 678rpx;
+}
+.category-tab {
+  flex: 1;
+  margin-right: 0;
+  justify-content: center;
+}
+
+.catalog-local {
+  margin: 0 12rpx 0 0;
+  flex-shrink: 0;
+  font-size: var(--sg-font-caption);
+  color: var(--sg-green-ink);
+}
+
+/* Short, centered selection marker matching the V3 tabs. */
+.category-tab {
+  position: relative;
+}
+.category-tab.selected {
+  border-bottom-color: transparent;
+}
+.category-tab.selected::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 32rpx);
+  bottom: 0;
+  width: 64rpx;
+  height: 6rpx;
+  border-radius: 8rpx;
+  background: var(--sg-brand);
+}
+.motion-tabs .category-tab.selected::after {
+  opacity: 0;
 }

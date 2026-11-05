@@ -13,9 +13,11 @@ import java.time.LocalDate;
  * 用户每日配额服务实现。
  */
 @Service
+@lombok.RequiredArgsConstructor
 public class UserDailyUsageServiceImpl extends ServiceImpl<UserDailyUsageMapper, UserDailyUsage> implements UserDailyUsageService {
 
     private static final int MAX_DAILY_SAVE_COUNT = 5;
+    private final com.photo.bg.service.MembershipService membership;
 
     @Override
     public UserDailyUsage getOrCreateUsage(Long userId, LocalDate date) {
@@ -35,6 +37,7 @@ public class UserDailyUsageServiceImpl extends ServiceImpl<UserDailyUsageMapper,
 
     @Override
     public boolean checkSaveConstraint(Long userId, LocalDate date) {
+        if (membership.isMember(userId)) return true;
         UserDailyUsage usage = getOrCreateUsage(userId, date);
         if (usage.getAdViewCount() >= MAX_DAILY_SAVE_COUNT) {
             return true;

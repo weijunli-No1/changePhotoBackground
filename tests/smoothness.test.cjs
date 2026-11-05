@@ -11,7 +11,8 @@ function load(
 ) {
   const filename = path.resolve(__dirname, "../mini-program", file);
   const realRequire = createRequire(filename);
-  deps = { 'brand-preview': { create: async (_page, source) => 'BRANDED:' + source }, ...deps };
+  app.globalData.sessionToken = 'fixture-token';
+  deps = { membership: require('./helpers/membership-stub.cjs'), 'brand-preview': { create: async (_page, source) => 'BRANDED:' + source }, ...deps };
   let def;
   vm.runInNewContext(
     fs.readFileSync(filename, "utf8"),

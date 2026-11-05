@@ -5,7 +5,7 @@
   "usingComponents": {
     "t-color-picker": "tdesign-miniprogram/color-picker/color-picker",
     "navigation-bar": "/components/navigation-bar/index",
-    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-icon": "/components/local-icon/index",
     "spec-picker": "/components/spec-picker/index"
   }
 }

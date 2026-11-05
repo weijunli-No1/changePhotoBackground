@@ -5,6 +5,7 @@ function request(path, options = {}, onTask) {
       url: `${app.globalData.baseUrl.replace(/\/$/, "")}${path}`,
       timeout: 60000,
       ...options,
+      header: { ...(options.header || {}), ...(app.globalData.sessionToken ? { Authorization: "Bearer " + app.globalData.sessionToken } : {}) },
       success(res) {
         if (
           res.statusCode >= 200 &&
@@ -13,7 +14,11 @@ function request(path, options = {}, onTask) {
           typeof res.data.code === "number"
         )
           resolve(res.data);
-        else reject(new Error("服务暂不可用，请稍后重试"));
+        else {
+          const error = new Error(res.statusCode === 401 ? "登录已过期，请重新登录" : "服务暂不可用，请稍后重试");
+          if (res.statusCode === 401) { app.globalData.sessionToken = ""; error.code = 401; }
+          reject(error);
+        }
       },
       fail: () => reject(new Error("连接失败，请检查网络后重试")),
     });

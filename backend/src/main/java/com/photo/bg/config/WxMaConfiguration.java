@@ -22,6 +22,8 @@ public class WxMaConfiguration {
     private String secret;
     /** 激励视频广告位 ID。 */
     private String rewardedAdUnitId;
+    private String homeNativeAdUnitId = "";
+    private String libraryNativeAdUnitId = "";
 
     /**
      * 初始化微信小程序服务实例。

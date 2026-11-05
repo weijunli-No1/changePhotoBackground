@@ -13,7 +13,8 @@
     "pages/specs/specs",
     "pages/spec-detail/spec-detail",
     "pages/exam/exam",
-    "pages/watermark/watermark"
+    "pages/watermark/watermark",
+    "pages/member/member"
   ],
   "subpackages": [],
   "window": {

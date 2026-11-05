@@ -18,7 +18,7 @@ function load(file, overrides = {}) {
     clearTimeout,
     ...overrides,
     require: (name) =>
-      name.endsWith("/brand-preview")
+      name.endsWith("/membership") ? require("./helpers/membership-stub.cjs") : name.endsWith("/brand-preview")
         ? { create: async (_page, source) => "BRANDED:" + source }
         : (overrides.require || createRequire(filename))(name),
   });
@@ -83,7 +83,7 @@ test("选择照片取消或页面退出不误导航；重复开始只调用一�
     choices = 0,
     nav = 0;
   const p = load("pages/spec-detail/spec-detail.js", {
-    require: (n) =>
+    require: (n) => n.endsWith("/membership") ? require("./helpers/membership-stub.cjs") :
       n.endsWith("/files")
         ? {
             call: (method) => {

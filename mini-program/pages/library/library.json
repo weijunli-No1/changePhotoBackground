@@ -4,8 +4,9 @@
   "componentFramework": "glass-easel",
   "usingComponents": {
     "navigation-bar": "/components/navigation-bar/index",
-    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-icon": "/components/local-icon/index",
     "spec-picker": "/components/spec-picker/index",
-    "tool-glyph": "/components/tool-glyph/index"
+    "tool-glyph": "/components/tool-glyph/index",
+    "member-ad": "/components/member-ad/index"
   }
 }

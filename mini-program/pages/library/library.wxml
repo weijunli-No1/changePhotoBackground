@@ -1,5 +1,11 @@
+<import src="../../templates/campus.wxml" />
 <view class="page-wrap library-page">
   <navigation-bar title="全部工具" show-back="{{true}}" />
+  <view class="campus-banner"
+    ><view class="campus-banner-title"
+      >照片小事，都在这里<template is="campus-spark" /></view
+    ><template is="campus-track"
+  /></view>
   <view class="library-header">
     <view class="catalog-search"
       ><t-icon name="search" size="40rpx" /><input
@@ -43,19 +49,12 @@
       ></scroll-view
     >
   </view>
-  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
+  <scroll-view class="page-scroll" scroll-y scroll-top="{{scrollTop}}" show-scrollbar="{{false}}">
     <view class="catalog-body">
-      <view
-        wx:if="{{entryError}}"
-        class="error-inline catalog-error"
-        aria-role="alert"
+      <view wx:if="{{entryError}}" class="error-inline catalog-error" aria-role="alert"
         >{{entryError}}</view
       >
-      <view
-        wx:for="{{groups}}"
-        wx:for-item="group"
-        wx:key="id"
-        class="catalog-group"
+      <view wx:for="{{groups}}" wx:for-item="group" wx:key="id" class="catalog-group"
         ><view class="catalog-heading">{{group.name}}</view>
         <view
           wx:for="{{group.tools}}"
@@ -67,22 +66,14 @@
           aria-role="button"
           aria-label="{{item.name + '，' + item.description}}"
         >
-          <view class="catalog-icon"
-            ><image
-              wx:if="{{item.thumbnail}}"
-              src="{{item.thumbnail}}"
-              class="catalog-portrait"
-              mode="aspectFill" /><tool-glyph
-              wx:else
-              name="{{item.icon}}"
-              size="{{50}}"
+          <view class="catalog-icon tone-{{item.tone}}"
+            ><tool-glyph name="{{item.icon}}" size="{{50}}"
           /></view>
           <view class="catalog-copy"
             ><view class="catalog-name">{{item.name}}</view
-            ><view class="catalog-description">{{item.description}}</view
-            ><view wx:if="{{item.local}}" class="catalog-local"
-              >本机处理</view
-            ></view
+            ><view class="catalog-description">{{item.description}}</view></view
+          ><view wx:if="{{item.local && item.id !== 'exam'}}" class="catalog-local"
+            >本机处理</view
           ><t-icon name="chevron-right" size="32rpx" color="var(--sg-muted)" />
         </view>
       </view>
@@ -94,6 +85,7 @@
           >查看全部工具</view
         ></view
       >
+      <member-ad placement="library" />
     </view>
   </scroll-view>
   <spec-picker

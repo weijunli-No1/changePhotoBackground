@@ -16,7 +16,7 @@ function page(file, globals = {}) {
       setTimeout,
       clearTimeout,
       ...globals,
-      require: (name) => name.endsWith('/brand-preview')
+      require: (name) => name.endsWith('/membership') ? require('./helpers/membership-stub.cjs') : name.endsWith('/brand-preview')
         ? { create: async (_page, source) => 'BRANDED:' + source }
         : name.endsWith('/exam-image') ? require('../mini-program/utils/exam-image')
         : (globals.require || createRequire(filename))(name),
@@ -101,7 +101,7 @@ test("恢复蓝底草稿后换色失败，显示照片与保存底色保持一�
 });
 test("配额查询失败显示可重试状态，重试后展示真实剩余次数", async () => {
   let requests = 0;
-  const app = { globalData: { openid: "test" } };
+  const app = { globalData: { openid: "test", sessionToken: "fixture-token" } };
   const p = page("pages/profile/profile.js", {
     getApp: () => app,
     require: (name) => {

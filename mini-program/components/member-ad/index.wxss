@@ -1,0 +1,4 @@
+@import "../../styles/tokens.wxss";
+.ad-slot { height: 0; overflow: hidden; }
+.ad-slot-ready { height: auto; overflow: visible; margin-top: 40rpx; padding-bottom: 20rpx; }
+.ad-label { font-size: var(--sg-font-caption); color: var(--sg-muted); margin-bottom: 12rpx; }

@@ -185,6 +185,7 @@ function editPage({
       exportSession: {
         mode,
         resultPath: 'ORIGINAL_PATH',
+        previewPath: 'BRANDED:ORIGINAL_PATH',
         width: 295,
         height: 413,
         bgColor: '#FFFFFF',
@@ -204,6 +205,10 @@ function editPage({
         definition = value;
       },
       require: (name) => {
+        if (name.endsWith("/membership")) return {
+          refresh: async () => ({ isLifetimeMember: false, adFree: false }),
+          canShowAds: () => true, open() {},
+        };
         if (name.endsWith('/brand-preview')) return { create: async (_page, source) => 'BRANDED:' + source };
         if (name === '../../utils/api')
           return {

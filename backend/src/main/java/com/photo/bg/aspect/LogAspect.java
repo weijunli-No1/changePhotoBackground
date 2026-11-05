@@ -40,7 +40,8 @@ public class LogAspect {
         // 接收到请求，记录请求内容
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes != null ? attributes.getRequest() : null;
-        boolean watermarkImage = request != null && request.getRequestURI().endsWith("/api/photo/watermark");
+        boolean watermarkImage = request != null && (request.getRequestURI().endsWith("/api/photo/watermark")
+                || request.getRequestURI().contains("/api/member") || request.getRequestURI().contains("/wechat/member/") || request.getRequestURI().endsWith("/api/user/login"));
 
         if (request != null) {
             // 打印请求相关参数

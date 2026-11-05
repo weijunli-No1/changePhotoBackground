@@ -32,6 +32,7 @@ public class PhotoController {
 
     private final PythonApiService pythonApiService;
     private final UserService userService;
+    private final com.photo.bg.service.MemberSessionService sessions;
     private final UserDailyUsageService userDailyUsageService;
     private final WxMaService wxMaService;
 
@@ -133,24 +134,21 @@ public class PhotoController {
      */
     @PostMapping("/generate-layout")
     public Result<Map<String, Object>> generateLayoutPhotos(
-            @RequestParam(value = "openid", required = false) String openid,
+            @RequestParam("openid") String openid,
+            @RequestHeader(value="Authorization",required=false) String auth,
             @RequestParam("base64Image") String base64Image,
             @RequestParam(value = "height", required = false) Integer height,
             @RequestParam(value = "width", required = false) Integer width) {
         
-        if (openid != null && !openid.isEmpty()) {
-            User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
-            if (user != null) {
-                LocalDate today = LocalDate.now();
-                boolean canSave = userDailyUsageService.checkSaveConstraint(user.getId(), today);
-                if (!canSave) {
-                    return Result.error(SAVE_LIMIT_REACHED_CODE, "今日免费保存次数已达上限");
-                }
-                userDailyUsageService.recordSave(user.getId(), today);
-            }
+        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
+        sessions.requireOwner(auth, user);
+        LocalDate today = LocalDate.now();
+        if (!userDailyUsageService.checkSaveConstraint(user.getId(), today)) {
+            return Result.error(SAVE_LIMIT_REACHED_CODE, "今日免费保存次数已达上限");
         }
 
         Map<String, Object> result = pythonApiService.generateLayoutPhotos(base64Image, height, width);
+        if (result != null && !Boolean.FALSE.equals(result.get("status"))) userDailyUsageService.recordSave(user.getId(), today);
         return Result.success(result);
     }
 }

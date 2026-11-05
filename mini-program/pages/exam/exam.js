@@ -17,7 +17,7 @@ Page({
     positionX: 50,
     positionY: 50,
     adjusting: false,
-    accentColor: "#2563eb",
+    accentColor: "#2358ee",
     resultWidth: 0,
     resultHeight: 0,
     cropReady: false,
@@ -32,7 +32,7 @@ Page({
     this._revision = 0;
     this._themeChange = ({ theme }) => {
       if (!this._unloaded)
-        this.setData({ accentColor: theme === "dark" ? "#78cbb4" : "#2563eb" });
+        this.setData({ accentColor: theme === "dark" ? "#91b4ff" : "#2358ee" });
     };
     if (wx.getAppBaseInfo) this._themeChange(wx.getAppBaseInfo());
     if (wx.onThemeChange) wx.onThemeChange(this._themeChange);

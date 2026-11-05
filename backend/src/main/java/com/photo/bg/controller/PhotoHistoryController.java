@@ -30,6 +30,7 @@ public class PhotoHistoryController {
     private final PhotoHistoryService photoHistoryService;
     private final MinioStorageService minioStorageService;
     private final UserService userService;
+    private final com.photo.bg.service.MemberSessionService sessions;
     private final UserDailyUsageService userDailyUsageService;
 
     /**
@@ -39,12 +40,13 @@ public class PhotoHistoryController {
      * @return 保存后的历史记录
      */
     @PostMapping("/save")
-    public Result<PhotoHistory> saveHistory(@RequestBody HistorySaveParam param) {
+    public Result<PhotoHistory> saveHistory(@RequestBody HistorySaveParam param, @RequestHeader(value="Authorization",required=false) String auth) {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, param.getOpenid()));
         if (user == null) {
             return Result.error(UNAUTHORIZED_CODE, "用户未登录");
         }
 
+        sessions.requireOwner(auth, user);
         LocalDate today = LocalDate.now();
         boolean canSave = userDailyUsageService.checkSaveConstraint(user.getId(), today);
         if (!canSave) {

@@ -1,3 +1,4 @@
+@import "../../styles/tokens.wxss";
 :host {
   display: block;
 }
@@ -15,7 +16,7 @@
   background: transparent;
   color: var(--sg-text, #1e293b);
   font-weight: 400;
-  font-size: 28rpx;
+  font-size: var(--sg-font-body);
   line-height: 1.6;
   display: flex;
   align-items: center;
@@ -41,7 +42,7 @@
 .faq-answer {
   padding: 0 0 28rpx;
   color: var(--sg-muted, #5b6b82);
-  font-size: 26rpx;
+  font-size: var(--sg-font-body);
   line-height: 1.9;
 }
 .faq-arrow {
@@ -52,7 +53,7 @@
   transform: rotate(180deg);
 }
 .pressed {
-  opacity: 0.75;
+  opacity: 0.7;
 }
 @media (prefers-color-scheme: dark) {
   .faq-item .faq-question {

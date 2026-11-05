@@ -24,7 +24,7 @@ Page({
     textStyle: "",
     spacingStyle: "",
     rowStyle: "",
-    accentColor: "#2563eb",
+    accentColor: "#2358ee",
     templates: ["仅供报名使用", "仅供办理业务", "仅供复印使用"],
     rows: [0, 1, 2, 3, 4, 5, 6, 7, 8],
     columns: [0, 1, 2],
@@ -40,7 +40,7 @@ Page({
     this.checkService();
     this._themeChange = ({ theme }) => {
       if (!this._unloaded)
-        this.setData({ accentColor: theme === "dark" ? "#78cbb4" : "#2563eb" });
+        this.setData({ accentColor: theme === "dark" ? "#91b4ff" : "#2358ee" });
     };
     if (wx.getAppBaseInfo) this._themeChange(wx.getAppBaseInfo());
     if (wx.onThemeChange) wx.onThemeChange(this._themeChange);
@@ -60,19 +60,26 @@ Page({
       });
       try {
         await files.call("getImageInfo", { src: draft.sourcePath });
-        if (draft.resultPath) {
-          await files.call("getImageInfo", { src: draft.resultPath });
-          if (!this._unloaded)
-            this.setData({
-              resultSize: files.formatBytes(
-                await files.fileSize(draft.resultPath),
-              ),
-            });
-        }
       } catch (error) {
         if (!this._unloaded)
-          this.setData({ resultPath: "", error: "草稿图片不可用，请重新选图" });
+          this.setData({ sourcePath: "", resultPath: "", resultSize: "", error: "草稿原图不可用，请重新选图" });
+        return;
       }
+      if (this._unloaded) return;
+      if (draft.resultPath) {
+        try {
+          await files.call("getImageInfo", { src: draft.resultPath });
+          const bytes = await files.fileSize(draft.resultPath);
+          if (!this._unloaded)
+            this.setData({
+              resultSize: files.formatBytes(bytes),
+            });
+        } catch (error) {
+          if (!this._unloaded)
+            this.setData({ resultPath: "", resultSize: "", error: "生成结果已失效，原图和样式已保留，请重新生成" });
+        }
+      }
+      this.updatePreview();
     }
   },
   onReady() {
@@ -115,7 +122,7 @@ Page({
     );
   },
   async choosePhoto() {
-    if (this.data.processing || this.data.opening || this._choosing) return;
+    if (this._unloaded || this.data.processing || this.data.opening || this._choosing) return;
     this._choosing = true;
     try {
       const media = await files.call("chooseMedia", {
@@ -225,6 +232,7 @@ Page({
   async generate() {
     if (
       this._unloaded ||
+      this._choosing ||
       this.data.processing ||
       this.data.opening ||
       !this.data.sourcePath
@@ -289,11 +297,13 @@ Page({
     }
   },
   primary() {
+    if (!this.data.sourcePath) return this.choosePhoto();
     return this.data.resultPath ? this.goExport() : this.generate();
   },
   async goExport() {
     if (
       this._unloaded ||
+      this._choosing ||
       this.data.processing ||
       this.data.opening ||
       !this.data.resultPath

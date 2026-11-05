@@ -2,6 +2,6 @@
   "component": true,
   "componentFramework": "glass-easel",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "t-icon": "/components/local-icon/index"
   }
 }

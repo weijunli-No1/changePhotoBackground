@@ -10,3 +10,6 @@ backend/target/
 
 # 本地生成的测试素材与临时产物
 /output/
+
+# 仅供本机后端读取的支付配置，不进入版本控制或构建资源
+/backend/.secrets/

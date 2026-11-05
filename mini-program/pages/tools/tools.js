@@ -15,7 +15,7 @@ Page({
     cropImageStyle: "",
     cropFallbackTransform: "",
     cropPreviewReady: false,
-    accentColor: "#2563eb",
+    accentColor: "#2358ee",
     error: "",
     errorRecovery: "reselect",
     quality: 85,
@@ -52,7 +52,7 @@ Page({
     this._unloaded = false;
     this._themeChange = ({ theme }) => {
       if (!this._unloaded)
-        this.setData({ accentColor: theme === "dark" ? "#78cbb4" : "#2563eb" });
+        this.setData({ accentColor: theme === "dark" ? "#91b4ff" : "#2358ee" });
     };
     if (wx.getAppBaseInfo) this._themeChange(wx.getAppBaseInfo());
     if (wx.onThemeChange) wx.onThemeChange(this._themeChange);
@@ -97,6 +97,7 @@ Page({
   },
   async choosePhoto() {
     if (
+      this._unloaded ||
       this.data.processing ||
       this.data.opening ||
       this.data.adjusting ||
@@ -112,15 +113,9 @@ Page({
         sizeType: ["original"],
       });
       if (this._unloaded) return;
-      this._draftId = drafts.createId();
-      this.setData({
-        angle: 0,
-        ratio: 0,
-        ratioName: "原比例",
-        positionX: 50,
-        positionY: 50,
-      });
-      await this.loadSource(res.tempFiles[0].tempFilePath);
+      const photo = res.tempFiles && res.tempFiles[0];
+      if (!photo || !photo.tempFilePath) throw Error("未能读取照片");
+      await this.loadSource(photo.tempFilePath, true);
     } catch (error) {
       if (!/cancel/.test(error.errMsg || "") && !this._unloaded)
         this.setData({ error: "无法选择照片，请重试" });
@@ -128,20 +123,29 @@ Page({
       this._choosing = false;
     }
   },
-  async loadSource(path) {
+  async loadSource(path, replacing = false) {
+    if (this._unloaded) return;
     this.setData({
       processing: true,
-      resultPath: "",
-      resultSize: "",
-      displayPath: "",
-      cropPreviewReady: false,
+      ...(!replacing ? {
+        resultPath: "", resultSize: "", displayPath: "", cropPreviewReady: false,
+      } : {}),
       error: "",
+      openingError: "",
     });
     try {
       const info = await files.call("getImageInfo", { src: path });
       const size = await files.fileSize(path);
       if (this._unloaded) return;
+      if (replacing) this._draftId = drafts.createId();
       this.setData({
+        ...(replacing ? {
+          angle: 0,
+          ratio: 0,
+          ratioName: "原比例",
+          positionX: 50,
+          positionY: 50,
+        } : {}),
         processing: false,
         sourcePath: path,
         displayPath: path,
@@ -149,6 +153,8 @@ Page({
         sourceWidth: info.width,
         sourceHeight: info.height,
         resultPath: "",
+        resultSize: "",
+        cropPreviewReady: false,
         error: "",
       });
       if (this._ready) await this.apply();
@@ -156,9 +162,13 @@ Page({
       if (!this._unloaded)
         this.setData({
           processing: false,
-          sourcePath: "",
-          sourceSize: "",
-          error: "原图不可用，请重新选择",
+          ...(!replacing ? {
+            sourcePath: "", sourceSize: "", resultPath: "",
+            resultSize: "", displayPath: "", cropPreviewReady: false,
+          } : {}),
+          error: replacing && this.data.sourcePath
+            ? "新照片读取失败，已保留当前照片和设置，请重新选择"
+            : "原图不可用，请重新选择",
           errorRecovery: "reselect",
         });
     }
@@ -447,6 +457,7 @@ Page({
   async goExport() {
     if (
       this._unloaded ||
+      this._choosing ||
       this.data.processing ||
       this.data.adjusting ||
       !this.data.resultPath ||
@@ -485,15 +496,39 @@ Page({
       if (!navigating) finish();
     }
   },
+  primary() {
+    return this.data.sourcePath ? this.goExport() : this.choosePhoto();
+  },
   makeIdPhoto() {
     if (
+      !this._unloaded &&
+      !this._choosing &&
+      !this._opening &&
       !this.data.processing &&
       !this.data.opening &&
       !this.data.adjusting &&
       this.data.resultPath
-    )
-      wx.navigateTo({
-        url: `/pages/edit/edit?src=${encodeURIComponent(this.data.resultPath)}`,
-      });
+    ) {
+      this._opening = true;
+      this.setData({ opening: true, openingError: "" });
+      const finish = () => {
+        this._opening = false;
+        if (!this._unloaded) this.setData({ opening: false });
+      };
+      const fail = () => {
+        if (!this._unloaded)
+          this.setData({ openingError: "未能打开证件照制作，请重试" });
+      };
+      try {
+        wx.navigateTo({
+          url: `/pages/edit/edit?src=${encodeURIComponent(this.data.resultPath)}`,
+          fail,
+          complete: finish,
+        });
+      } catch (error) {
+        fail();
+        finish();
+      }
+    }
   },
 });

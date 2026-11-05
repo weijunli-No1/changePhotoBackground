@@ -1,6 +1,6 @@
 const catalog = require("./tool-catalog");
 const { call } = require("./files");
-const { validateSize } = require("./photo-specs");
+const { validateSize, sizes } = require("./photo-specs");
 // 仅 portrait 入口进入现有证件照链路；文档等新工具使用独立 page 入口。
 module.exports = {
   openToolEntry(e) {
@@ -13,8 +13,7 @@ module.exports = {
     if (tool.entry.type === "portrait") {
       this.setData({
         specVisible: true,
-        specTitle:
-          tool.id === "background" ? "更换底色：选择规格" : "选择照片规格",
+        specTitle: tool.id === "background" ? "更换底色：选择规格" : "选择照片规格",
       });
       return;
     }
@@ -22,8 +21,7 @@ module.exports = {
     wx.navigateTo({
       url: tool.entry.url,
       fail: () => {
-        if (!this._unloaded)
-          this.setData({ entryError: "工具暂时无法打开，请重新点击" });
+        if (!this._unloaded) this.setData({ entryError: "工具暂时无法打开，请重新点击" });
       },
       complete: () => {
         this._openingTool = false;
@@ -40,11 +38,11 @@ module.exports = {
     if (this._openingTool || this._choosing || this._unloaded) return;
     this.setData({ specVisible: false });
     this._openingTool = true;
+    const size = this.data.size || sizes[0];
     wx.navigateTo({
-      url: "/pages/specs/specs",
+      url: `/pages/specs/specs?tool=${this._activeTool === "background" ? "background" : "idphoto"}&width=${size.width}&height=${size.height}&name=${encodeURIComponent(size.name)}`,
       fail: () => {
-        if (!this._unloaded)
-          this.setData({ entryError: "规格目录未能打开，请重试" });
+        if (!this._unloaded) this.setData({ entryError: "规格目录未能打开，请重试" });
       },
       complete: () => {
         this._openingTool = false;
@@ -76,8 +74,7 @@ module.exports = {
       });
       if (this._unloaded) return;
       const photo = media.tempFiles && media.tempFiles[0];
-      if (!photo || !photo.tempFilePath)
-        throw new Error("未能读取照片，请重新选择");
+      if (!photo || !photo.tempFilePath) throw new Error("未能读取照片，请重新选择");
       this._openingTool = true;
       wx.navigateTo({
         url: `/pages/edit/edit?src=${encodeURIComponent(photo.tempFilePath)}&width=${size.width}&height=${size.height}&name=${encodeURIComponent(size.name)}&tool=${tool.id}`,

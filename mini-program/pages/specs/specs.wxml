@@ -1,5 +1,10 @@
+<import src="../../templates/campus.wxml" />
 <view class="page-wrap specs-page">
   <navigation-bar title="选择照片规格" show-back="{{true}}" />
+  <view class="campus-banner"
+    ><view class="campus-banner-title">为照片选个规格<template is="campus-spark" /></view
+    ><template is="campus-track"
+  /></view>
   <view class="spec-search-wrap">
     <view class="spec-search"
       ><t-icon name="search" size="36rpx" /><input
@@ -39,58 +44,78 @@
   >
     <view class="spec-list">
       <view wx:if="{{query}}" class="result-count">找到 {{count}} 项规格</view>
-      <view wx:if="{{error}}" class="error-inline" aria-role="alert"
-        >{{error}}</view
-      >
-      <view
-        wx:for="{{groups}}"
-        wx:for-item="group"
-        wx:key="id"
-        class="spec-group"
+      <view wx:if="{{error}}" class="error-inline" aria-role="alert">{{error}}</view>
+      <view wx:for="{{groups}}" wx:for-item="group" wx:key="id" class="spec-group"
         ><view class="group-heading">{{group.name}}</view
         ><view class="spec-rows"
           ><view
             wx:for="{{group.items}}"
             wx:key="id"
-            class="spec-row"
+            class="spec-row {{item.category === 'common' && item.width === selectedSize.width && item.height === selectedSize.height ? 'selected' : ''}}"
             data-id="{{item.id}}"
-            bindtap="showDetail"
+            bindtap="{{item.category === 'common' ? 'selectCommon' : 'showDetail'}}"
             hover-class="pressed"
             aria-role="button"
             aria-label="{{item.name + '，' + item.dimensionLabel}}"
+            ><view wx:if="{{item.category === 'common'}}" class="spec-format-icon"
+              ><t-icon name="portrait" size="48rpx" /></view
             ><view class="spec-row-copy"
               ><view class="spec-row-name">{{item.name}}</view
               ><view class="spec-row-note">{{item.dimensionLabel}}</view
               ><view class="spec-row-note background-note"
                 >{{item.background}}</view
               ></view
-            ><t-icon name="chevron-right" size="32rpx" /></view></view
+            ><t-icon
+              name="{{item.category !== 'common' ? 'chevron-right' : item.width === selectedSize.width && item.height === selectedSize.height ? 'check-circle-filled' : 'circle'}}"
+              size="36rpx"
+              color="{{item.category === 'common' && item.width === selectedSize.width && item.height === selectedSize.height ? 'var(--sg-brand)' : 'var(--sg-muted)'}}" /></view></view
       ></view>
       <view wx:if="{{!count}}" class="empty-state"
         ><view class="empty-title">没有找到这个考试</view
-        ><view class="empty-desc"
-          >试试“国考”“四六级”“一建”，或按报名要求自定义尺寸。</view
+        ><view class="empty-desc">试试“国考”“四六级”“一建”，或按报名要求自定义尺寸。</view
         ><view
           wx:if="{{category !== 'all'}}"
           class="secondary"
           bindtap="broadenSearch"
           aria-role="button"
           >在全部分类搜索</view
-        ><view
-          wx:else
-          class="secondary"
-          bindtap="clearSearch"
-          aria-role="button"
+        ><view wx:else class="secondary" bindtap="clearSearch" aria-role="button"
           >清空搜索</view
         ></view
       >
     </view>
   </scroll-view>
-  <view class="footer-actions"
-    ><view class="secondary custom-entry" bindtap="custom" aria-role="button"
-      ><t-icon name="add" size="36rpx" /><text>自定义尺寸</text></view
-    ></view
-  >
+  <view class="footer-actions specs-footer">
+    <view class="spec-advice"
+      ><t-icon name="info-circle-filled" size="26rpx" /><text
+        >请以当次报名公告为准</text
+      ></view
+    >
+    <view class="selection-summary"
+      ><view class="selected-copy"
+        ><text class="selected-name">已选：{{selectedSize.name}}</text
+        ><text class="selected-pixels"
+          >{{selectedSize.width}} × {{selectedSize.height}} px</text
+        ></view
+      ><view
+        class="custom-entry"
+        bindtap="custom"
+        aria-role="button"
+        hover-class="pressed"
+        >自定义尺寸<t-icon name="chevron-right" size="26rpx" /></view
+    ></view>
+    <view
+      class="primary {{choosing ? 'disabled' : ''}}"
+      bindtap="confirmSelection"
+      aria-role="button"
+      aria-disabled="{{choosing}}"
+      hover-class="pressed"
+      >{{choosing ? '正在选择照片…' : selectOnly ? '应用所选规格' : '选择照片'}}<t-icon
+        wx:if="{{!choosing}}"
+        name="arrow-right"
+        size="32rpx"
+    /></view>
+  </view>
   <spec-picker
     show-catalog="{{false}}"
     visible="{{specVisible}}"

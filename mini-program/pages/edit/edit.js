@@ -37,12 +37,10 @@ Page({
     this._draftId = options.draft || drafts.createId();
     const draft = options.draft ? drafts.get(options.draft) : null;
     this._examSpec = getSpec(draft ? draft.specId : options.spec);
-    if (this._examSpec && this._examSpec.category === "common")
-      this._examSpec = null;
+    if (this._examSpec && this._examSpec.category === "common") this._examSpec = null;
     this.setData({
       toolId:
-        (draft && draft.toolId === "background") ||
-        options.tool === "background"
+        (draft && draft.toolId === "background") || options.tool === "background"
           ? "background"
           : "idphoto",
     });
@@ -122,11 +120,9 @@ Page({
   },
   updatePanelMotion() {
     if (this._motion)
-      this._motion.indicator(
-        ".editor-tabs",
-        ".editor-tab.active",
-        ".editor-indicator",
-      );
+      this._motion.indicator(".editor-tabs", ".editor-tab.active", ".editor-indicator", {
+        maxWidth: 32,
+      });
   },
   onHide() {
     if (!this.data.opening) this.persistDraft();
@@ -152,8 +148,7 @@ Page({
     if (panel === "size") this.setData({ specVisible: true });
   },
   showSpecs() {
-    if (!this._mattingBusy && !this.data.opening)
-      this.setData({ specVisible: true });
+    if (!this._mattingBusy && !this.data.opening) this.setData({ specVisible: true });
   },
   closeSpecs() {
     this.setData({ specVisible: false });
@@ -162,15 +157,13 @@ Page({
     if (this.data.processing || this.data.opening) return;
     this.setData({ specVisible: false });
     wx.navigateTo({
-      url: "/pages/specs/specs?select=1",
+      url: `/pages/specs/specs?select=1&width=${this.data.size.width}&height=${this.data.size.height}&name=${encodeURIComponent(this.data.size.name)}&tool=${this.data.toolId}&spec=${this._examSpec ? this._examSpec.id : ""}`,
       success: (res) =>
         res.eventChannel.on("selected", (value) => {
-          if (!this._unloaded && value.size)
-            this.selectSpec({ detail: value.size });
+          if (!this._unloaded && value.size) this.selectSpec({ detail: value.size });
         }),
       fail: () => {
-        if (!this._unloaded)
-          this.setData({ error: "规格目录未能打开，请重试" });
+        if (!this._unloaded) this.setData({ error: "规格目录未能打开，请重试" });
       },
     });
   },
@@ -178,14 +171,11 @@ Page({
     if (this.data.opening || this._mattingBusy || this._unloaded) return;
     const size = e.detail;
     const selected = getSpec(size.specId);
-    const examSpec =
-      selected && selected.category !== "common" ? selected : null;
+    const examSpec = selected && selected.category !== "common" ? selected : null;
     const sameRules =
-      ((this._examSpec && this._examSpec.id) || "") ===
-      ((examSpec && examSpec.id) || "");
+      ((this._examSpec && this._examSpec.id) || "") === ((examSpec && examSpec.id) || "");
     const sameDimensions =
-      size.width === this.data.size.width &&
-      size.height === this.data.size.height;
+      size.width === this.data.size.width && size.height === this.data.size.height;
     this._examSpec = examSpec;
     this.setData({ specVisible: false, panel: "color" });
     this.setData({ size });
@@ -208,24 +198,19 @@ Page({
       error: "",
       errorRecovery: "retry",
       resultPath: "",
+      // A new source must never keep displaying the previous photo on failure.
+      previewPath: "",
     });
     try {
-      const data = await api.upload(
-        this.data.sourcePath,
-        this.data.size,
-        (task) => {
-          this._activeTask = task;
-        },
-      );
+      const data = await api.upload(this.data.sourcePath, this.data.size, (task) => {
+        this._activeTask = task;
+      });
       if (this._unloaded || seq !== this._seq) return;
       const transparent = files.cleanBase64(
         data.image_base64_hd || data.image_base64_standard,
       );
       if (!transparent) throw new Error("没有生成有效照片，请换一张正面照片");
-      const transparentPath = await files.writeBase64(
-        transparent,
-        "transparent",
-      );
+      const transparentPath = await files.writeBase64(transparent, "transparent");
       if (this._unloaded || seq !== this._seq) {
         files.removeTemp(transparentPath);
         return;
@@ -295,8 +280,7 @@ Page({
           },
         ),
       );
-      if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq)
-        return;
+      if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq) return;
       if (!data || data.status === false) throw new Error("换底色失败，请重试");
       let path = await files.writeBase64(data.image_base64, "photo");
       if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq) {
@@ -329,11 +313,7 @@ Page({
       });
       this.persistDraft();
     } catch (error) {
-      if (
-        !this._unloaded &&
-        seq === this._colorSeq &&
-        sourceSeq === this._seq
-      ) {
+      if (!this._unloaded && seq === this._colorSeq && sourceSeq === this._seq) {
         this._activeTask = null;
         this._requestedColor = "";
         this._failedColor = color;
@@ -436,7 +416,8 @@ Page({
     return this.processTransparentImage();
   },
   async reselect() {
-    if (this.data.processing || this.data.opening) return;
+    if (this.data.processing || this.data.opening || this._choosing || this._adjusting || this._unloaded) return;
+    this._choosing = true;
     try {
       const res = await files.call("chooseMedia", {
         count: 1,
@@ -445,17 +426,22 @@ Page({
         sizeType: ["original"],
       });
       if (this._unloaded) return;
+      const photo = res.tempFiles && res.tempFiles[0];
+      if (!photo || !photo.tempFilePath) throw Error("未能读取照片，请重新选择");
       this._draftId = drafts.createId();
-      this.setData({ sourcePath: res.tempFiles[0].tempFilePath });
+      this.setData({ sourcePath: photo.tempFilePath });
       this.processTransparentImage();
     } catch (error) {
-      if (!/cancel/.test(error.errMsg || ""))
+      if (!this._unloaded && !/cancel/i.test(error.errMsg || ""))
         wx.showToast({ title: "选择照片失败", icon: "none" });
+    } finally {
+      this._choosing = false;
     }
   },
   adjustPhoto() {
-    if (this.data.processing || this.data.opening || !this.data.sourcePath)
-      return;
+    if (this.data.processing || this.data.opening || this._choosing || this._adjusting || this._unloaded || !this.data.sourcePath) return;
+    this._adjusting = true;
+    this.setData({ openingError: "" });
     wx.navigateTo({
       url: `/pages/tools/tools?mode=crop&src=${encodeURIComponent(this.data.sourcePath)}&returnToEditor=1`,
       success: (res) => {
@@ -465,6 +451,10 @@ Page({
           this.processTransparentImage();
         });
       },
+      fail: () => {
+        if (!this._unloaded) this.setData({ openingError: "裁剪页未能打开，请重试" });
+      },
+      complete: () => { this._adjusting = false; },
     });
   },
   snapshot() {
@@ -514,12 +504,7 @@ Page({
     }
   },
   async goExport() {
-    if (
-      this._unloaded ||
-      this._opening ||
-      this.data.processing ||
-      !this.data.resultPath
-    )
+    if (this._unloaded || this._opening || this.data.processing || !this.data.resultPath)
       return;
     this._opening = true;
     this.setData({ opening: true, openingError: "" });
