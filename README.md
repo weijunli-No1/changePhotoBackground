@@ -134,11 +134,9 @@ mvn spring-boot:run
 4. 构建 npm（工具栏 → 工具 → 构建 npm）
 5. 编译运行
 
-2026-11-03 联调：小程序统一使用服务器当前可用入口 `https://www.myhaibin.top/new-api`；例如登录地址为 `/new-api/api/user/login`。已核实 `/new-api/api/app/config` 返回照片服务 JSON。计划迁移的 `/shiguang-api` 当前返回管理端 HTML，尚不能用于联调。微信事件回调的新前缀仍须按迁移方案完成服务端部署后启用。
+统一入口配置为 `https://www.myhaibin.top/shiguang-api`，覆盖所有业务接口及微信回调；不使用 `/new-api` 兼容路径。微信回调地址为 `https://www.myhaibin.top/shiguang-api/wechat/member/push`。
 
-2026-11-04 已修复远端隧道 IP 变化引起的 Nginx 502；公网仍使用 `/new-api`，登录、额度和作品查询已复测正常。会员接口在远端尚未部署。见 [转发故障修复记录](docs/Nginx转发故障修复-20261104.md)。
-
-Nginx 合并示例见 `backend/deploy/nginx-shiguang.conf.example`；部署前核对后端实际端口，保留业务 `proxy_pass` 末尾的 `/` 以剥离公网前缀。配置示例用于后续迁移；小程序已恢复当前可用的 `/new-api` 入口，迁移完成并验证后再统一切换。迁移步骤见 [全部业务接口迁移说明](docs/全部业务接口迁移-20261027.md)。
+Nginx 配置见 `backend/deploy/nginx-shiguang.conf.example`，使用动态 DNS 转发至本机后端的公网隧道。上线时需移除旧前缀下本项目的专用路由，保留其他服务的转发，并执行 `nginx -t`、reload 和公网验证。2026-11-08 已完成服务器切换：新配置接口与水印接口验证成功，旧配置接口返回 404，其他服务管理页面保持正常；小程序源码已切换，需重新预览或发布后生效。历史故障记录见 [转发故障修复记录](docs/Nginx转发故障修复-20261104.md)。
 
 ## 手动广告与永久会员（本地开发）
 

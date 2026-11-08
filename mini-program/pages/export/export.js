@@ -5,6 +5,13 @@ const files = require("../../utils/files");
 const brandPreview = require("../../utils/brand-preview");
 const { createRewardedVideoPlayer } = require("../../utils/rewarded-video");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜制作并保存证件照", path: "/pages/index/index" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜制作并保存证件照", query: "" };
+  },
+
   data: {
     memberKnown: false,
     memberLoading: false,

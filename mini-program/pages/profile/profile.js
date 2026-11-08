@@ -5,6 +5,13 @@ const { call } = require("../../utils/files");
 const membership = require("../../utils/membership");
 const profiles = require("../../utils/user-profile");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜你的随身照片工具", path: "/pages/index/index" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜你的随身照片工具", query: "" };
+  },
+
   data: {
     memberKnown: false,
     memberLoading: false,

@@ -1,12 +1,15 @@
-# 以下一个 location 加到 www.myhaibin.top 已有的 HTTPS server 块。
-# 127.0.0.1:8080 为 application.yml 默认值，应用前必须核对照片后端实际端口。
-
-# 所有业务 API 和微信回调共用入口。proxy_pass 的末尾 / 必须保留：
-# /shiguang-api/api/user/login -> /api/user/login
-# /shiguang-api/wechat/member/push -> /wechat/member/push（GET/POST 均适用）
+# 加到 www.myhaibin.top 现有 HTTPS server 块；目标为本机后端的公网隧道。
+# 从 /new-api/ 下删除本项目专用的照片、用户、作品、配置、会员和回调 location。
+# 保留其他服务自己的 /new-api/ 通用转发，不添加旧前缀兼容或重定向。
+# 核对隧道地址后使用；不要把这里误指向 Nginx 服务器自己的 8080。
 location ^~ /shiguang-api/ {
     client_max_body_size 50m;
-    proxy_pass http://127.0.0.1:8080/;
+    # 动态解析隧道域名，避免公网 IP 改变后保留旧地址。
+    resolver 183.60.83.19 183.60.82.98 valid=60s ipv6=off;
+    set $shiguang_backend http://1ln0498ig7766.vicp.fun:58079;
+    rewrite ^/shiguang-api/(.*)$ /$1 break;
+    # 变量 proxy_pass 不带 URI，沿用 rewrite 后路径及原请求参数。
+    proxy_pass $shiguang_backend;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

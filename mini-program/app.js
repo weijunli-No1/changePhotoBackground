@@ -7,7 +7,7 @@ App({
     nativeAdUnits: {},
     membershipEnabled: null,
     openid: "",
-    baseUrl: "https://www.myhaibin.top/new-api", // Nginx 公网入口，由服务器转发到远端照片服务；不要填写隧道直连地址
+    baseUrl: "https://www.myhaibin.top/shiguang-api", // Nginx 公网入口，由服务器转发到远端照片服务；不要填写隧道直连地址
     rewardedVideoAdUnitIdOverride: "adunit-8643a04d0caed362", // 当前版本指定广告位，避免线上旧配置覆盖
     defaultRewardedVideoAdUnitId: "",
     rewardedVideoAdUnitId: "",

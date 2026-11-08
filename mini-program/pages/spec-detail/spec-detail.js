@@ -1,6 +1,13 @@
 const specs = require("../../utils/photo-specs");
 const files = require("../../utils/files");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜证件照规格详情", path: this.data.spec ? "/pages/spec-detail/spec-detail?id=" + encodeURIComponent(this.data.spec.id) : "/pages/specs/specs" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜证件照规格详情", query: this.data.spec ? "id=" + encodeURIComponent(this.data.spec.id) : "" };
+  },
+
   data: {
     spec: null,
     choosing: false,

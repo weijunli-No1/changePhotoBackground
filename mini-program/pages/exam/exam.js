@@ -5,6 +5,13 @@ const { prepare } = require("../../utils/exam-image");
 const { cropRect } = require("../../utils/image-transform");
 const brandPreview = require("../../utils/brand-preview");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜考试报名照片制作", path: this.data.spec ? "/pages/exam/exam?spec=" + encodeURIComponent(this.data.spec.id) : "/pages/specs/specs" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜考试报名照片制作", query: this.data.spec ? "spec=" + encodeURIComponent(this.data.spec.id) : "" };
+  },
+
   data: {
     spec: null,
     sourcePath: "",

@@ -2,6 +2,13 @@ const files = require("../../utils/files");
 const api = require("../../utils/api");
 const drafts = require("../../utils/drafts");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜为图片添加水印", path: "/pages/watermark/watermark" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜为图片添加水印", query: "" };
+  },
+
   data: {
     sourcePath: "",
     resultPath: "",

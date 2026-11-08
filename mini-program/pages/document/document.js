@@ -34,6 +34,13 @@ const AGREEMENT_CONTENT = `欢迎使用拾光小相。
 
 6. 网络异常、相册授权或设备能力可能影响处理和保存。遇到问题可保留草稿后重试，或通过“我的—帮助与客服”反馈。`;
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜使用须知与隐私政策", path: "/pages/document/document" + "?" + ("type=" + (this.data.title === "用户须知" ? "agreement" : "privacy")) };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜使用须知与隐私政策", query: "type=" + (this.data.title === "用户须知" ? "agreement" : "privacy") };
+  },
+
   data: { title: '', content: '' },
   onLoad(options) {
     const privacy = options.type !== 'agreement';

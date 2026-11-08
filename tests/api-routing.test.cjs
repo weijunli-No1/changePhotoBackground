@@ -49,7 +49,7 @@ test("启动配置、登录及所有业务请求使用当前服务器入口，�
     ["/api/member/orders", "POST"],
     ["/api/member/orders/M123", "GET"],
   ];
-  const base = "https://www.myhaibin.top/new-api";
+  const base = "https://www.myhaibin.top/shiguang-api";
   for (const [route, method] of routes) {
     await api.request(route, { method, data: { openid: "test-user" }, header: { "content-type": "application/json" } });
     const request = requests.at(-1);
@@ -69,5 +69,5 @@ test("启动配置、登录及所有业务请求使用当前服务器入口，�
   assert.equal(uploads[0].filePath, "portrait.jpg");
   assert.equal(uploads[0].formData.width, 295);
   assert.equal(uploads[1].formData.text, "test");
-  assert.ok(requests.every(item => !item.url.includes("/shiguang-api")));
+  assert.ok(requests.every(item => !item.url.includes("/new-api")));
 });

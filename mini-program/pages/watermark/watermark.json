@@ -5,5 +5,7 @@
   "usingComponents": {
     "navigation-bar": "/components/navigation-bar/index",
     "t-icon": "/components/local-icon/index"
-  }
+  },
+  "enableShareAppMessage": true,
+  "enableShareTimeline": true
 }

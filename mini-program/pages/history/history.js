@@ -5,6 +5,13 @@ const drafts = require("../../utils/drafts");
 const catalog = require("../../utils/tool-catalog");
 const { call } = require("../../utils/files");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜记录你的照片作品", path: "/pages/index/index" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜记录你的照片作品", query: "" };
+  },
+
   data: {
     tab: "drafts",
     drafts: [],

@@ -3,6 +3,13 @@ const catalog = require("../../utils/tool-catalog");
 const launcher = require("../../utils/tool-launcher");
 const { sizes } = require("../../utils/photo-specs");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜证件照与图片工具", path: "/pages/index/index" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜证件照与图片工具", query: "" };
+  },
+
   data: {
     draft: null,
     quickTools: catalog.quickTools(),

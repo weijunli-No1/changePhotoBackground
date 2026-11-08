@@ -2,6 +2,13 @@ const specs = require("../../utils/photo-specs");
 const files = require("../../utils/files");
 const { createMotion } = require("../../utils/skyline-motion");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜查找证件照规格", path: "/pages/specs/specs" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜查找证件照规格", query: "" };
+  },
+
   data: {
     query: "",
     category: "all",

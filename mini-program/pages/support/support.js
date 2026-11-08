@@ -1,6 +1,13 @@
 const { faqs, deviceSummary } = require("../../utils/support");
 const { call } = require("../../utils/files");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜帮助与客服", path: "/pages/support/support" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜帮助与客服", query: "" };
+  },
+
   data: {
     faqs,
     expanded: "",

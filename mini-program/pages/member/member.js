@@ -3,6 +3,13 @@ const api = require("../../utils/api");
 const membership = require("../../utils/membership");
 const { call } = require("../../utils/files");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜永久会员", path: "/pages/member/member" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜永久会员", query: "" };
+  },
+
   data: { checking: true, unavailable: false, statusKnown: false, busy: false, isMember: false, price: "", purchaseEnabled: false, pendingOrder: false, agreed: false, termsExpanded: false, termsAnchor: "", error: "", notice: "", supportError: "" },
   onLoad() { this._unloaded = false; },
   onShow() { if (!this._purchasing) this.reload(); },

@@ -6,6 +6,13 @@ const { sizes, validateSize, getSpec } = require("../../utils/photo-specs");
 const brandPreview = require("../../utils/brand-preview");
 const { prepare: prepareExam } = require("../../utils/exam-image");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜制作证件照，轻松换底色", path: "/pages/index/index" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜制作证件照，轻松换底色", query: "" };
+  },
+
   data: {
     toolId: "idphoto",
     sourcePath: "",

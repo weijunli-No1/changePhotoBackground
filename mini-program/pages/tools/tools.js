@@ -2,6 +2,13 @@ const files = require("../../utils/files");
 const drafts = require("../../utils/drafts");
 const { transform, cropRect } = require("../../utils/image-transform");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜图片压缩与裁剪", path: "/pages/tools/tools" + "?" + ("mode=" + (this.data.mode === "crop" ? "crop" : "compress")) };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜图片压缩与裁剪", query: "mode=" + (this.data.mode === "crop" ? "crop" : "compress") };
+  },
+
   data: {
     mode: "compress",
     sourcePath: "",

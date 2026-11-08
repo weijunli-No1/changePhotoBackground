@@ -8,5 +8,7 @@
     "spec-picker": "/components/spec-picker/index",
     "tool-glyph": "/components/tool-glyph/index",
     "member-ad": "/components/member-ad/index"
-  }
+  },
+  "enableShareAppMessage": true,
+  "enableShareTimeline": true
 }

@@ -3,6 +3,13 @@ const catalog = require("../../utils/tool-catalog");
 const launcher = require("../../utils/tool-launcher");
 const { sizes } = require("../../utils/photo-specs");
 Page({
+  onShareAppMessage() {
+    return { title: "拾光小相｜照片工具箱", path: "/pages/library/library" };
+  },
+  onShareTimeline() {
+    return { title: "拾光小相｜照片工具箱", query: "" };
+  },
+
   data: {
     query: "",
     category: "all",

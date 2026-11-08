@@ -6,5 +6,7 @@
     "navigation-bar": "/components/navigation-bar/index",
     "t-icon": "/components/local-icon/index",
     "faq-item": "/components/faq-item/index"
-  }
+  },
+  "enableShareAppMessage": true,
+  "enableShareTimeline": true
 }
