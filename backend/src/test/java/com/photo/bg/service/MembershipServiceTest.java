@@ -57,6 +57,71 @@ class MembershipServiceTest {
     @Test void cannotQueryAnotherUsersOrder() {
         row("PENDING");assertThrows(IllegalArgumentException.class,()->service.queryOwnOrder(2L,"M123"));verifyNoInteractions(gateway);
     }
+    @Test void closedOrderReturnsTerminalStatusWithoutQueryingPaymentPlatform() {
+        row("CLOSED");
+        when(jdbc.queryForObject(anyString(),eq(Integer.class),eq(1L))).thenReturn(0);
+        Map<String,Object> result = service.queryOwnOrder(1L,"M123");
+        assertEquals("CLOSED",result.get("orderStatus"));
+        assertEquals(false,result.get("isLifetimeMember"));
+        verifyNoInteractions(gateway);
+        assertThrows(IllegalArgumentException.class,()->service.queryOwnOrder(2L,"M123"));
+    }
+
+    @Test void unresolvedOrderRemainsRecoverableWhenPaymentPlatformFails() {
+        row("PENDING");
+        when(gateway.query("owner","M123")).thenThrow(new IllegalStateException("timeout"));
+        Map<String,Object> result=service.queryOwnOrder(1L,"M123");
+        assertEquals("PENDING",result.get("orderStatus"));
+        assertNotNull(result.get("orderMessage"));
+        assertEquals(false,result.get("isLifetimeMember"));
+    }
+    @Test void reviewOrderCanRecoverAfterLateSuccessfulPayment() {
+        row("REVIEW");remote(2);
+        assertEquals("ACTIVE",service.queryOwnOrder(1L,"M123").get("orderStatus"));
+    }
+    @Test void verifiedClosedOrderClosesButCannotDowngradeActiveOrRefunded() {
+        Map<String,Object> row=row("PENDING");remote(6);service.reconcile("M123",false);
+        assertEquals("CLOSED",row.get("status"));
+        row.put("status","ACTIVE");remote(6);service.reconcile("M123",false);
+        assertEquals("ACTIVE",row.get("status"));
+        row.put("status","REFUNDED");service.reconcile("M123",false);
+        assertEquals("REFUNDED",row.get("status"));
+    }
+    @Test void existingPendingOrderIsRecoveredUnderUserLockInsteadOfResigned() throws Exception {
+        cn.binarywang.wx.miniapp.api.WxMaService wx=mock(cn.binarywang.wx.miniapp.api.WxMaService.class,RETURNS_DEEP_STUBS);
+        cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult session=new cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult();
+        session.setOpenid("owner");session.setSessionKey("session-key");
+        when(wx.getUserService().getSessionInfo("code")).thenReturn(session);
+        MemberConfiguration config=new MemberConfiguration();
+        config.setEnabled(true);config.setOfferId("offer");config.setAppKey("key");config.setProductId("product");config.setPriceFen(990);
+        config.setPushToken("token");config.setPushAesKey("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG");
+        MembershipService guarded=new MembershipService(jdbc,tx,config,gateway,wx);
+        row("PENDING");
+        when(jdbc.queryForObject(contains("SELECT openid"),eq(String.class),eq(1L))).thenReturn("owner");
+        Map<String,Object> pending=new HashMap<>();pending.put("out_trade_no","M123");pending.put("status","PENDING");
+        when(jdbc.queryForList(contains("status IN ('PENDING','REVIEW')"),eq(1L))).thenReturn(Collections.singletonList(pending));
+        for(int i=0;i<2;i++){
+            Map<String,Object> answer=guarded.createOrder(1L,"code");
+            assertEquals("M123",answer.get("outTradeNo"));assertEquals(true,answer.get("recoveryRequired"));assertFalse(answer.containsKey("payData"));
+        }
+        verify(jdbc,times(2)).queryForObject(contains("FOR UPDATE"),eq(Long.class),eq(1L));
+        verify(jdbc,never()).update(startsWith("INSERT INTO t_member_order("),any(Object[].class));
+    }
+
+    @Test void iosInquiryDoesNotWaitForSlowAuditDatabaseOrChangeEntitlements() throws Exception {
+        java.util.concurrent.CountDownLatch entered=new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch release=new java.util.concurrent.CountDownLatch(1);
+        doAnswer(inv -> { entered.countDown();release.await(2,java.util.concurrent.TimeUnit.SECONDS);return 1; })
+                .when(jdbc).update(startsWith("INSERT IGNORE INTO t_member_refund_inquiry"),eq("WX-audit"),anyString());
+        try {
+            long start=System.nanoTime();
+            String evidence=service.iosRefundEvidence("WX-audit");
+            assertTrue((System.nanoTime()-start)<1_000_000_000L);
+            assertFalse(evidence.isEmpty());
+            assertTrue(entered.await(1,java.util.concurrent.TimeUnit.SECONDS));
+            verifyNoInteractions(gateway,tx);
+        } finally { release.countDown(); }
+    }
     @Test void hmacMatchesPublishedRfc4231Vector() {
         assertEquals("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843",VirtualPaymentGateway.hmac("Jefe","what do ya want for nothing?"));
         assertNotEquals(VirtualPaymentGateway.hmac("key","requestVirtualPayment&{}"),VirtualPaymentGateway.hmac("key","requestVirtualPayment&{ }"));

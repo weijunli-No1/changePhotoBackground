@@ -51,6 +51,14 @@ public class MemberPushController {
         } catch (Exception e) { throw new ResponseStatusException(HttpStatus.FORBIDDEN); }
         String event = value(doc,"Event");
         try {
+            if ("xpay_subscribe_ios_refund_query_notify".equals(event)) {
+                String evidence = membership.iosRefundEvidence(value(doc,"pay_order_id"));
+                String reply = "<xml><ErrCode>0</ErrCode><ErrMsg>success</ErrMsg><IosRefundQueryResponse>"
+                        + "<result_code>0</result_code><result_info>建议退款，等待平台最终结果</result_info>"
+                        + "<evidence>" + escape(evidence) + "</evidence></IosRefundQueryResponse></xml>";
+                // Business replies in security mode must be encrypted; no external API call here.
+                return new WxCryptUtil(config.getPushToken(),config.getPushAesKey(),wxConfig.getAppId()).encrypt(reply);
+            }
             if ("xpay_goods_deliver_notify".equals(event)) {
                 String id=value(doc,"OutTradeNo");
                 java.util.Map<String,Object> order=membership.find(id);
@@ -67,6 +75,9 @@ public class MemberPushController {
             }
             return "<xml><ErrCode>0</ErrCode><ErrMsg><![CDATA[success]]></ErrMsg></xml>";
         } catch (Exception e) { throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"订单核对待重试"); }
+    }
+    private String escape(String text) {
+        return text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;").replace("'","&apos;");
     }
     private String value(Document doc,String name) {
         return doc.getElementsByTagName(name).getLength()==0 ? "" : doc.getElementsByTagName(name).item(0).getTextContent();

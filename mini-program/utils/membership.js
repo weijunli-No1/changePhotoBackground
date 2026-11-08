@@ -37,14 +37,23 @@ function refresh(app, force = false) {
     }
     await app.ensureLogin();
     const owner = app.globalData.openid;
-    const id = getPending(owner);
+    let id = getPending(owner);
     let result;
     if (id) {
       result = api.unwrap(await api.request("/api/member/orders/" + encodeURIComponent(id)));
+      if (version !== generation || owner !== app.globalData.openid) throw Error("账号状态已变化，请重试");
       if (result.isLifetimeMember || ["CLOSED", "REFUNDED"].includes(result.orderStatus)) {
         wx.removeStorageSync(pendingKey(owner));
       }
-    } else result = api.unwrap(await api.request("/api/member/status"));
+    } else {
+      result = api.unwrap(await api.request("/api/member/status"));
+      if (version !== generation || owner !== app.globalData.openid) throw Error("账号状态已变化，请重试");
+      if (!result.isLifetimeMember && result.pendingOrderId) {
+        // Server-owned recovery survives storage cleanup and device changes.
+        wx.setStorageSync(pendingKey(owner), result.pendingOrderId);
+        result = { ...result, orderStatus: result.pendingOrderStatus };
+      }
+    }
     if (version !== generation || owner !== app.globalData.openid) throw Error("账号状态已变化，请重试");
     if (typeof result.isLifetimeMember !== "boolean" || typeof result.adFree !== "boolean") throw Error("会员状态暂不可用");
     // 支付待确认期间始终抑制广告，避免支付返回时闪现广告。

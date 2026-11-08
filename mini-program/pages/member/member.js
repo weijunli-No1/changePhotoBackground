@@ -35,6 +35,7 @@ Page({
         purchaseEnabled: state.purchaseEnabled,
         pendingOrder: Boolean(membership.getPending(app.globalData.openid)),
         supportError: membership.paymentSupport(state),
+        notice: state.orderMessage || (state.pendingOrderStatus === "REVIEW" ? "自动查询已暂停，请联系客服核实订单，请勿重复付款" : ""),
       });
     } catch (e) { if (!this._unloaded) this.setData({ statusKnown: false, purchaseEnabled: false, error: e.message || "暂时无法查询会员，请重试" }); }
     finally { this._checking = false; if (!this._unloaded) this.setData({ checking: false }); }
@@ -74,16 +75,19 @@ Page({
       const order = api.unwrap(await api.request("/api/member/orders", { method: "POST", data: { code: login.code } }));
       id = order.outTradeNo;
       membership.setPending(owner, id);
+      if (order.recoveryRequired) {
+        this.setData({ pendingOrder: true, notice: "已有待确认订单，请查询原订单，勿重复付款" });
+        return;
+      }
       if (owner !== app.globalData.openid) throw Error("登录账号已变化，请重新打开会员页");
       if (this._unloaded) return;
       try { await call("requestVirtualPayment", order.payData); }
       catch (e) {
         if (e.errCode === -2) {
-          // 明确取消时允许重新下单；每次支付使用新业务单号。
-          membership.setPending(owner, "");
-          throw Error("已取消支付");
+          // A client cancellation cannot prove the platform order is closed.
+          this.setData({ notice: "已取消本次支付，正在核实订单状态…" });
         }
-        this.setData({ notice: "支付结果待确认，正在查询订单…" });
+        else this.setData({ notice: "支付未完成，正在核实订单状态，请勿重复付款…" });
       }
       if (this._unloaded) return;
       let confirmed = false;
@@ -94,7 +98,13 @@ Page({
         } catch (_) { /* 保留订单以便恢复，绝不凭前端回调开会员。 */ }
         if (i<3) await new Promise(resolve => setTimeout(resolve, 1200));
       }
-      if (!this._unloaded) this.setData({ isMember: confirmed, pendingOrder: !confirmed, notice: confirmed ? "永久会员已开通，立即享受免广告与无限保存" : "付款状态仍在确认。可点击恢复购买，或稍后重新进入本页。请勿重复付款。" });
+      if (!this._unloaded) {
+        const pendingOrder = Boolean(membership.getPending(owner));
+        const state = typeof membership.current === "function" ? membership.current() : {};
+        this.setData({ isMember: confirmed, pendingOrder,
+          notice: confirmed ? "永久会员已开通，立即享受免广告与无限保存"
+            : state.orderMessage || (pendingOrder ? "订单仍待确认，可手动查询或联系客服，请勿重复付款" : "本次订单已结束，可以重新购买") });
+      }
     } catch (e) { if (!this._unloaded) this.setData({ error: e.message || "购买未完成，可稍后恢复购买" }); }
     finally {
       this._purchasing = false;

@@ -44,6 +44,31 @@ class MemberPushControllerTest {
         assertThrows(ResponseStatusException.class,()->controller.notify(body.replace(encrypted.getEncrypt(),encrypted.getEncrypt()+"x"),encrypted.getSignature(),encrypted.getTimeStamp(),encrypted.getNonce()));
     }
 
+
+    @Test void iosRefundInquiryReturnsEncryptedBusinessReplyWithoutGrantingOrRevoking() throws Exception {
+        MemberConfiguration config=new MemberConfiguration();config.setPushToken("token");config.setPushAesKey("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG");
+        WxMaConfiguration wx=new WxMaConfiguration();wx.setAppId("wxapp");
+        MembershipService membership=mock(MembershipService.class);
+        when(membership.iosRefundEvidence("WX123")).thenReturn("未记录可核实的消耗凭据 & 建议退款");
+        MemberPushController controller=new MemberPushController(config,wx,membership);
+        me.chanjar.weixin.common.util.crypto.WxCryptUtil crypt=new me.chanjar.weixin.common.util.crypto.WxCryptUtil(config.getPushToken(),config.getPushAesKey(),"wxapp");
+        String plain="<xml><Event>xpay_subscribe_ios_refund_query_notify</Event><pay_order_id>WX123</pay_order_id></xml>";
+        me.chanjar.weixin.common.util.crypto.WxCryptUtil.EncryptContext encrypted=crypt.encryptContext(plain);
+        String body="<xml><Encrypt>"+encrypted.getEncrypt()+"</Encrypt></xml>";
+        long start=System.nanoTime();
+        String response=controller.notify(body,encrypted.getSignature(),encrypted.getTimeStamp(),encrypted.getNonce());
+        assertTrue((System.nanoTime()-start)<3_000_000_000L);
+        javax.xml.parsers.DocumentBuilderFactory factory=javax.xml.parsers.DocumentBuilderFactory.newInstance();
+        org.w3c.dom.Document doc=factory.newDocumentBuilder().parse(new java.io.ByteArrayInputStream(response.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        String signature=doc.getElementsByTagName("MsgSignature").item(0).getTextContent();
+        String timestamp=doc.getElementsByTagName("TimeStamp").item(0).getTextContent();
+        String nonce=doc.getElementsByTagName("Nonce").item(0).getTextContent();
+        String reply=crypt.decryptXml(signature,timestamp,nonce,response);
+        assertTrue(reply.contains("<result_code>0</result_code>"));
+        assertTrue(reply.contains("<IosRefundQueryResponse>"));
+        assertTrue(reply.contains("&amp;"));
+        verify(membership).iosRefundEvidence("WX123");verifyNoMoreInteractions(membership);
+    }
     @Test void rejectsForgedAndUnsignedNotificationBeforeAnyOrderMutation() {
         MemberConfiguration config=new MemberConfiguration();config.setPushToken("token");config.setPushAesKey("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG");
         WxMaConfiguration wx=new WxMaConfiguration();wx.setAppId("wxapp");MembershipService membership=mock(MembershipService.class);

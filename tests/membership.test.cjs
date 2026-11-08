@@ -100,9 +100,9 @@ test("支付 success 但服务端未确认时不授予会员，保留恢复单�
  assert.equal(page.data.isMember,false);assert.equal(page.data.pendingOrder,true);assert.equal(counts().creates,1);assert.equal(counts().payments,1);assert.equal(counts().pending,"M123");
  await page.buy();assert.equal(counts().creates,1);
 });
-test("只有服务端确认后显示已开通，明确取消会保留提示并允许重新购买",async()=>{
+test("只有服务端确认后显示已开通，客户端取消仍保留原订单防止重复付款",async()=>{
  const good=purchasePage({confirmed:true});await good.page.buy();await tick();assert.equal(good.page.data.isMember,true);
- const cancelled=purchasePage({cancel:true});await cancelled.page.buy();await tick();assert.equal(cancelled.page.data.isMember,false);assert.equal(cancelled.counts().pending,"");assert.match(cancelled.page.data.error,/取消/);
+ const cancelled=purchasePage({cancel:true});await cancelled.page.buy();await tick();assert.equal(cancelled.page.data.isMember,false);assert.equal(cancelled.counts().pending,"M123");assert.equal(cancelled.page.data.pendingOrder,true);assert.equal(cancelled.counts().creates,1);
 });
 
 test('会员查询失败不展示默认价格或未开放状态，重试不创建支付订单', async () => {
@@ -177,4 +177,34 @@ for(const [completed,pending] of [[true,false],[false,false],[true,true]]) test(
  const page={...definition,data:{...definition.data},setData(v){Object.assign(this.data,v);},showAdDialog:async()=>true,_videoPlayer:{play:async()=>{plays++;return completed;}}};
  if(pending){await assert.rejects(page.watchAdForSave('owner'),/付款状态/);assert.equal(plays,0);assert.equal(records,0);}
  else {assert.equal(await page.watchAdForSave('owner'),completed);assert.equal(plays,1);assert.equal(records,completed?1:0);}
+});
+
+test('新设备从服务端恢复待确认订单，不能绕过旧订单再次付款', async () => {
+ const e=setup();const p=e.m.refresh(e.app);await tick();
+ assert.equal(e.requests[0].route,'/api/member/status');
+ resolve(e.requests[0],{pendingOrderId:'Mremote',pendingOrderStatus:'REVIEW'});await p;
+ assert.equal(e.m.getPending('owner'),'Mremote');assert.equal(e.m.current().orderStatus,'REVIEW');
+ assert.equal(e.m.canShowAds(),false);
+ const q=e.m.refresh(e.app,true);await tick();assert.equal(e.requests[1].route,'/api/member/orders/Mremote');
+ resolve(e.requests[1],{orderStatus:'CLOSED'});await q;
+ assert.equal(e.m.getPending('owner'),'');
+});
+test('查单暂不可用仍展示恢复状态，不丢失订单也不开通权益',async()=>{
+ const e=setup();e.m.setPending('owner','M123');
+ const p=e.m.refresh(e.app);await tick();
+ resolve(e.requests[0],{orderStatus:'REVIEW',orderMessage:'自动查询已暂停，请联系客服'});await p;
+ assert.equal(e.m.getPending('owner'),'M123');assert.equal(e.m.current().known,true);
+ assert.equal(e.m.current().isLifetimeMember,false);
+});
+test('下单被服务端返回为旧单恢复时，不再次拉起支付',async()=>{
+ let def,payments=0,pending='';
+ const app={globalData:{openid:'owner'}};
+ const m={refresh:async()=>({isLifetimeMember:false,purchaseEnabled:true}),paymentSupport:()=>'',getPending:()=>pending,setPending:(_,id)=>{pending=id;}};
+ vm.runInNewContext(fs.readFileSync(path.join(base,'pages/member/member.js'),'utf8'),{
+  Page:d=>def=d,getApp:()=>app,wx:{},setTimeout:fn=>fn(),
+  require:n=>n.endsWith('/membership')?m:n.endsWith('/api')?{request:async()=>({code:200,data:{outTradeNo:'Mold',recoveryRequired:true}}),unwrap:r=>r.data}
+    :{call:async(method)=>{if(method==='login')return {code:'code'};payments++;}}
+ });
+ const page={...def,data:{...def.data,checking:false,statusKnown:true,purchaseEnabled:true,agreed:true},setData(v){Object.assign(this.data,v);}};
+ await page.buy();assert.equal(payments,0);assert.equal(pending,'Mold');assert.equal(page.data.pendingOrder,true);
 });

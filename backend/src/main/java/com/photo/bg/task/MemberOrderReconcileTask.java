@@ -19,8 +19,11 @@ public class MemberOrderReconcileTask {
     public void reconcile() {
         jdbc.update("DELETE FROM t_member_session WHERE expires_at<NOW()");
         if (!config.purchasable()) return;
-        // checked_at 先更新使长期查不到的取消订单不阻塞后续订单，ACTIVE 轮询兜底退款通知。
-        for (String id : jdbc.queryForList("SELECT out_trade_no FROM t_member_order WHERE status IN ('PENDING','ACTIVE') ORDER BY COALESCE(checked_at,'1970-01-01'),created_at LIMIT 50",String.class)) {
+        // Unresolved orders are quarantined, never assumed unpaid just because time elapsed.
+        jdbc.update("UPDATE t_member_order SET status='REVIEW' WHERE status='PENDING' AND created_at<DATE_SUB(NOW(),INTERVAL 1 DAY)");
+        for (String id : jdbc.queryForList("SELECT o.out_trade_no FROM t_member_order o LEFT JOIN t_member_order_recovery r ON r.out_trade_no=o.out_trade_no "
+                + "WHERE o.status IN ('PENDING','ACTIVE') AND COALESCE(r.suspended,0)=0 AND (r.next_check_at IS NULL OR r.next_check_at<=NOW()) "
+                + "ORDER BY COALESCE(r.next_check_at,o.checked_at,o.created_at),o.created_at LIMIT 50",String.class)) {
             jdbc.update("UPDATE t_member_order SET checked_at=NOW() WHERE out_trade_no=?",id);
             try { membership.reconcile(id,true); }
             catch (Exception e) { log.warn("会员订单核对暂未完成: {}",id); }
