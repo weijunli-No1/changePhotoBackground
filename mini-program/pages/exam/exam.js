@@ -37,6 +37,7 @@ Page({
   async onLoad(options = {}) {
     this._unloaded = false;
     this._revision = 0;
+    this._brandedPreviewPath = "";
     this._themeChange = ({ theme }) => {
       if (!this._unloaded)
         this.setData({ accentColor: theme === "dark" ? "#91b4ff" : "#2358ee" });
@@ -228,6 +229,7 @@ Page({
     )
       return;
     const revision = ++this._revision;
+    this._brandedPreviewPath = "";
     this.setData({
       processing: true,
       resultPath: "",
@@ -263,6 +265,7 @@ Page({
           width: result.sourceWidth,
           height: result.sourceHeight,
         };
+      this._brandedPreviewPath = previewPath;
       this.setData({
         resultPath: result.path,
         previewPath,
@@ -298,6 +301,9 @@ Page({
         sourcePath: this.data.sourcePath,
         resultPath: this.data.resultPath,
         previewPath: this.data.previewPath,
+        previewWatermarkVersion: this.data.previewPath &&
+          this.data.previewPath === this._brandedPreviewPath &&
+          this.data.previewPath !== this.data.resultPath ? brandPreview.VERSION : 0,
         requiresQuota: true,
         width: this.data.resultWidth,
         height: this.data.resultHeight,
@@ -310,6 +316,9 @@ Page({
       };
       const saved = await drafts.save(session);
       if (this._unloaded) return;
+      if (session.previewWatermarkVersion === brandPreview.VERSION &&
+        this._brandedPreviewPath === session.previewPath)
+        this._brandedPreviewPath = saved.previewPath;
       this.setData({
         sourcePath: saved.sourcePath,
         resultPath: saved.resultPath,

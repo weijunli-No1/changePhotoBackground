@@ -10,7 +10,7 @@ function historyPage(request) {
     __dirname,
     "../mini-program/pages/history/history.js",
   );
-  const app = { globalData: { openid: "test-user" } };
+  const app = { globalData: { openid: "test-user", sessionToken: "fixture-token" } };
   vm.runInNewContext(
     fs.readFileSync(filename, "utf8"),
     {

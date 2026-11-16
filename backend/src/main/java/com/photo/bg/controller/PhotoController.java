@@ -143,12 +143,19 @@ public class PhotoController {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
         sessions.requireOwner(auth, user);
         LocalDate today = LocalDate.now();
-        if (!userDailyUsageService.checkSaveConstraint(user.getId(), today)) {
+        if (!userDailyUsageService.tryConsumeSave(user.getId(), today)) {
             return Result.error(SAVE_LIMIT_REACHED_CODE, "今日免费保存次数已达上限");
         }
 
-        Map<String, Object> result = pythonApiService.generateLayoutPhotos(base64Image, height, width);
-        if (result != null && !Boolean.FALSE.equals(result.get("status"))) userDailyUsageService.recordSave(user.getId(), today);
-        return Result.success(result);
+        boolean generated = false;
+        try {
+            Map<String, Object> result = pythonApiService.generateLayoutPhotos(base64Image, height, width);
+            generated = result != null && !Boolean.FALSE.equals(result.get("status"))
+                    && result.get("image_base64") instanceof String && !((String) result.get("image_base64")).isEmpty();
+            if (!generated) return Result.error(502, "排版生成失败，请重试");
+            return Result.success(result);
+        } finally {
+            if (!generated) userDailyUsageService.releaseSave(user.getId(), today);
+        }
     }
 }

@@ -42,6 +42,7 @@ Page({
     this._unloaded = false;
     this._seq = 0;
     this._colorSeq = 0;
+    this._brandedPreviewPath = "";
     this._draftId = options.draft || drafts.createId();
     const draft = options.draft ? drafts.get(options.draft) : null;
     this._examSpec = getSpec(draft ? draft.specId : options.spec);
@@ -65,7 +66,8 @@ Page({
         this._transparentPath = draft.transparentPath || "";
         this.setData({
           sourcePath: draft.sourcePath,
-          resultPath: draft.resultPath || "",
+          resultPath: "",
+          previewPath: "",
           size: {
             name: draft.sizeName || "自定义",
             width: draft.width,
@@ -77,28 +79,37 @@ Page({
         if (this._transparentPath) {
           try {
             this._transparent = await files.readBase64(this._transparentPath);
-            if (!this._unloaded) this.setData({ colorReady: !!this._transparent });
           } catch (error) {
             this._transparentPath = "";
             this._transparent = "";
           }
         }
         if (draft.resultPath && this._transparent) {
+          const seq = ++this._seq;
+          this._mattingBusy = true;
+          this.setData({ processing: true, status: "正在恢复水印预览", colorReady: false });
           try {
             await files.call("getImageInfo", { src: draft.resultPath });
-            let previewPath = draft.previewPath || "";
-            try {
-              if (!previewPath) throw Error("missing");
-              await files.call("getImageInfo", { src: previewPath });
-            } catch (error) {
-              previewPath = await brandPreview.create(this, draft.resultPath);
+            const previewPath = await brandPreview.create(this, draft.resultPath);
+            if (this._unloaded || seq !== this._seq) {
+              files.removeTemp(previewPath);
+              return;
             }
-            if (this._unloaded) return;
-            this.setData({ previewPath });
+            this._brandedPreviewPath = previewPath;
+            this._mattingBusy = false;
+            this.setData({ resultPath: draft.resultPath, previewPath, processing: false, status: "", colorReady: true });
             this._appliedColor = draft.bgColor || "#FFFFFF";
+            await this.persistDraft();
             return;
           } catch (error) {
-            this.setData({ resultPath: "" });
+            if (this._unloaded || seq !== this._seq) return;
+            this._mattingBusy = false;
+            this._failedColor = this.data.currentBgColor;
+            this.setData({
+              resultPath: "", previewPath: "", processing: false, status: "",
+              colorReady: true, error: "水印预览恢复失败，请重试", errorRecovery: "retry",
+            });
+            return;
           }
         }
       } else if (options.src) {
@@ -201,6 +212,7 @@ Page({
     this._transparent = "";
     this._transparentPath = "";
     this._failedColor = "";
+    this._brandedPreviewPath = "";
     this.setData({
       processing: true,
       status: "正在识别人像与制作证件照",
@@ -315,6 +327,7 @@ Page({
       this._activeTask = null;
       this._requestedColor = "";
       this._appliedColor = color;
+      this._brandedPreviewPath = previewPath;
       this.setData({
         resultPath: path,
         previewPath,
@@ -415,6 +428,7 @@ Page({
       status: "",
       error: "处理已取消，可重试或重新选择照片",
       errorRecovery: "retry",
+      colorReady: !!this._transparent,
       currentBgColor: color,
       custom: !["#FFFFFF", "#638cce", "#FF0000"].includes(color),
     });
@@ -477,6 +491,9 @@ Page({
       sourcePath: this.data.sourcePath,
       resultPath: this.data.resultPath,
       previewPath: this.data.previewPath,
+      previewWatermarkVersion: this.data.previewPath &&
+        this.data.previewPath === this._brandedPreviewPath &&
+        this.data.previewPath !== this.data.resultPath ? brandPreview.VERSION : 0,
       requiresQuota: true,
       specId: this._examSpec ? this._examSpec.id : "",
       transparentPath: this._transparentPath || "",
@@ -498,6 +515,9 @@ Page({
         this.data.sourcePath === snapshot.sourcePath &&
         this.data.resultPath === snapshot.resultPath
       ) {
+        if (snapshot.previewWatermarkVersion === brandPreview.VERSION &&
+          this._brandedPreviewPath === snapshot.previewPath)
+          this._brandedPreviewPath = saved.previewPath;
         this.setData({
           sourcePath: saved.sourcePath,
           resultPath: saved.resultPath,

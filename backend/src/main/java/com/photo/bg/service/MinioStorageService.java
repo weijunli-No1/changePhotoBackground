@@ -23,6 +23,12 @@ public interface MinioStorageService {
      */
     String uploadFile(InputStream inputStream, String fileName, String contentType);
 
+    /** Read an original using server credentials; never fetch arbitrary URLs. */
+    byte[] readFile(String fileUrl);
+
+    /** Public preview objects contain a burned-in watermark. */
+    String uploadPreview(byte[] image, String sourceUrl);
+
     /**
      * 删除文件
      *

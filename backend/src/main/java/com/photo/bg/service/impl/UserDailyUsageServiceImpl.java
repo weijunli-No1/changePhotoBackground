@@ -21,18 +21,21 @@ public class UserDailyUsageServiceImpl extends ServiceImpl<UserDailyUsageMapper,
 
     @Override
     public UserDailyUsage getOrCreateUsage(Long userId, LocalDate date) {
+        baseMapper.insertUsageIfAbsent(userId, date);
         QueryWrapper<UserDailyUsage> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("record_date", date);
-        UserDailyUsage usage = getOne(queryWrapper);
-        if (usage == null) {
-            usage = new UserDailyUsage();
-            usage.setUserId(userId);
-            usage.setRecordDate(date);
-            usage.setSaveCount(0);
-            usage.setAdViewCount(0);
-            save(usage);
-        }
-        return usage;
+        return getOne(queryWrapper);
+    }
+
+    @Override
+    public boolean tryConsumeSave(Long userId, LocalDate date) {
+        baseMapper.insertUsageIfAbsent(userId, date);
+        return baseMapper.tryConsumeSave(userId, date, membership.isMember(userId), MAX_DAILY_SAVE_COUNT) == 1;
+    }
+
+    @Override
+    public void releaseSave(Long userId, LocalDate date) {
+        baseMapper.releaseSave(userId, date);
     }
 
     @Override
@@ -47,15 +50,13 @@ public class UserDailyUsageServiceImpl extends ServiceImpl<UserDailyUsageMapper,
 
     @Override
     public void recordSave(Long userId, LocalDate date) {
-        UserDailyUsage usage = getOrCreateUsage(userId, date);
-        usage.setSaveCount(usage.getSaveCount() + 1);
-        updateById(usage);
+        baseMapper.insertUsageIfAbsent(userId, date);
+        baseMapper.incrementSaveCount(userId, date);
     }
 
     @Override
     public void recordAdView(Long userId, LocalDate date) {
-        UserDailyUsage usage = getOrCreateUsage(userId, date);
-        usage.setAdViewCount(usage.getAdViewCount() + 1);
-        updateById(usage);
+        baseMapper.insertUsageIfAbsent(userId, date);
+        baseMapper.incrementAdViewCount(userId, date);
     }
 }

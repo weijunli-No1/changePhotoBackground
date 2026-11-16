@@ -90,7 +90,7 @@
         >
         <block wx:else
           ><view class="works-helper"
-            >这里是已通过保存次数校验的无水印成品，可直接查看下载。云端记录定期清理，请及时保存到手机。</view
+            >查看时展示带水印预览，保存无水印照片需校验保存次数。云端记录定期清理，请及时保存到手机。</view
           ><view
             wx:if="{{hasLogin && loadError && historyList.length}}"
             class="refresh-error"
@@ -136,11 +136,16 @@
           ><view wx:else class="cloud-list"
             ><view class="cloud-work" wx:for="{{historyList}}" wx:key="id"
               ><image
-                src="{{item.photoUrl}}"
+                wx:if="{{item.previewUrl && !item.previewMissing}}"
+                src="{{item.previewUrl}}"
                 class="cloud-photo"
                 mode="aspectFit"
-                data-url="{{item.photoUrl}}"
-                bindtap="previewImage" /><view class="cloud-meta"
+                show-menu-by-longpress="{{true}}"
+                data-id="{{item.id}}"
+                binderror="cloudImageError"
+                bindtap="previewImage" /><view wx:else class="cloud-photo cloud-preview-empty"
+                ><t-icon name="image" size="52rpx" /><text>水印预览暂不可用</text></view
+              ><view class="cloud-meta"
                 ><text>{{item.timeStr}}</text
                 ><view
                   class="delete-target"
@@ -148,7 +153,17 @@
                   bindtap="onDelete"
                   aria-label="删除记录"
                   aria-role="button"
+                  aria-disabled="{{savingId !== null}}"
                   ><t-icon
                     name="delete"
-                    size="34rpx" /></view></view></view></view></block></view></view></scroll-view
+                    size="34rpx" /></view></view
+              ><view class="cloud-save-area"
+                ><view class="cloud-save {{savingId !== null ? 'disabled' : ''}}"
+                  data-id="{{item.id}}" bindtap="saveCloudPhoto" aria-role="button"
+                  aria-disabled="{{savingId !== null}}" hover-class="pressed"
+                  >{{savingId === item.id ? '正在保存…' : item.downloadError ? '重试保存无水印' : item.downloadSaved ? '再次保存无水印' : '保存无水印照片'}}</view
+                ><view wx:if="{{item.downloadError}}" class="cloud-save-error" aria-role="alert">{{item.downloadError}}</view
+                ><view wx:if="{{item.quotaBlocked}}" class="cloud-save-link" bindtap="goToIndex" aria-role="button">去首页继续制作</view
+                ><view wx:if="{{item.saveMessage}}" class="cloud-save-message" aria-role="status">{{item.saveMessage}}</view
+              ></view></view></view></block></view></view></scroll-view
 ></view>

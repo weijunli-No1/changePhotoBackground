@@ -17,7 +17,7 @@ function page(file, globals = {}) {
       clearTimeout,
       ...globals,
       require: (name) => name.endsWith('/membership') ? require('./helpers/membership-stub.cjs') : name.endsWith('/brand-preview')
-        ? { create: async (_page, source) => 'BRANDED:' + source }
+        ? { VERSION: 2, create: async (_page, source) => 'BRANDED:' + source }
         : name.endsWith('/exam-image') ? require('../mini-program/utils/exam-image')
         : (globals.require || createRequire(filename))(name),
     },
@@ -81,7 +81,7 @@ test("恢复蓝底草稿后换色失败，显示照片与保存底色保持一�
         return require("../mini-program/utils/skyline-motion");
       if (name.endsWith("/files"))
         return { call: async () => ({}), readBase64: async () => "ALPHA" };
-      if (name.endsWith("/drafts")) return { get: () => draft };
+      if (name.endsWith("/drafts")) return { get: () => draft, save: async (snapshot) => snapshot };
       if (name.endsWith("/api"))
         return {
           request: async () => {

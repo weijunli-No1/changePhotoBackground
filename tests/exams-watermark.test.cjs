@@ -317,7 +317,7 @@ test("主制作与换底色仍进入原有智能制作，考试目录不替换�
   assert.match(page.data.specTitle, /更换底色/);
 });
 
-test("考试照片使用真实品牌预览并走保存配额；额度不足不写相册，成功后重复保存复用", async () => {
+test("考试照片重建品牌水印并走保存配额；额度不足不写相册，成功后重复保存重新计次", async () => {
   const session = {
     mode: "exam",
     sourcePath: "SOURCE",
@@ -368,10 +368,11 @@ test("考试照片使用真实品牌预览并走保存配额；额度不足不�
     },
   });
   p.onLoad();
+  await p._previewReady;
   assert.equal(p.data.local, false);
   assert.equal(p.data.allowLayout, false);
   p.previewImage();
-  assert.equal(previews[0].current, "BRAND.jpg");
+  assert.equal(previews[0].current, "BRANDED:CLEAN.jpg");
   p.requestSave = async () => {
     requests++;
     return denied ? { code: 4031 } : { code: 200, data: {} };
@@ -384,14 +385,14 @@ test("考试照片使用真实品牌预览并走保存配额；额度不足不�
   await p.saveImage("single");
   assert.equal(albums.length, 0);
   assert.equal(ads, 1);
-  assert.equal(p.data.previewPath, "BRAND.jpg");
+  assert.equal(p.data.previewPath, "BRANDED:CLEAN.jpg");
   denied = false;
   await p.saveImage("single");
   assert.deepEqual(albums, ["CLEAN.jpg"]);
   await p.saveImage("single");
-  assert.equal(requests, 2);
+  assert.equal(requests, 3);
   assert.equal(albums.length, 2);
-  assert.equal(p.data.previewPath, "BRAND.jpg");
+  assert.equal(p.data.previewPath, "BRANDED:CLEAN.jpg");
 });
 
 test("品牌水印绘制到导出的位图中，不依赖页面覆盖文字", async () => {

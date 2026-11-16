@@ -3,7 +3,8 @@ const app = getApp();
 const api = require("../../utils/api");
 const drafts = require("../../utils/drafts");
 const catalog = require("../../utils/tool-catalog");
-const { call } = require("../../utils/files");
+const files = require("../../utils/files");
+const { call } = files;
 Page({
   onShareAppMessage() {
     return { title: "拾光小相｜记录你的照片作品", path: "/pages/index/index" };
@@ -21,6 +22,7 @@ Page({
     loggingIn: false,
     error: "",
     loadError: "",
+    savingId: null,
   },
   onReady() {
     this._motion = createMotion(this, wx);
@@ -42,6 +44,8 @@ Page({
       delete app.globalData.requestedWorksTab;
     }
     if (this._historyOwner !== app.globalData.openid) {
+      this.clearDownloadRetries();
+      this._cloudSave = null;
       this._historySeq = (this._historySeq || 0) + 1;
       this._historyOwner = app.globalData.openid;
       this.setData({
@@ -49,6 +53,7 @@ Page({
         isLoading: false,
         error: "",
         loadError: "",
+        savingId: null,
       });
     }
     this.setData({
@@ -59,6 +64,8 @@ Page({
   },
   onUnload() {
     this._unloaded = true;
+    this._cloudSave = null;
+    this.clearDownloadRetries();
     if (this._motion) this._motion.dispose();
   },
   draftImageError(e) {
@@ -101,16 +108,32 @@ Page({
   async fetchHistoryList(force = false) {
     if (!app.globalData.openid || (this.data.isLoading && !force)) return;
     const owner = app.globalData.openid;
+    if (this._historyOwner !== owner) {
+      if (this._historyOwner !== undefined) {
+        this.clearDownloadRetries();
+        this._cloudSave = null;
+        this.setData({ historyList: [], savingId: null });
+      }
+      this._historyOwner = owner;
+    }
     const seq = (this._historySeq = (this._historySeq || 0) + 1);
     this.setData({ isLoading: true, loadError: "" });
     try {
+      if (!app.globalData.sessionToken) {
+        if (typeof app.ensureLogin !== "function") throw Error("请重新登录后查看作品");
+        const loggedIn = await app.ensureLogin();
+        if (this._unloaded || seq !== this._historySeq || app.globalData.openid !== owner) return;
+        if (!loggedIn || !app.globalData.sessionToken) throw Error("请重新登录后查看作品");
+      }
       const list = api.unwrap(
         await api.request("/api/history/list", { data: { openid: owner } }),
       );
       if (!this._unloaded && seq === this._historySeq && app.globalData.openid === owner)
         this.setData({
           historyList: (list || []).map((item) => ({
-            ...item,
+            id: item.id,
+            previewUrl: item.previewUrl || "",
+            createTime: item.createTime || "",
             timeStr: (item.createTime || "").replace("T", " ").slice(0, 16),
           })),
         });
@@ -193,11 +216,107 @@ Page({
     }
   },
   previewImage(e) {
-    const url = e.currentTarget.dataset.url;
-    wx.previewImage({ urls: [url], current: url });
+    if (this._unloaded || app.globalData.openid !== this._historyOwner) return;
+    const item = this.data.historyList.find((value) => String(value.id) === String(e.currentTarget.dataset.id));
+    if (item && item.previewUrl && !item.previewMissing)
+      wx.previewImage({ urls: [item.previewUrl], current: item.previewUrl });
+  },
+  cloudImageError(e) {
+    if (!this._unloaded)
+      this.updateCloudWork(e.currentTarget.dataset.id, { previewMissing: true });
+  },
+  updateCloudWork(id, values) {
+    this.setData({
+      historyList: this.data.historyList.map((item) =>
+        String(item.id) === String(id) ? { ...item, ...values } : item,
+      ),
+    });
+  },
+  clearDownloadRetries() {
+    for (const retry of Object.values(this._downloadRetries || {}))
+      if (files.removeTemp) files.removeTemp(retry.path);
+    this._downloadRetries = {};
+  },
+  cloudSaveCurrent(operation) {
+    return !this._unloaded && this._cloudSave === operation &&
+      app.globalData.openid === operation.owner &&
+      app.globalData.sessionToken === operation.token;
+  },
+  async saveCloudPhoto(e) {
+    if (this._unloaded || this._cloudSave || this._deleting) return;
+    const item = this.data.historyList.find((value) => String(value.id) === String(e.currentTarget.dataset.id));
+    const owner = app.globalData.openid;
+    if (!item || !owner || (this._historyOwner && this._historyOwner !== owner)) return;
+    const operation = { owner, token: app.globalData.sessionToken, id: item.id };
+    this._cloudSave = operation;
+    this.setData({ savingId: item.id });
+    this.updateCloudWork(item.id, { downloadError: "", saveMessage: "", quotaBlocked: false });
+    let path = "";
+    let albumFailed = false;
+    try {
+      if (!operation.token) {
+        if (typeof app.ensureLogin !== "function") throw Error("请重新登录后保存作品");
+        const loggedIn = await app.ensureLogin();
+        if (this._unloaded || this._cloudSave !== operation || app.globalData.openid !== owner) return;
+        operation.token = app.globalData.sessionToken;
+        if (!loggedIn || !operation.token) throw Error("请重新登录后保存作品");
+      }
+      this._downloadRetries = this._downloadRetries || {};
+      const retry = this._downloadRetries[item.id];
+      if (retry && retry.owner === owner && retry.token === operation.token) path = retry.path;
+      else {
+        if (retry && files.removeTemp) files.removeTemp(retry.path);
+        delete this._downloadRetries[item.id];
+        const response = await api.request(`/api/history/${encodeURIComponent(item.id)}/download`, {
+          method: "POST",
+          data: { openid: owner },
+        });
+        if (!this.cloudSaveCurrent(operation)) return;
+        const result = api.unwrap(response);
+        if (!result || !result.image_base64) throw Error("没有收到可保存的照片，请重试");
+        path = await files.writeBase64(result.image_base64, "photo");
+      }
+      if (!this.cloudSaveCurrent(operation)) return;
+      try {
+        await files.saveAlbum(path);
+      } catch (error) {
+        albumFailed = true;
+        throw error;
+      }
+      if (!this.cloudSaveCurrent(operation)) return;
+      delete this._downloadRetries[item.id];
+      this.updateCloudWork(item.id, {
+        downloadError: "", saveMessage: "已保存到手机相册", downloadSaved: true, quotaBlocked: false,
+      });
+      wx.showToast({ title: "已保存到相册", icon: "success" });
+    } catch (error) {
+      if (this.cloudSaveCurrent(operation)) {
+        if (albumFailed && path)
+          this._downloadRetries[item.id] = { owner, token: operation.token, path };
+        const quotaBlocked = error.code === 4031;
+        this.updateCloudWork(item.id, {
+          downloadError: quotaBlocked
+            ? "今日保存次数不足，可在制作保存时观看视频，或在「我的」查看会员。"
+            : error.message || "保存失败，请重试",
+          quotaBlocked,
+        });
+      }
+    } finally {
+      let retry = (this._downloadRetries || {})[item.id];
+      if (retry && retry.path === path &&
+        (this._unloaded || app.globalData.openid !== owner || app.globalData.sessionToken !== operation.token)) {
+        delete this._downloadRetries[item.id];
+        retry = null;
+      }
+      if (path && (!retry || retry.path !== path) && files.removeTemp) files.removeTemp(path);
+      if (this._cloudSave === operation) {
+        this._cloudSave = null;
+        if (!this._unloaded && app.globalData.openid === owner) this.setData({ savingId: null });
+      }
+    }
   },
   async onDelete(e) {
-    if (this._deleting || this._unloaded) return;
+    if (this._deleting || this._cloudSave || this._unloaded) return;
     this._deleting = true;
     const owner = app.globalData.openid;
     const id = e.currentTarget.dataset.id;
@@ -211,6 +330,9 @@ Page({
       if (!res.confirm || this._unloaded || app.globalData.openid !== owner) return;
       api.unwrap(await api.request(`/api/history/${id}`, { method: "DELETE" }));
       if (!this._unloaded && app.globalData.openid === owner) {
+        const retry = (this._downloadRetries || {})[id];
+        if (retry && files.removeTemp) files.removeTemp(retry.path);
+        if (this._downloadRetries) delete this._downloadRetries[id];
         this.setData({
           historyList: this.data.historyList.filter((item) => item.id !== id),
           error: "",

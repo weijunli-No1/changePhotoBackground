@@ -33,7 +33,6 @@ Page({
     busy: false,
     savingStage: "",
     saved: false,
-    savedPath: "",
     error: "",
     quotaVisible: false,
     quotaKnown: false,
@@ -49,6 +48,7 @@ Page({
     this._saveInProgress = false;
     this._cloudResults = Object.create(null);
     this._layoutPaths = [];
+    this._previewPaths = [];
     this._videoPlayer = createRewardedVideoPlayer(wx);
     const session = app.globalData.exportSession;
     if (!session || !session.resultPath) {
@@ -59,8 +59,10 @@ Page({
     const requiresQuota =
       ["idphoto", "exam"].includes(session.mode) || session.requiresQuota === true;
     this.setData({
-      previewPath: session.previewPath || (requiresQuota ? "" : session.resultPath),
-      previewPreparing: requiresQuota && !session.previewPath,
+      // Quota-protected images must be burnt into a fresh watermarked bitmap.
+      // Imported or old draft preview paths are not proof that a bitmap is protected.
+      previewPath: requiresQuota ? "" : session.resultPath,
+      previewPreparing: requiresQuota,
       previewCaption:
         session.mode === "exam" || session.specId
           ? "预览保留高清，保存按所选规格输出；小像素标准照放大查看会影响清晰感。"
@@ -78,9 +80,7 @@ Page({
     });
     this.refreshMembership();
     this.fetchUsage();
-    if (requiresQuota && !session.previewPath) {
-      this.retryPreview();
-    }
+    if (requiresQuota) this._previewReady = this.retryPreview();
     files
       .call("getImageInfo", { src: session.resultPath })
       .then((info) => {
@@ -150,16 +150,17 @@ Page({
       return;
     this._previewLoading = true;
     this.setData({ previewPreparing: true, previewFailed: false, error: "" });
-    const savedPath = this.data.saved && this.data.savedPath;
+    const source = this.data.saved && this._savedPath
+      ? this._savedPath : this._session.resultPath;
     try {
-      const path = savedPath || (this.data.local
-        ? this._session.resultPath
-        : await brandPreview.create(this, this._session.resultPath));
-      if (this.data.local || savedPath) await files.call("getImageInfo", { src: path });
+      const path = this.data.local ? source : await brandPreview.create(this, source);
+      if (this.data.local) await files.call("getImageInfo", { src: path });
       if (this._unloaded || this.data.unavailable) {
-        if (!this.data.local && !savedPath) files.removeTemp(path);
+        if (!this.data.local) files.removeTemp(path);
         return;
       }
+      if (!this.data.local) (this._previewPaths || (this._previewPaths = [])).push(path);
+      if (source === this._session.resultPath) this._singlePreviewPath = path;
       this.setData({ previewPath: path });
     } catch (error) {
       if (!this._unloaded && !this.data.unavailable)
@@ -188,6 +189,7 @@ Page({
     if (this._confirmAd) this._confirmAd(false);
     if (this._videoPlayer) this._videoPlayer.dispose();
     for (const path of this._layoutPaths || []) files.removeTemp(path);
+    for (const path of this._previewPaths || []) files.removeTemp(path);
   },
   sourceDimensions() {
     return this._sourceDimensions || { actualWidth: 0, actualHeight: 0 };
@@ -206,14 +208,12 @@ Page({
       action,
       saved: false,
       error: "",
+      previewPath: this._singlePreviewPath || (this.data.local ? this._session.resultPath : this.data.previewPath),
       ...this.sourceDimensions(),
     });
   },
   previewImage() {
-    const path =
-      this.data.saved && this.data.savedPath
-        ? this.data.savedPath
-        : this.data.previewPath;
+    const path = this.data.previewPath;
     if (path)
       wx.previewImage({
         urls: [path],
@@ -288,6 +288,17 @@ Page({
   saveCurrent() {
     return this.saveImage(this.data.action);
   },
+  saveSessionIsCurrent(identity) {
+    return !this._unloaded && identity.openid === app.globalData.openid &&
+      identity.sessionToken === app.globalData.sessionToken;
+  },
+  assertSaveSession(identity) {
+    if (!this.saveSessionIsCurrent(identity)) {
+      const error = new Error("登录状态已变化，请重新保存");
+      error.saveSessionChanged = true;
+      throw error;
+    }
+  },
   async saveImage(action) {
     if (
       this._unloaded ||
@@ -299,11 +310,14 @@ Page({
     )
       return;
     this._saveInProgress = true;
+    let cacheKey = "";
+    let identity = null;
     this.setData({
       busy: true,
       savingStage: "准备保存…",
       error: "",
       saved: false,
+      previewPath: this._singlePreviewPath || (this.data.local ? this._session.resultPath : this.data.previewPath),
       ...this.sourceDimensions(),
     });
     try {
@@ -313,22 +327,27 @@ Page({
           savingStage: "正在准备保存…",
         });
         if (!(await app.ensureLogin()) || this._unloaded) return;
+        identity = {
+          openid: app.globalData.openid,
+          sessionToken: app.globalData.sessionToken,
+        };
+        this.assertSaveSession(identity);
         this.setData({ login: true });
         const snapshot = {
-          openid: app.globalData.openid,
+          openid: identity.openid,
           base64Image: await files.readBase64(this._session.resultPath),
           bgColor: this._session.bgColor,
           size: { width: this._session.width, height: this._session.height },
         };
-        if (this._unloaded) return;
-        const cacheKey = snapshot.openid + ":" + action;
+        this.assertSaveSession(identity);
+        cacheKey = JSON.stringify([identity.openid, identity.sessionToken, action]);
         if (this._cloudResults[cacheKey]) path = this._cloudResults[cacheKey];
         else {
           this.setData({
             savingStage: action === "layout" ? "正在生成六寸排版…" : "正在保存云端作品…",
           });
           let result = await this.requestSave(action, snapshot);
-          if (this._unloaded) return;
+          this.assertSaveSession(identity);
           if (result.code === 4031) {
             this.setData({
               busy: false,
@@ -336,7 +355,9 @@ Page({
               remaining: 0,
               unlimited: false,
             });
-            if (!(await this.watchAdForSave(snapshot.openid)) || this._unloaded) return;
+            const rewarded = await this.watchAdForSave(identity.openid, identity.sessionToken);
+            this.assertSaveSession(identity);
+            if (!rewarded) return;
             this.setData({
               busy: true,
               savingStage:
@@ -344,35 +365,45 @@ Page({
             });
             result = await this.requestSave(action, snapshot);
           }
-          if (this._unloaded) return;
+          this.assertSaveSession(identity);
           const data = api.unwrap(result);
           if (action === "layout") {
             if (!data || data.status === false) throw new Error("排版生成失败，请重试");
             path = await files.writeBase64(data.image_base64, "layout");
             this._layoutPaths.push(path);
+            this.assertSaveSession(identity);
           }
           this._cloudResults[cacheKey] = path;
         }
       }
       if (this._unloaded) return;
+      if (identity) this.assertSaveSession(identity);
       this.setData({ savingStage: "正在写入手机相册…" });
-      await this.saveToAlbum(path);
+      await this.saveToAlbum(path, identity);
+      // Keep an authorization only for retrying an interrupted album write.
+      // A new save after success always goes through the server quota again.
+      if (cacheKey) delete this._cloudResults[cacheKey];
+      if (identity) this.assertSaveSession(identity);
+      this._savedPath = path;
       if (!this._unloaded) {
         this.setData({
           saved: true,
-          savedPath: path,
           action,
+          ...(action === "layout" ? { previewPath: "" } : {}),
           ...(action === "layout" ? { actualWidth: 0, actualHeight: 0 } : this.sourceDimensions()),
         });
         if (action === "layout") {
           files.call("getImageInfo", { src: path }).then((info) => {
-            if (!this._unloaded && this.data.saved && this.data.savedPath === path)
+            if (!this._unloaded && (!identity || this.saveSessionIsCurrent(identity)) && this.data.saved && this._savedPath === path)
               this.setData({ actualWidth: info.width, actualHeight: info.height });
           }).catch(() => { /* Saving succeeded; an unavailable dimension must not report failure. */ });
+          await this.retryPreview();
+          if (identity) this.assertSaveSession(identity);
         }
         this.fetchUsage();
       }
     } catch (error) {
+      if (error.saveSessionChanged && cacheKey) delete this._cloudResults[cacheKey];
       if (!this._unloaded)
         this.setData({ error: error.message || "保存失败，请稍后重试" });
     } finally {
@@ -380,8 +411,10 @@ Page({
       if (!this._unloaded) this.setData({ busy: false, savingStage: "" });
     }
   },
-  async saveToAlbum(path) {
+  async saveToAlbum(path, identity) {
+    if (identity) this.assertSaveSession(identity);
     await files.saveAlbum(path);
+    if (identity) this.assertSaveSession(identity);
     if (!this._unloaded) wx.showToast({ title: "已保存到相册", icon: "success" });
   },
   showAdDialog() {
@@ -401,25 +434,30 @@ Page({
     if (this._confirmAd) this._confirmAd(false);
   },
   stop() {},
-  async watchAdForSave(openid) {
+  async watchAdForSave(openid, sessionToken = app.globalData.sessionToken) {
+    const identity = { openid, sessionToken };
+    this.assertSaveSession(identity);
     const status = await membership.refresh(app, true);
-    if (this._unloaded || openid !== app.globalData.openid) return false;
+    this.assertSaveSession(identity);
     if (status.isLifetimeMember) return true;
     const legacyRewards = (state) => state.available === false &&
       app.globalData.membershipEnabled === false && !membership.getPending(openid);
     if (!legacyRewards(status) && !membership.canShowAds()) throw new Error("付款状态待确认，请在会员页恢复购买");
     const adUnitId = await app.getRewardedVideoAdUnitId();
-    if (this._unloaded) return false;
+    this.assertSaveSession(identity);
     if (!adUnitId) throw new Error("广告暂未开放，作品已保留");
-    if (!(await this.showAdDialog()) || this._unloaded) return false;
+    const confirmed = await this.showAdDialog();
+    this.assertSaveSession(identity);
+    if (!confirmed) return false;
     // 用户确认期间可能已在其他页面开通会员，播放前再次确认。
     const latest = await membership.refresh(app, true);
-    if (this._unloaded || openid !== app.globalData.openid) return false;
+    this.assertSaveSession(identity);
     if (latest.isLifetimeMember) return true;
     if (!legacyRewards(latest) && !membership.canShowAds()) return false;
     this.setData({ busy: true, savingStage: "正在加载视频…" });
     const completed = await this._videoPlayer.play(adUnitId);
-    if (!completed || this._unloaded) {
+    this.assertSaveSession(identity);
+    if (!completed) {
       if (!this._unloaded)
         this.setData({ error: "完整观看视频后可增加保存次数，当前作品已保留" });
       return false;
@@ -429,8 +467,9 @@ Page({
       header: { "content-type": "application/x-www-form-urlencoded" },
       data: { openid },
     });
+    this.assertSaveSession(identity);
     api.unwrap(result);
-    return !this._unloaded;
+    return true;
   },
   backToTools() {
     wx.switchTab({ url: "/pages/index/index" });

@@ -1,6 +1,7 @@
 const { getCanvas } = require("./image-transform");
 const files = require("./files");
 const BRAND = "拾光小相";
+const VERSION = 2;
 // 水印烧录进预览位图；不能以WXML叠层代替，否则长按保存拿到的是干净底图。
 async function create(page, source, options = {}) {
   const info = await files.call("getImageInfo", { src: source });
@@ -57,7 +58,7 @@ async function create(page, source, options = {}) {
   ctx.font = `500 ${fontSize}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgba(45,65,95,0.18)";
+  ctx.fillStyle = "rgba(45,65,95,0.32)";
   for (let y = -diagonal; y < diagonal; y += fontSize * 3.6)
     for (let x = -diagonal; x < diagonal; x += fontSize * 7)
       ctx.fillText(BRAND, x, y);
@@ -91,4 +92,4 @@ async function create(page, source, options = {}) {
   });
   return result.tempFilePath;
 }
-module.exports = { create, BRAND };
+module.exports = { create, BRAND, VERSION };

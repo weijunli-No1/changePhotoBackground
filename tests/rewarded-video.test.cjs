@@ -248,7 +248,10 @@ function editPage({
   page.saveToAlbum = async (value) => {
     saved.push(value);
   };
-  const start = () => (action === 'layout' ? page.savePrintLayout() : page.savePhoto());
+  const start = async () => {
+    await page._previewReady;
+    return action === 'layout' ? page.savePrintLayout() : page.savePhoto();
+  };
   return { page, app, sdk, calls, saved, toasts, start };
 }
 
@@ -394,19 +397,19 @@ test('相册失败后重试不重复扣除云端保存额度', async () => {
 });
 
 for (const action of ['single', 'layout']) {
-  test(`${action} 同一导出页反复下载成功结果，不重复扣保存次数或新增历史`, async () => {
+  test(`${action} 每次主动重复保存都重新校验并扣除服务端保存次数`, async () => {
     const env = editPage({ action, limited: false });
     await env.start();
     await env.start();
-    assert.equal(env.calls.length, 1);
+    assert.equal(env.calls.length, 2);
     assert.equal(env.saved.length, 2);
     assert.equal(env.saved[0], env.saved[1]);
     env.page.selectAction({ currentTarget: { dataset: { action: action === 'single' ? 'layout' : 'single' } } });
     await env.page.saveCurrent();
-    assert.equal(env.calls.length, 2);
+    assert.equal(env.calls.length, 3);
     env.page.selectAction({ currentTarget: { dataset: { action } } });
     await env.page.saveCurrent();
-    assert.equal(env.calls.length, 2);
+    assert.equal(env.calls.length, 4);
     env.page.onUnload();
   });
 }

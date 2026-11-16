@@ -6,6 +6,10 @@ const vm = require("node:vm");
 const { createRequire } = require("node:module");
 
 function loadPage(name, { app, wx = {}, dependencies = {} }) {
+  dependencies = {
+    "brand-preview": { create: async (_page, source) => "BRANDED:" + source },
+    ...dependencies,
+  };
   const filename = path.resolve(__dirname, `../mini-program/pages/${name}/${name}.js`);
   const actual = createRequire(filename);
   let definition;
@@ -29,7 +33,7 @@ function loadPage(name, { app, wx = {}, dependencies = {} }) {
 test("删除云端作品替换删除前的刷新，旧响应不能将已删除作品放回列表", async () => {
   const loads = [];
   const page = loadPage("history", {
-    app: { globalData: { openid: "owner" } },
+    app: { globalData: { openid: "owner", sessionToken: "fixture-token" } },
     wx: { showToast() {} },
     dependencies: {
       api: {
@@ -83,6 +87,7 @@ test("六寸排版保存后显示成品尺寸，迟到的单张尺寸不会覆�
   page.requestSave = async () => ({ image_base64: "LAYOUT_BASE64" });
   page.saveToAlbum = async () => {};
   page.onLoad();
+  await page._previewReady;
   await page.savePrintLayout();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(page.data.saved, true);
@@ -124,6 +129,7 @@ function exportDimensionsFixture() {
 
 test("排版保存后切回电子照片，预览和再次保存恢复单张实测尺寸", async () => {
   const { page } = exportDimensionsFixture();
+  await page._previewReady;
   await page.savePrintLayout();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(page.data.actualWidth, 1800);
@@ -140,6 +146,7 @@ test("排版保存后切回电子照片，预览和再次保存恢复单张实�
 
 test("排版再次保存失败后展示的单张预览使用单张尺寸", async () => {
   const { page, failAlbum } = exportDimensionsFixture();
+  await page._previewReady;
   await page.savePrintLayout();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(page.data.actualWidth, 1800);
@@ -177,23 +184,24 @@ test("退出会员页后到达的恢复订单仍保留订单号，不再更新�
   assert.deepEqual(pending, { owner: "owner", id: "PENDING" });
 });
 
-test("已保存排版的预览重试沿用排版成品，不创建单张品牌预览", async () => {
+test("已保存排版的预览重试重新烧录水印，不将干净排版传入视图数据", async () => {
   const checked = [];
   let branded = 0;
   const page = loadPage("export", {
     app: { globalData: {} },
     dependencies: {
       files: { call: async (_method, options) => { checked.push(options.src); return {}; } },
-      "brand-preview": { create: async () => { branded++; return "SINGLE_PREVIEW"; } },
+      "brand-preview": { create: async (_page, source) => { assert.equal(source, "LAYOUT"); branded++; return "BRANDED_LAYOUT"; } },
     },
   });
   page._session = { resultPath: "SINGLE" };
-  page.setData({ saved: true, savedPath: "LAYOUT", action: "layout", previewPath: "OLD_SINGLE_PREVIEW" });
+  page._savedPath = "LAYOUT";
+  page.setData({ saved: true, action: "layout", previewPath: "OLD_SINGLE_PREVIEW" });
   page.previewError();
   await page.primaryAction();
-  assert.equal(branded, 0);
-  assert.deepEqual(checked, ["LAYOUT"]);
-  assert.equal(page.data.previewPath, "LAYOUT");
-  assert.equal(page.data.savedPath, "LAYOUT");
+  assert.equal(branded, 1);
+  assert.deepEqual(checked, []);
+  assert.equal(page.data.previewPath, "BRANDED_LAYOUT");
+  assert.equal(Object.hasOwn(page.data, "savedPath"), false);
   assert.equal(page.data.previewFailed, false);
 });

@@ -1,4 +1,5 @@
 // 展示与入口共用的工具注册表；新功能需要有真实页面，不能用占位条目上线。
+const { VERSION: PREVIEW_WATERMARK_VERSION } = require("./brand-preview");
 const categories = [
   { id: "portrait", name: "证件照" },
   { id: "image", name: "图片编辑" },
@@ -172,6 +173,10 @@ function draftUrl(draft) {
 }
 function presentDraft(draft, now = Date.now()) {
   const tool = draftTool(draft);
+  const protectedPhoto = draft.requiresQuota === true || ["idphoto", "exam"].includes(draft.mode);
+  const trustedPreview = Boolean(draft.previewPath) &&
+    draft.previewWatermarkVersion === PREVIEW_WATERMARK_VERSION &&
+    draft.previewPath !== draft.resultPath;
   let updatedLabel = "保存在当前设备";
   if (Number.isFinite(draft.updatedAt) && draft.updatedAt > 0) {
     const elapsed = Math.max(0, now - draft.updatedAt);
@@ -184,11 +189,10 @@ function presentDraft(draft, now = Date.now()) {
   }
   return {
     ...draft,
-    displayPath:
-      draft.previewPath ||
-      (["idphoto", "exam"].includes(draft.mode)
-        ? draft.sourcePath
-        : draft.resultPath || draft.sourcePath),
+    displayPath: protectedPhoto
+      ? trustedPreview ? draft.previewPath : ""
+      : draft.previewPath || draft.resultPath || draft.sourcePath,
+    thumbnailMissing: protectedPhoto && !trustedPreview,
     title: tool ? tool.draftName || `${tool.name}草稿` : "本地作品草稿",
     updatedLabel,
   };

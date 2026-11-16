@@ -125,8 +125,9 @@ function silentExportFixture() {
   return { ...env, page, counts: () => ({ saves, albums }) };
 }
 
-test("未登录点保存会自动登录并继续一次保存，重复点击不重入，重复下载复用结果", async () => {
+test("未登录点保存会自动登录并继续一次保存，重复点击不重入，成功后的新保存重新计次", async () => {
   const env = silentExportFixture();
+  await env.page._previewReady;
   const pending = env.page.saveCurrent();
   await env.page.saveCurrent();
   assert.equal(env.login.length, 1);
@@ -139,12 +140,13 @@ test("未登录点保存会自动登录并继续一次保存，重复点击不�
   assert.equal(env.page.data.busy, false);
   assert.deepEqual(env.counts(), { saves: 1, albums: 1 });
   await env.page.saveCurrent();
-  assert.deepEqual(env.counts(), { saves: 1, albums: 2 });
+  assert.deepEqual(env.counts(), { saves: 2, albums: 2 });
   env.page.onUnload();
 });
 
 test("保存时静默登录失败保留照片并可重试；退出页面后迟到登录不继续保存", async () => {
   const env = silentExportFixture();
+  await env.page._previewReady;
   const pending = env.page.saveCurrent();
   env.login[0].fail({ errMsg: "login:fail" });
   await pending;
