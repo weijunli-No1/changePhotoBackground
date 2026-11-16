@@ -64,8 +64,7 @@
             : '拾光永久会员'}}</view
           >
           <view class="member-desc"
-            >{{!memberKnown ? '会员状态以当前微信账号为准' : isLifetimeMember ? '无限保存
-            · 全站免广告' : '一次开通，无限保存，免广告'}}</view
+            >{{!memberKnown ? '会员状态以当前微信账号为准' : isLifetimeMember ? '无限保存 · 全站免广告' : '一次开通，无限保存，免广告'}}</view
           ></view
         >
         <view class="member-link"

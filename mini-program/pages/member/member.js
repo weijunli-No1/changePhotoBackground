@@ -75,14 +75,15 @@ Page({
       const order = api.unwrap(await api.request("/api/member/orders", { method: "POST", data: { code: login.code } }));
       id = order.outTradeNo;
       membership.setPending(owner, id);
+      if (this._unloaded) return;
+      if (owner !== app.globalData.openid) throw Error("登录账号已变化，请重新打开会员页");
       if (order.recoveryRequired) {
         this.setData({ pendingOrder: true, notice: "已有待确认订单，请查询原订单，勿重复付款" });
         return;
       }
-      if (owner !== app.globalData.openid) throw Error("登录账号已变化，请重新打开会员页");
-      if (this._unloaded) return;
       try { await call("requestVirtualPayment", order.payData); }
       catch (e) {
+        if (this._unloaded) return;
         if (e.errCode === -2) {
           // A client cancellation cannot prove the platform order is closed.
           this.setData({ notice: "已取消本次支付，正在核实订单状态…" });

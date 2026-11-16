@@ -22,7 +22,7 @@
         ></view
       >
       <view class="export-spec"
-        >{{sizeName}}{{allowLayout ? ' · ' + colorName : ''}}</view
+        >{{saved && action === 'layout' ? '六寸排版 · ' : ''}}{{sizeName}}{{allowLayout ? ' · ' + colorName : ''}}</view
       >
       <view wx:if="{{actualWidth}}" class="export-dimensions"
         >实际图片 {{actualWidth}} × {{actualHeight}} px</view

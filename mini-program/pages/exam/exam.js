@@ -117,7 +117,13 @@ Page({
       wx.offThemeChange(this._themeChange);
   },
   async choosePhoto() {
-    if (this.data.processing || this.data.opening || this._choosing) return;
+    if (
+      this._unloaded ||
+      !this.data.spec ||
+      this.data.processing ||
+      this.data.opening ||
+      this._choosing
+    ) return;
     this._choosing = true;
     try {
       const media = await files.call("chooseMedia", {
@@ -147,6 +153,18 @@ Page({
         this.setData({ error: error.message || "选择失败，请重试" });
     } finally {
       this._choosing = false;
+    }
+  },
+  async openSpecs() {
+    if (this._unloaded || this._openingSpecs) return;
+    this._openingSpecs = true;
+    try {
+      await files.call("redirectTo", { url: "/pages/specs/specs" });
+    } catch (_) {
+      if (!this._unloaded)
+        this.setData({ error: "规格页未能打开，请重试" });
+    } finally {
+      this._openingSpecs = false;
     }
   },
   async smartPhoto() {

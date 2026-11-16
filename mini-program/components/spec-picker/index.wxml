@@ -23,6 +23,8 @@
         ><t-icon name="close" size="40rpx"
       /></view>
     </view>
+    <scroll-view class="spec-body" scroll-y show-scrollbar="{{true}}" scroll-into-view="{{customScrollTarget}}" style="height:{{bodyHeight}}px">
+      <view class="spec-body-content">
     <block wx:if="{{!keyboardHeight}}">
       <view wx:if="{{description}}" class="spec-description"
         >{{description}}</view
@@ -97,11 +99,13 @@
           /><text class="dimension-unit">px</text></view
         >
       </view>
-      <view wx:if="{{error}}" class="spec-error" aria-role="alert"
+      <view wx:if="{{error}}" id="custom-error" class="spec-error" aria-role="alert"
         >{{error}}</view
       >
     </view>
     <view wx:if="{{showCatalog && !keyboardHeight}}" class="spec-catalog-link" bindtap="browse" aria-role="button">查看考试与全部规格<t-icon name="chevron-right" size="28rpx" /></view>
+      </view>
+    </scroll-view>
     <view class="spec-footer">
       <view
         class="custom-confirm {{closing ? 'confirm-disabled' : ''}}"

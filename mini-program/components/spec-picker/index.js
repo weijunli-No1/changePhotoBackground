@@ -25,6 +25,8 @@ Component({
     invalidHeight: false,
     keyboardHeight: 0,
     availableHeight: 640,
+    bodyHeight: 320,
+    customScrollTarget: "",
     compactLayout: false,
   },
   observers: {
@@ -37,6 +39,10 @@ Component({
         this.hideSheet();
       }
     },
+    "description, showCatalog, error, keyboardHeight, availableHeight, compactLayout"() {
+      if (wx.nextTick) wx.nextTick(() => this.updateBodyHeight());
+      else this.updateBodyHeight();
+    },
   },
   methods: {
     stop() {},
@@ -47,8 +53,39 @@ Component({
         : wx.getSystemInfoSync();
       this._windowHeight = info.windowHeight;
       this._topInset = (info.statusBarHeight || 20) + 48;
+      this._safeBottom = info.safeArea
+        ? Math.max(0, (info.screenHeight || info.windowHeight) - info.safeArea.bottom)
+        : 0;
       const availableHeight = Math.max(240, info.windowHeight - this._topInset);
-      this.setData({ availableHeight, compactLayout: availableHeight < 500 });
+      this.setData({
+        availableHeight,
+        bodyHeight: this.initialBodyHeight(availableHeight),
+        compactLayout: availableHeight < 500,
+      });
+    },
+    initialBodyHeight(availableHeight) {
+      // Reserve the heading, confirmation button and safe area until native
+      // measurements are ready; the body must never push those controls out.
+      return Math.max(0, availableHeight - 8 - 44 - 72 - (this._safeBottom || 0));
+    },
+    updateBodyHeight() {
+      if (!this.data.rendered || this.data.closing || this._detached || !this.createSelectorQuery) return;
+      const version = this._layoutVersion = (this._layoutVersion || 0) + 1;
+      this.createSelectorQuery()
+        .select(".spec-head").boundingClientRect()
+        .select(".spec-footer").boundingClientRect()
+        .select(".spec-body-content").boundingClientRect()
+        .exec((rects) => {
+          if (this._detached || !this.data.rendered || this.data.closing || version !== this._layoutVersion) return;
+          const [head, footer, content] = rects || [];
+          if (!head || !footer || !content) return;
+          const height = Math.max(0, Math.min(
+            content.height,
+            this.data.availableHeight - 8 - head.height - footer.height,
+          ));
+          if (Math.abs(height - this.data.bodyHeight) > 0.5)
+            this.setData({ bodyHeight: height });
+        });
     },
     resetSelection() {
       const width = this.data.currentWidth || sizes[0].width;
@@ -64,6 +101,7 @@ Component({
         error: "",
         invalidWidth: false,
         invalidHeight: false,
+        customScrollTarget: "",
       });
     },
     openSheet() {
@@ -83,6 +121,7 @@ Component({
         },
         () => {
           if (this._detached || transition !== this._transition) return;
+          this.updateBodyHeight();
           this.bindMotion(transition);
         },
       );
@@ -157,29 +196,45 @@ Component({
       this._styleBindings = [];
     },
     resetKeyboard() {
+      const availableHeight = Math.max(
+        240,
+        (this._windowHeight || 730) - (this._topInset || 68),
+      );
       this.setData({
         keyboardHeight: 0,
-        availableHeight: Math.max(
-          240,
-          (this._windowHeight || 730) - (this._topInset || 68),
-        ),
+        availableHeight,
+        compactLayout: availableHeight < 500,
+        bodyHeight: this.initialBodyHeight(availableHeight),
       });
     },
     keyboardChange(e) {
       if (this.data.closing) return;
       const height = Math.max(0, Number(e.detail.height) || 0);
+      const availableHeight = Math.max(
+        200,
+        (this._windowHeight || 730) - (this._topInset || 68) - height,
+      );
       this.setData({
         keyboardHeight: height,
-        availableHeight: Math.max(
-          200,
-          (this._windowHeight || 730) - (this._topInset || 68) - height,
-        ),
+        availableHeight,
+        compactLayout: availableHeight < 500,
+        bodyHeight: this.initialBodyHeight(availableHeight),
       });
     },
     focusCustom(e) {
       if (this.data.closing) return;
       this.setData({ selectedIndex: -1, selectedName: "自定义" });
       if (e.detail && Number.isFinite(e.detail.height)) this.keyboardChange(e);
+      this.revealCustom();
+    },
+    revealCustom(target = "custom-fields") {
+      const transition = this._transition;
+      // Clear first so repeated invalid confirmations still reveal the fields
+      // after the user scrolls back to the preset list.
+      this.setData({ customScrollTarget: "" }, () => {
+        if (this._detached || this.data.closing || transition !== this._transition) return;
+        this.setData({ customScrollTarget: target });
+      });
     },
     inputBlur() {
       // 切换宽／高输入框也会 blur；只跟随键盘高度事件，避免弹层反复展开。
@@ -275,7 +330,7 @@ Component({
           error: error.message,
           invalidWidth: invalid(this.data.width),
           invalidHeight: invalid(this.data.height),
-        });
+        }, () => this.revealCustom("custom-error"));
       }
     },
     custom() {

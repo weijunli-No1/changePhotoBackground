@@ -84,8 +84,9 @@ Page({
     files
       .call("getImageInfo", { src: session.resultPath })
       .then((info) => {
-        if (!this._unloaded)
-          this.setData({ actualWidth: info.width, actualHeight: info.height });
+        this._sourceDimensions = { actualWidth: info.width, actualHeight: info.height };
+        if (!this._unloaded && !(this.data.saved && this.data.action === "layout"))
+          this.setData(this.sourceDimensions());
       })
       .catch(() => {
         if (!this._unloaded) this.markUnavailable();
@@ -149,13 +150,14 @@ Page({
       return;
     this._previewLoading = true;
     this.setData({ previewPreparing: true, previewFailed: false, error: "" });
+    const savedPath = this.data.saved && this.data.savedPath;
     try {
-      const path = this.data.local
+      const path = savedPath || (this.data.local
         ? this._session.resultPath
-        : await brandPreview.create(this, this._session.resultPath);
-      if (this.data.local) await files.call("getImageInfo", { src: path });
+        : await brandPreview.create(this, this._session.resultPath));
+      if (this.data.local || savedPath) await files.call("getImageInfo", { src: path });
       if (this._unloaded || this.data.unavailable) {
-        if (!this.data.local) files.removeTemp(path);
+        if (!this.data.local && !savedPath) files.removeTemp(path);
         return;
       }
       this.setData({ previewPath: path });
@@ -187,6 +189,9 @@ Page({
     if (this._videoPlayer) this._videoPlayer.dispose();
     for (const path of this._layoutPaths || []) files.removeTemp(path);
   },
+  sourceDimensions() {
+    return this._sourceDimensions || { actualWidth: 0, actualHeight: 0 };
+  },
   selectAction(e) {
     const action = e.currentTarget.dataset.action;
     if (
@@ -201,6 +206,7 @@ Page({
       action,
       saved: false,
       error: "",
+      ...this.sourceDimensions(),
     });
   },
   previewImage() {
@@ -298,6 +304,7 @@ Page({
       savingStage: "准备保存…",
       error: "",
       saved: false,
+      ...this.sourceDimensions(),
     });
     try {
       let path = this._session.resultPath;
@@ -351,7 +358,18 @@ Page({
       this.setData({ savingStage: "正在写入手机相册…" });
       await this.saveToAlbum(path);
       if (!this._unloaded) {
-        this.setData({ saved: true, savedPath: path });
+        this.setData({
+          saved: true,
+          savedPath: path,
+          action,
+          ...(action === "layout" ? { actualWidth: 0, actualHeight: 0 } : this.sourceDimensions()),
+        });
+        if (action === "layout") {
+          files.call("getImageInfo", { src: path }).then((info) => {
+            if (!this._unloaded && this.data.saved && this.data.savedPath === path)
+              this.setData({ actualWidth: info.width, actualHeight: info.height });
+          }).catch(() => { /* Saving succeeded; an unavailable dimension must not report failure. */ });
+        }
         this.fetchUsage();
       }
     } catch (error) {

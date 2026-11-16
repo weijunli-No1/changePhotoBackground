@@ -85,7 +85,7 @@
     <view class="panel-content">
       <view wx:if="{{panel !== 'adjust'}}" class="color-row">
         <view
-          class="swatch-item"
+          class="swatch-item {{opening || !colorReady ? 'unavailable' : ''}}"
           wx:for="{{presetColors}}"
           wx:key="value"
           data-color="{{item.value}}"
@@ -93,7 +93,7 @@
           aria-role="radio"
           aria-label="{{item.name}}"
           aria-checked="{{currentBgColor === item.value && !custom}}"
-          aria-disabled="{{opening}}"
+          aria-disabled="{{opening || !colorReady}}"
           ><view
             class="swatch {{currentBgColor === item.value && !custom ? 'selected' : ''}}"
             style="background-color:{{item.value}}"
@@ -108,11 +108,12 @@
           ></view
         >
         <view
-          class="swatch-item"
+          class="swatch-item {{opening || !colorReady ? 'unavailable' : ''}}"
           bindtap="showCustomColor"
           aria-role="radio"
           aria-label="自定义底色"
           aria-checked="{{custom}}"
+          aria-disabled="{{opening || !colorReady}}"
           ><view
             class="swatch custom-swatch {{custom ? 'selected' : ''}}"
             style="background-color:{{custom ? currentBgColor : ''}}"

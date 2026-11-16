@@ -124,6 +124,7 @@ Page({
   },
   invalidate(values) {
     if (this.data.processing || this.data.opening || this._unloaded) return;
+    if (Object.keys(values).every((key) => this.data[key] === values[key])) return;
     this.setData({ ...values, resultPath: "", resultSize: "", error: "" }, () =>
       this.updatePreview(),
     );

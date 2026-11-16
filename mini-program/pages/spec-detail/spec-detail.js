@@ -15,6 +15,7 @@ Page({
     mode: "smart",
     selectOnly: false,
     expanded: false,
+    copyingSource: false,
   },
   onLoad(options = {}) {
     this._unloaded = false;
@@ -33,12 +34,19 @@ Page({
   onUnload() {
     this._unloaded = true;
   },
-  source() {
-    if (this.data.spec && this.data.spec.sourceUrl)
-      wx.setClipboardData({
+  async source() {
+    if (this._unloaded || this.data.copyingSource || !this.data.spec || !this.data.spec.sourceUrl) return;
+    this.setData({ copyingSource: true, error: "" });
+    try {
+      await files.call("setClipboardData", {
         data: this.data.spec.sourceUrl,
-        success: () => wx.showToast({ title: "已复制官方链接", icon: "none" }),
       });
+      if (!this._unloaded) wx.showToast({ title: "已复制官方链接", icon: "none" });
+    } catch (_) {
+      if (!this._unloaded) this.setData({ error: "官方来源链接未能复制，请重试" });
+    } finally {
+      if (!this._unloaded) this.setData({ copyingSource: false });
+    }
   },
   toggleRequirements() {
     this.setData({ expanded: !this.data.expanded });

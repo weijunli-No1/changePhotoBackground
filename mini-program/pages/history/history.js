@@ -98,8 +98,8 @@ Page({
       if (!this._unloaded) this.setData({ loggingIn: false });
     }
   },
-  async fetchHistoryList() {
-    if (!app.globalData.openid || this.data.isLoading) return;
+  async fetchHistoryList(force = false) {
+    if (!app.globalData.openid || (this.data.isLoading && !force)) return;
     const owner = app.globalData.openid;
     const seq = (this._historySeq = (this._historySeq || 0) + 1);
     this.setData({ isLoading: true, loadError: "" });
@@ -211,8 +211,13 @@ Page({
       if (!res.confirm || this._unloaded || app.globalData.openid !== owner) return;
       api.unwrap(await api.request(`/api/history/${id}`, { method: "DELETE" }));
       if (!this._unloaded && app.globalData.openid === owner) {
+        this.setData({
+          historyList: this.data.historyList.filter((item) => item.id !== id),
+          error: "",
+        });
         wx.showToast({ title: "已删除", icon: "success" });
-        this.fetchHistoryList();
+        // Replace any refresh started before deletion, whose response may still contain it.
+        await this.fetchHistoryList(true);
       }
     } catch (error) {
       if (!this._unloaded && app.globalData.openid === owner)

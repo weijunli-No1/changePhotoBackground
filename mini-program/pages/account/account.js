@@ -78,6 +78,10 @@ Page({
         () => !this._unloaded && app.globalData.openid === this._owner,
       );
       if (this._unloaded) return;
+      if (app.globalData.openid !== this._owner) {
+        this.setData({ ownerValid: false, error: "登录状态已变化，请返回后重新进入" });
+        return;
+      }
       app.globalData.userInfo = {
         ...app.globalData.userInfo,
         openid: this._owner,

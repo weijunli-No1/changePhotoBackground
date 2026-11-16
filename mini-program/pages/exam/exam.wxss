@@ -25,6 +25,24 @@
   height: 100%;
   width: 100%;
 }
+.exam-preview-empty {
+  height: auto;
+  min-height: 480rpx;
+}
+.exam-empty {
+  padding: 32rpx;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--sg-muted);
+}
+.exam-empty .empty-title {
+  color: var(--sg-text);
+  margin-top: 20rpx;
+}
+.exam-empty .secondary {
+  margin-top: 20rpx;
+}
 .exam-loading {
   position: absolute;
   left: 0;

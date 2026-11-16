@@ -102,8 +102,8 @@
           <view wx:if="{{spec.sourceUrl}}" class="source-section"
             ><view class="source-label">依据：{{spec.sourceLabel}}</view
             ><view class="source-date">核对日期 {{spec.reviewedAt}}</view
-            ><view class="source-link" bindtap="source" aria-role="button"
-              >复制官方来源链接<t-icon name="link" size="30rpx" /></view
+            ><view class="source-link" bindtap="source" aria-role="button" aria-disabled="{{copyingSource}}"
+              >{{copyingSource ? '正在复制…' : '复制官方来源链接'}}<t-icon name="link" size="30rpx" /></view
           ></view>
         </block>
       </block>

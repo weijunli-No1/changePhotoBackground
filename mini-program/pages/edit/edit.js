@@ -28,6 +28,7 @@ Page({
     panel: "color",
     specVisible: false,
     colorPickerVisible: false,
+    colorReady: false,
     currentBgColor: "#FFFFFF",
     size: sizes[0],
     presetColors: [
@@ -76,6 +77,7 @@ Page({
         if (this._transparentPath) {
           try {
             this._transparent = await files.readBase64(this._transparentPath);
+            if (!this._unloaded) this.setData({ colorReady: !!this._transparent });
           } catch (error) {
             this._transparentPath = "";
             this._transparent = "";
@@ -162,7 +164,7 @@ Page({
   },
   browseSpecs() {
     if (this.data.processing || this.data.opening) return;
-    this.setData({ specVisible: false });
+    this.setData({ specVisible: false, openingError: "" });
     wx.navigateTo({
       url: `/pages/specs/specs?select=1&width=${this.data.size.width}&height=${this.data.size.height}&name=${encodeURIComponent(this.data.size.name)}&tool=${this.data.toolId}&spec=${this._examSpec ? this._examSpec.id : ""}`,
       success: (res) =>
@@ -170,7 +172,7 @@ Page({
           if (!this._unloaded && value.size) this.selectSpec({ detail: value.size });
         }),
       fail: () => {
-        if (!this._unloaded) this.setData({ error: "规格目录未能打开，请重试" });
+        if (!this._unloaded) this.setData({ openingError: "规格目录未能打开，请重试" });
       },
     });
   },
@@ -207,6 +209,7 @@ Page({
       resultPath: "",
       // A new source must never keep displaying the previous photo on failure.
       previewPath: "",
+      colorReady: false,
     });
     try {
       const data = await api.upload(this.data.sourcePath, this.data.size, (task) => {
@@ -225,6 +228,7 @@ Page({
       this._transparent = transparent;
       this._transparentPath = transparentPath;
       this._mattingBusy = false;
+      this.setData({ colorReady: true });
       await this.changeBackgroundColor(this.data.currentBgColor);
     } catch (error) {
       if (!this._unloaded && seq === this._seq)
@@ -337,12 +341,13 @@ Page({
     }
   },
   selectColor(e) {
-    if (this._mattingBusy || this.data.opening) return;
+    if (!this._transparent || this._mattingBusy || this.data.opening) return;
     clearTimeout(this._colorTimer);
     this.setData({ custom: false });
     this.queueColor(e.currentTarget.dataset.color);
   },
   queueColor(color) {
+    if (!this._transparent || this._mattingBusy || this.data.opening || this._unloaded) return;
     if (
       this.data.processing &&
       (this._queuedColor === color || this._requestedColor === color)
