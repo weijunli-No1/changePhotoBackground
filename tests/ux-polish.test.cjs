@@ -254,7 +254,7 @@ test("原图文件失效时阻止保存，并显示明确恢复状态", async ()
   assert.equal(saves, 0);
 });
 
-test("预览失败可在当前页重建品牌水印，重试不消耗保存次数且防重复", async () => {
+test("预览失败可在当前页重建小图，重试不消耗保存次数且防重复", async () => {
   let resolve,
     renders = 0,
     saves = 0;
@@ -267,7 +267,7 @@ test("预览失败可在当前页重建品牌水印，重试不消耗保存次�
     require: (n) =>
       n.endsWith("/brand-preview")
         ? {
-            create: () => {
+            displayPreview: () => {
               renders++;
               return new Promise((r) => (resolve = r));
             },
@@ -283,9 +283,9 @@ test("预览失败可在当前页重建品牌水印，重试不消耗保存次�
   assert.equal(renders, 1);
   assert.equal(saves, 0);
   assert.equal(p.data.previewPreparing, true);
-  resolve("NEW_BRANDED");
+  resolve("NEW_SMALL");
   await retry;
-  assert.equal(p.data.previewPath, "NEW_BRANDED");
+  assert.equal(p.data.previewPath, "NEW_SMALL");
   assert.equal(p.data.previewPreparing, false);
   assert.equal(p.data.previewFailed, false);
 });

@@ -7,7 +7,8 @@ function createMotion(host, api) {
   let disposed = false;
   const bindings = [],
     fades = new Map(),
-    indicators = new Map();
+    indicators = new Map(),
+    measurements = new Map();
   function bind(selector, updater, ready) {
     if (!enabled || disposed) return;
     host.applyAnimatedStyle(selector, updater, {}, (result) => {
@@ -48,6 +49,8 @@ function createMotion(host, api) {
     },
     indicator(track, selected, marker, options = {}) {
       if (!enabled || disposed || !host.createSelectorQuery) return;
+      const request = (measurements.get(marker) || 0) + 1;
+      measurements.set(marker, request);
       host
         .createSelectorQuery()
         .select(track)
@@ -55,7 +58,7 @@ function createMotion(host, api) {
         .select(selected)
         .boundingClientRect()
         .exec((rects) => {
-          if (disposed || !rects[0] || !rects[1]) return;
+          if (disposed || measurements.get(marker) !== request || !rects[0] || !rects[1]) return;
           const width = Math.min(rects[1].width, options.maxWidth || rects[1].width);
           const x = rects[1].left - rects[0].left + (rects[1].width - width) / 2;
           let state = indicators.get(marker);
@@ -89,6 +92,7 @@ function createMotion(host, api) {
       bindings.length = 0;
       fades.clear();
       indicators.clear();
+      measurements.clear();
     },
   };
 }

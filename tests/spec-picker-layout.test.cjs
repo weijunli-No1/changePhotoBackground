@@ -5,13 +5,13 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { createRequire } = require("node:module");
 
-function picker() {
+function picker(windowInfo = { windowHeight: 730, statusBarHeight: 47 }) {
   const filename = path.resolve(__dirname, "../mini-program/components/spec-picker/index.js");
   let definition;
   vm.runInNewContext(fs.readFileSync(filename, "utf8"), {
     Component: (value) => { definition = value; },
     require: createRequire(filename),
-    wx: { getWindowInfo: () => ({ windowHeight: 730, statusBarHeight: 47 }) },
+    wx: { getWindowInfo: () => windowInfo },
     setTimeout,
     clearTimeout,
   }, { filename });
@@ -51,6 +51,14 @@ test("规格弹层仅有260px空间时内容可滚动，标题和安全区确认
   measure(page, { content: 420 });
   assert.equal(page.data.bodyHeight, 102);
   assert.equal(8 + 44 + page.data.bodyHeight + 106, 260);
+});
+
+test("窄屏大键盘弹起时弹层不会向上越过状态栏，内容区仍能滚动", () => {
+  const page = picker({ windowWidth: 320, windowHeight: 568, statusBarHeight: 20 });
+  page.keyboardChange({ detail: { height: 376 } });
+  measure(page, { head: 44, footer: 66, content: 200 });
+  assert.equal(page.data.availableHeight, 172);
+  assert.equal(page.data.bodyHeight, 54);
 });
 
 test("空间充裕时规格弹层按内容自然收高，键盘出现时重新计算滚动区", () => {

@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 root=Path(__file__).resolve().parents[1]/"mini-program"
 scale=4
-blue='#2358EE';slate='#63718A'
+pine='#1B5147';slate='#586961'
 def canvas():
  im=Image.new('RGBA',(80*scale,80*scale));return im,ImageDraw.Draw(im)
 def xy(points):return [(int(x*scale),int(y*scale)) for x,y in points]
@@ -15,14 +15,14 @@ def box(d,b,**kw):d.rounded_rectangle(tuple(int(v*scale) for v in b),radius=8*sc
 for theme in ("light", "dark"):
  for name in ['home','history','user']:
   for active in [False,True]:
-   im,d=canvas();color=(blue if theme == "light" else "#91B4FF") if active else (slate if theme == "light" else "#ABABAF")
+   im,d=canvas();color=(pine if theme == "light" else "#A0D5BD") if active else (slate if theme == "light" else "#B0BEB4")
    if name=='home':
     shape=[(9,35),(40,10),(71,35),(67,35),(67,68),(48,68),(48,49),(32,49),(32,68),(13,68),(13,35),(9,35)]
-    if active:d.polygon(xy(shape),fill=color);d.ellipse((61*scale,7*scale,77*scale,23*scale),fill='#FFE34C')
+    if active:d.polygon(xy(shape),fill=color)
     else:line(d,shape,color)
    elif name=='history':
     box(d,(12,12,68,68),fill=color if active else None,outline=color,width=5*scale)
-    fg=('#FFFFFF' if theme == 'light' else '#102144') if active else color
+    fg=('#FFFFFF' if theme == 'light' else '#0d2c24') if active else color
     d.ellipse((46*scale,22*scale,56*scale,32*scale),fill=fg)
     line(d,[(18,57),(33,41),(45,53),(54,43),(64,53)],fg,4)
    else:

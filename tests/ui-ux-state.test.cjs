@@ -17,7 +17,12 @@ function page(file, globals = {}) {
       clearTimeout,
       ...globals,
       require: (name) => name.endsWith('/membership') ? require('./helpers/membership-stub.cjs') : name.endsWith('/brand-preview')
-        ? { VERSION: 2, create: async (_page, source) => 'BRANDED:' + source }
+        ? {
+            VERSION: 2, DISPLAY_VERSION: 1,
+            create: async (_page, source) => 'BRANDED:' + source,
+            createPair: async (_page, source) => ({ displayPath: 'SMALL:' + source, previewPath: 'BRANDED:' + source }),
+            displayPreview: async (_page, source) => 'SMALL:' + source,
+          }
         : name.endsWith('/exam-image') ? require('../mini-program/utils/exam-image')
         : (globals.require || createRequire(filename))(name),
     },

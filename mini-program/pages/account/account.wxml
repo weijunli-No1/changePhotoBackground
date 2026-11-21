@@ -1,10 +1,10 @@
 <form bindsubmit="submit">
-  <view class="page-wrap">
+  <view class="page-wrap theme-{{studioTheme.id}}">
     <navigation-bar title="个人资料" show-back="{{true}}" />
     <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
       <view class="account-body">
-        <view class="account-title">设置头像与昵称</view>
-        <view class="account-note">选择头像，使用微信昵称快捷完善资料。</view>
+        <view class="account-title">头像与昵称</view>
+        <view class="account-card">
         <button
           class="avatar-picker"
           open-type="chooseAvatar"
@@ -43,11 +43,12 @@
           aria-label="微信昵称快捷填写"
         />
         <view class="account-note input-note"
-          >点击输入框，在键盘上方选择你的微信昵称。</view
+          >支持微信昵称快捷填写</view
         >
-        <view wx:if="{{error}}" class="error-inline">{{error}}</view>
+        <view wx:if="{{error}}" class="error-inline" aria-role="alert">{{error}}</view>
+        </view>
         <view class="account-privacy"
-          >头像和昵称仅用于“我的”页面展示，保存在当前设备。</view
+          >资料仅保存在这台设备，随当前微信账号显示。</view
         >
       </view>
     </scroll-view>

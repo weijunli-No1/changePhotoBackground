@@ -11,13 +11,13 @@
   color: var(--sg-muted);
   line-height: 1.8;
 }
-.faq-heading {
+.feedback-heading {
   margin: 44rpx 0 12rpx;
   font-size: var(--sg-font-label);
   font-weight: 600;
 }
 .feedback-note {
-  margin-top: 36rpx;
+  margin-top: 8rpx;
   font-size: var(--sg-font-note);
   color: var(--sg-muted);
   line-height: 1.8;
@@ -61,3 +61,5 @@
 }
 
 .device-copy::after { border: 0; }
+
+.faq-list { margin-top: 26rpx; padding: 0 24rpx; background: var(--sg-surface); border: 1rpx solid var(--sg-line); border-radius: var(--sg-radius-card); overflow: hidden; }

@@ -7,7 +7,7 @@ const { createRequire } = require("node:module");
 
 function loadPage(name, { app, wx = {}, dependencies = {} }) {
   dependencies = {
-    "brand-preview": { create: async (_page, source) => "BRANDED:" + source },
+    "brand-preview": { displayPreview: async (_page, source) => "SMALL:" + source, create: async (_page, source) => "BRANDED:" + source },
     ...dependencies,
   };
   const filename = path.resolve(__dirname, `../mini-program/pages/${name}/${name}.js`);
@@ -184,14 +184,14 @@ test("退出会员页后到达的恢复订单仍保留订单号，不再更新�
   assert.deepEqual(pending, { owner: "owner", id: "PENDING" });
 });
 
-test("已保存排版的预览重试重新烧录水印，不将干净排版传入视图数据", async () => {
+test("已保存排版的预览重试重新生成缩图，不将干净排版传入视图数据", async () => {
   const checked = [];
   let branded = 0;
   const page = loadPage("export", {
     app: { globalData: {} },
     dependencies: {
       files: { call: async (_method, options) => { checked.push(options.src); return {}; } },
-      "brand-preview": { create: async (_page, source) => { assert.equal(source, "LAYOUT"); branded++; return "BRANDED_LAYOUT"; } },
+      "brand-preview": { displayPreview: async (_page, source) => { assert.equal(source, "LAYOUT"); branded++; return "SMALL_LAYOUT"; } },
     },
   });
   page._session = { resultPath: "SINGLE" };
@@ -201,7 +201,7 @@ test("已保存排版的预览重试重新烧录水印，不将干净排版传�
   await page.primaryAction();
   assert.equal(branded, 1);
   assert.deepEqual(checked, []);
-  assert.equal(page.data.previewPath, "BRANDED_LAYOUT");
+  assert.equal(page.data.previewPath, "SMALL_LAYOUT");
   assert.equal(Object.hasOwn(page.data, "savedPath"), false);
   assert.equal(page.data.previewFailed, false);
 });

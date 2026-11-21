@@ -21,7 +21,11 @@ function load(file, globals = {}) {
       clearTimeout,
       ...globals,
       require: (name) => name.endsWith('/brand-preview')
-        ? { create: async (_page, source) => 'BRANDED:' + source }
+        ? {
+          displayPreview: async (_page, source) => "SMALL:" + source, create: async (_page, source) => "BRANDED:" + source,
+          createPair: async (_page, source) => ({ displayPath: "SMALL:" + source, previewPath: "BRANDED:" + source }),
+          VERSION: 2, DISPLAY_VERSION: 1,
+        }
         : name.endsWith('/exam-image') ? require('../mini-program/utils/exam-image')
         : (globals.require || createRequire(filename))(name),
     },

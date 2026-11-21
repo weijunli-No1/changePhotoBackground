@@ -31,7 +31,6 @@ Page({
     draftCount: 0,
   },
   onShow() {
-    if (this.getTabBar && this.getTabBar()) this.getTabBar().init();
     this._unloaded = false;
     this.syncUsageOwner();
     this.setData({
@@ -150,6 +149,7 @@ Page({
       const usage = api.unwrap(
         await api.request("/api/user/usage", { data: { openid } }),
       );
+      const hasMemberField = typeof usage.isLifetimeMember === "boolean";
       if (
         !this._unloaded &&
         seq === this._usageSeq &&
@@ -161,9 +161,11 @@ Page({
             0,
             5 + (usage.adViewCount || 0) - (usage.saveCount || 0),
           ),
-          unlimited: usage.isLifetimeMember === true || usage.adViewCount >= 5,
-          memberKnown: typeof usage.isLifetimeMember === "boolean",
-          isLifetimeMember: usage.isLifetimeMember === true,
+          unlimited: (hasMemberField ? usage.isLifetimeMember : this.data.isLifetimeMember) || usage.adViewCount >= 5,
+          ...(hasMemberField ? {
+            memberKnown: true,
+            isLifetimeMember: usage.isLifetimeMember,
+          } : {}),
         });
     } catch (error) {
       if (
@@ -181,14 +183,19 @@ Page({
         this.setData({ usageBusy: false });
     }
   },
-  openDrafts() {
-    app.globalData.requestedWorksTab = "drafts";
+  openWorks(e) {
+    if (this._openingWorks || this._unloaded) return;
+    const tab = e.currentTarget.dataset.tab;
+    if (tab !== "drafts" && tab !== "cloud") return;
+    this._openingWorks = true;
+    app.globalData.requestedWorksTab = tab;
     wx.switchTab({
       url: "/pages/history/history",
       fail: () => {
         delete app.globalData.requestedWorksTab;
         if (!this._unloaded) this.setData({ error: "作品页未能打开，请重试" });
       },
+      complete: () => { this._openingWorks = false; },
     });
   },
   async onLogout() {

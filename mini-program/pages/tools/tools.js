@@ -22,7 +22,6 @@ Page({
     cropImageStyle: "",
     cropFallbackTransform: "",
     cropPreviewReady: false,
-    accentColor: "#2358ee",
     error: "",
     errorRecovery: "reselect",
     quality: 85,
@@ -34,6 +33,9 @@ Page({
     positionY: 50,
     sourceSize: "",
     resultSize: "",
+    sourceBar: 0,
+    resultBar: 0,
+    sizeChange: "",
     sourceWidth: 0,
     sourceHeight: 0,
     canMoveX: false,
@@ -57,14 +59,9 @@ Page({
   },
   onLoad(options) {
     this._unloaded = false;
-    this._themeChange = ({ theme }) => {
-      if (!this._unloaded)
-        this.setData({ accentColor: theme === "dark" ? "#91b4ff" : "#2358ee" });
-    };
-    if (wx.getAppBaseInfo) this._themeChange(wx.getAppBaseInfo());
-    if (wx.onThemeChange) wx.onThemeChange(this._themeChange);
     this._draftId = options.draft || drafts.createId();
-    const draft = options.draft ? drafts.get(options.draft) : null;
+    const stored = options.draft ? drafts.get(options.draft) : null;
+    const draft = stored && ["compress", "crop"].includes(stored.mode) ? stored : null;
     const mode = draft
       ? draft.mode
       : options.mode === "crop"
@@ -80,10 +77,10 @@ Page({
         width: draft.width,
         height: draft.height,
       });
+    else if (options.draft)
+      this.setData({ error: "这个草稿无法在当前工具打开，请重新选图" });
     else if (options.src)
       this.setData({ sourcePath: decodeURIComponent(options.src) });
-    else if (options.draft)
-      this.setData({ error: "草稿已清理，请重新选择照片" });
   },
   onReady() {
     this._ready = true;
@@ -93,13 +90,15 @@ Page({
     this.updateCropPreview();
   },
   onHide() {
+    if (this._cropDrag) {
+      this.cancelCropDrag();
+      if (this.data.processing) return;
+    }
     if (!this.data.opening) this.persistDraft();
   },
   onUnload() {
     this.persistDraft();
     this._unloaded = true;
-    if (this._themeChange && wx.offThemeChange)
-      wx.offThemeChange(this._themeChange);
     this.releaseCropMotion();
   },
   async choosePhoto() {
@@ -145,8 +144,9 @@ Page({
       const size = await files.fileSize(path);
       if (this._unloaded) return;
       if (replacing) this._draftId = drafts.createId();
+      this._sourceBytes = size;
       this.setData({
-        ...(replacing ? {
+        ...(replacing && this.data.sourcePath ? {
           angle: 0,
           ratio: 0,
           ratioName: "原比例",
@@ -161,6 +161,9 @@ Page({
         sourceHeight: info.height,
         resultPath: "",
         resultSize: "",
+        sizeChange: "",
+        sourceBar: 100,
+        resultBar: 0,
         cropPreviewReady: false,
         error: "",
       });
@@ -219,6 +222,16 @@ Page({
         ? this.data.sourceWidth
         : this.data.sourceHeight;
       const rect = cropRect(orientedWidth, orientedHeight, this.data.ratio);
+      const sourceBytes = this._sourceBytes;
+      const fileComparison = { sizeChange: "", sourceBar: sourceBytes > 0 ? 100 : 0, resultBar: 0 };
+      if (this.data.mode === "compress" && sourceBytes > 0 && size > 0) {
+        const largest = Math.max(sourceBytes, size);
+        const change = Math.round((size - sourceBytes) * 100 / sourceBytes);
+        fileComparison.sourceBar = 100 * sourceBytes / largest;
+        fileComparison.resultBar = 100 * size / largest;
+        fileComparison.sizeChange = change === 0 ? "体积接近原图" :
+          (change > 0 ? "增大 " : "减小 ") + Math.abs(change) + "%";
+      }
       this.setData({
         canMoveX: rect.width < orientedWidth - 0.5,
         canMoveY: rect.height < orientedHeight - 0.5,
@@ -227,6 +240,7 @@ Page({
         width: result.width,
         height: result.height,
         resultSize: files.formatBytes(size),
+        ...fileComparison,
       });
       this.persistDraft();
     } catch (error) {
@@ -278,6 +292,8 @@ Page({
   reset() {
     if (this.data.processing || this.data.opening || this.data.adjusting)
       return;
+    const { angle, ratio, positionX, positionY, resultPath } = this.data;
+    if (resultPath && angle === 0 && ratio === 0 && positionX === 50 && positionY === 50) return;
     this.setData({
       angle: 0,
       ratio: 0,
@@ -302,6 +318,7 @@ Page({
   previewPosition(axis, e) {
     if (this.data.processing || this.data.opening || this._unloaded) return;
     const value = Math.max(0, Math.min(100, Number(e.detail.value) || 0));
+    if (!this.data.adjusting && this.data.resultPath && value === this.data["position" + axis]) return;
     if (!this.data.adjusting)
       this.setData({
         adjusting: true,
@@ -316,12 +333,11 @@ Page({
   },
   finishPosition(axis, e) {
     if (this.data.processing || this.data.opening || this._unloaded) return;
+    const value = Math.max(0, Math.min(100, Number(e.detail.value) || 0));
+    if (!this.data.adjusting && this.data.resultPath && value === this.data["position" + axis]) return;
     this._dragPosition = null;
     this.setData({
-      ["position" + axis]: Math.max(
-        0,
-        Math.min(100, Number(e.detail.value) || 0),
-      ),
+      ["position" + axis]: value,
       adjusting: false,
     });
     this.apply();
@@ -331,6 +347,42 @@ Page({
     this._dragPosition = null;
     this.setData({ adjusting: false });
     this.apply();
+  },
+  startCropDrag(e) {
+    if (this._unloaded || this.data.processing || this.data.opening || this.data.adjusting ||
+        !this._cropGeometry || e.touches.length !== 1) return;
+    const axis = this.data.canMoveX ? "X" : this.data.canMoveY ? "Y" : "";
+    const range = axis === "X" ? this._cropGeometry.dx : this._cropGeometry.dy;
+    if (!axis || range < 1) return;
+    const touch = e.touches[0];
+    this._cropDrag = {
+      axis, range, id: touch.identifier,
+      origin: axis === "X" ? touch.clientX : touch.clientY,
+      start: this.data["position" + axis],
+    };
+  },
+  moveCropDrag(e) {
+    const drag = this._cropDrag;
+    if (!drag) return;
+    if (e.touches.length !== 1) return this.cancelCropDrag();
+    const touch = e.touches[0];
+    if (drag.id !== touch.identifier) return;
+    const distance = (drag.axis === "X" ? touch.clientX : touch.clientY) - drag.origin;
+    if (drag.value === undefined && Math.abs(distance) < 3) return;
+    const value = Math.max(0, Math.min(100, Math.round(drag.start - 100 * distance / drag.range)));
+    if (value === (drag.value === undefined ? drag.start : drag.value)) return;
+    drag.value = value;
+    this.previewPosition(drag.axis, { detail: { value } });
+  },
+  endCropDrag() {
+    const drag = this._cropDrag;
+    this._cropDrag = null;
+    if (drag && drag.value !== undefined)
+      this.finishPosition(drag.axis, { detail: { value: drag.value } });
+  },
+  cancelCropDrag() {
+    this._cropDrag = null;
+    this.cancelPosition();
   },
   cropTransform(axis, value) {
     const g = this._cropGeometry || { dx: 0, dy: 0 };

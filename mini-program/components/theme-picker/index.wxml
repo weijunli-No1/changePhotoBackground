@@ -1,0 +1,10 @@
+<view class="picker theme-{{selected}}" aria-role="radiogroup" aria-label="外观主题">
+  <view class="picker-title">外观主题</view>
+  <view class="choices">
+    <view wx:for="{{choices}}" wx:key="id" id="theme-{{item.id}}" class="choice {{item.id === selected ? 'chosen' : ''}}"
+      data-id="{{item.id}}" bindtap="selectTheme" hover-class="press" aria-role="radio" aria-checked="{{item.id === selected}}" aria-label="{{item.name}}">
+      <view class="chip" style="background:{{item.swatch}};"><t-icon wx:if="{{item.id === selected}}" name="check" size="24rpx"/></view>
+      <text>{{item.name}}</text>
+    </view>
+  </view>
+</view>

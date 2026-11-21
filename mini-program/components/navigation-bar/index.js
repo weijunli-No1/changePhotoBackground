@@ -1,3 +1,4 @@
+const themes = require("../../utils/themes");
 Component({
   properties: {
     title: String,
@@ -23,6 +24,10 @@ Component({
   },
   lifetimes: {
     attached() {
+      this._offTheme = themes.subscribe(theme => {
+        this.setData({ studioTheme: theme });
+        if (this._visible) this.updateForeground();
+      });
       this._onThemeChange = (event) => {
         if (this._visible) this.updateForeground(event.theme);
       };
@@ -54,7 +59,9 @@ Component({
         });
       }
     },
+    ready() { themes.applyCurrentPage(); },
     detached() {
+      if (this._offTheme) this._offTheme();
       if (wx.offThemeChange && this._onThemeChange)
         wx.offThemeChange(this._onThemeChange);
     },
@@ -70,15 +77,16 @@ Component({
   },
   methods: {
     updateForeground(theme) {
+      themes.applyCurrentPage(theme);
       if (!wx.setNavigationBarColor) return;
       const dark = (theme || (wx.getAppBaseInfo && wx.getAppBaseInfo().theme)) === "dark";
       wx.setNavigationBarColor({
         frontColor: this.properties.inverse || dark ? "#ffffff" : "#000000",
         backgroundColor: this.properties.inverse
-          ? "#16885d"
+          ? "#1b5147"
           : dark
-            ? "#121212"
-            : "#ffffff",
+            ? themes.current().darkPaper
+            : themes.current().paper,
         fail() {},
       });
     },

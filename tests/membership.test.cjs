@@ -103,6 +103,20 @@ test("支付 success 但服务端未确认时不授予会员，保留恢复单�
 test("只有服务端确认后显示已开通，客户端取消仍保留原订单防止重复付款",async()=>{
  const good=purchasePage({confirmed:true});await good.page.buy();await tick();assert.equal(good.page.data.isMember,true);
  const cancelled=purchasePage({cancel:true});await cancelled.page.buy();await tick();assert.equal(cancelled.page.data.isMember,false);assert.equal(cancelled.counts().pending,"M123");assert.equal(cancelled.page.data.pendingOrder,true);assert.equal(cancelled.counts().creates,1);
+ assert.match(good.page.data.notice, /已开通/);
+ assert.match(cancelled.page.data.notice, /待确认/);
+});
+
+test("反复点击开通入口只进入一次",()=>{
+ const e=setup(), nav=[];
+ e.wx.navigateTo=options=>nav.push(options);
+ e.m.open();e.m.open();assert.equal(nav.length,1);
+ nav[0].complete();e.m.open();assert.equal(nav.length,2);
+});
+test("恢复已购权益后明确展示查询结果",async()=>{
+ const {page}=purchasePage();
+ await page.restore();assert.equal(page.data.statusKnown,true);
+ assert.match(page.data.notice,/未查询到已购权益/);
 });
 
 test('会员查询失败不展示默认价格或未开放状态，重试不创建支付订单', async () => {
@@ -151,6 +165,10 @@ test('未同意协议不能下单，协议详情可展开且不会隐式勾选',
   assert.equal(page.data.agreed, false);
   page.toggleAgreement();
   assert.equal(page.data.agreed, true);
+  assert.equal(page.data.error, '');
+  page.setData({ agreed: false, error: '网络异常' });
+  page.toggleAgreement();
+  assert.equal(page.data.error, '网络异常');
 });
 
 test('未开放会员显示独立状态；重新查询失败不能残留未开放或购买按钮', async () => {

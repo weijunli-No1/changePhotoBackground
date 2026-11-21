@@ -2,6 +2,7 @@ const api = require("./api");
 let state = { known: false, isLifetimeMember: false, adFree: true };
 let generation = 0;
 let pending = null;
+let openingMemberPage = false;
 const listeners = new Set();
 function emit() { listeners.forEach((fn) => fn(state)); }
 function invalidate() {
@@ -67,7 +68,15 @@ function refresh(app, force = false) {
 function subscribe(fn) { listeners.add(fn); fn(state); return () => listeners.delete(fn); }
 function current() { return state; }
 function canShowAds() { return state.known && state.adFree === false && state.isLifetimeMember === false; }
-function open() { wx.navigateTo({ url: "/pages/member/member" }); }
+function open() {
+  if (openingMemberPage) return;
+  openingMemberPage = true;
+  wx.navigateTo({
+    url: "/pages/member/member",
+    fail: () => wx.showToast({ title: "会员页未能打开，请重试", icon: "none" }),
+    complete: () => { openingMemberPage = false; },
+  });
+}
 function compareVersion(a, b) {
   const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number);
   for (let i=0; i<Math.max(x.length,y.length);i++) { if ((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0)?1:-1; }

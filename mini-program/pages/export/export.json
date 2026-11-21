@@ -5,7 +5,8 @@
   "usingComponents": {
     "navigation-bar": "/components/navigation-bar/index",
     "t-icon": "/components/local-icon/index",
-    "motion-sheet": "/components/motion-sheet/index"
+    "motion-sheet": "/components/motion-sheet/index",
+    "theme-picker": "/components/theme-picker/index"
   },
   "enableShareAppMessage": true,
   "enableShareTimeline": true

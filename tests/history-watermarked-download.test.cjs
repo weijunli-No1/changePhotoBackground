@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-function fixture({ request, saveAlbum, writeBase64, ensureLogin } = {}) {
+function fixture({ request, saveAlbum, writeBase64, ensureLogin, localDrafts = [] } = {}) {
   let definition;
   const calls = [], albums = [], writes = [], removed = [], previews = [];
   const app = {
@@ -18,8 +18,8 @@ function fixture({ request, saveAlbum, writeBase64, ensureLogin } = {}) {
     wx: { showToast() {}, previewImage: (options) => previews.push(options) },
     require(name) {
       if (name.endsWith("/skyline-motion")) return {};
-      if (name.endsWith("/drafts")) return { list: () => [] };
-      if (name.endsWith("/tool-catalog")) return { presentDraft: (value) => value };
+      if (name.endsWith("/drafts")) return { list: () => localDrafts };
+      if (name.endsWith("/tool-catalog")) return require("../mini-program/utils/tool-catalog");
       if (name.endsWith("/api")) return {
         request: async (url, options) => {
           calls.push({ url, options });
@@ -101,6 +101,23 @@ test("云端作品每次主动保存均向服务端校验，干净成品只写�
   resolve({ code: 200, data: { image_base64: "SECOND_CLEAN_BASE64" } });
   await second;
   assert.equal(f.albums.length, 2);
+});
+
+test("左右翻看云端作品仅包括同账号且可用的水印缩略图", () => {
+  const { page, app, previews } = fixture();
+  page.data.historyList = [
+    { id: 1, previewUrl: "ONE" },
+    { id: 2, previewUrl: "BROKEN", previewMissing: true },
+    { id: 3, photoUrl: "ORIGINAL" },
+    { id: 4, previewUrl: "FOUR" },
+  ];
+  const tapFourth = { currentTarget: { dataset: { id: 4 } } };
+  page.previewImage(tapFourth);
+  assert.deepEqual(Array.from(previews[0].urls), ["ONE", "FOUR"]);
+  assert.equal(previews[0].current, "FOUR");
+  app.globalData.openid = "ANOTHER";
+  page.previewImage(tapFourth);
+  assert.equal(previews.length, 1);
 });
 
 test("相册写入失败的重试复用同次授权，成功后的再次保存重新扣次", async () => {
@@ -196,4 +213,26 @@ test("账号切换清理相册失败的授权缓存，不能继续保存上个�
   assert.deepEqual(f.removed, ["PRIVATE_CLEAN_PATH"]);
   await f.page.saveCloudPhoto(tap);
   assert.equal(f.calls.length, 1);
+});
+
+test("云端列表只采用同一账号已关联的本机低清封面，打开大图不请求原图或扣次", async () => {
+  const { DISPLAY_VERSION } = require("../mini-program/utils/brand-preview");
+  const draft = { id: "d7", mode: "idphoto", displayPath: "SMALL_COVER", displayPreviewVersion: DISPLAY_VERSION };
+  const f = fixture({
+    localDrafts: [
+      { ...draft, cloudCover: { owner: "OWNER", ids: ["7"] } },
+      { ...draft, displayPath: "OTHER_COVER", cloudCover: { owner: "OTHER_OWNER", ids: ["8"] } },
+    ],
+    request: async () => ({ code: 200, data: [
+      { id: 7, previewUrl: "SIGNED_MARKED" }, { id: 8, previewUrl: "ANOTHER_MARKED" },
+    ] }),
+  });
+  await f.page.fetchHistoryList();
+  assert.equal(f.page.data.historyList[0].coverPath, "SMALL_COVER");
+  assert.equal(f.page.data.historyList[1].coverPath, "");
+  f.page.cloudCoverError(tap);
+  f.page.previewImage(tap);
+  assert.deepEqual(Array.from(f.previews[0].urls), ["SIGNED_MARKED", "ANOTHER_MARKED"]);
+  assert.equal(f.previews[0].current, "SIGNED_MARKED");
+  assert.deepEqual(f.calls.map(item => item.url), ["/api/history/list"]);
 });

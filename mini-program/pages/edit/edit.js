@@ -15,10 +15,14 @@ Page({
 
   data: {
     toolId: "idphoto",
+    exportAction: "",
     sourcePath: "",
     resultPath: "",
     previewPath: "",
+    displayPath: "",
     comparing: false,
+    comparison: 50,
+    phase: "",
     processing: false,
     opening: false,
     openingError: "",
@@ -45,9 +49,12 @@ Page({
     this._brandedPreviewPath = "";
     this._draftId = options.draft || drafts.createId();
     const draft = options.draft ? drafts.get(options.draft) : null;
+    const restoreSeq = this._seq;
+    this._restoringDraft = draft ? this._draftId : "";
     this._examSpec = getSpec(draft ? draft.specId : options.spec);
     if (this._examSpec && this._examSpec.category === "common") this._examSpec = null;
     this.setData({
+      exportAction: (draft ? draft.exportAction : options.exportAction) === "layout" ? "layout" : "",
       toolId:
         (draft && draft.toolId === "background") || options.tool === "background"
           ? "background"
@@ -63,11 +70,13 @@ Page({
     try {
       if (draft) {
         await files.call("getImageInfo", { src: draft.sourcePath });
+        if (this._unloaded || this._seq !== restoreSeq) return;
         this._transparentPath = draft.transparentPath || "";
         this.setData({
           sourcePath: draft.sourcePath,
           resultPath: "",
           previewPath: "",
+          displayPath: "",
           size: {
             name: draft.sizeName || "自定义",
             width: draft.width,
@@ -78,8 +87,11 @@ Page({
         });
         if (this._transparentPath) {
           try {
-            this._transparent = await files.readBase64(this._transparentPath);
+            const transparent = await files.readBase64(this._transparentPath);
+            if (this._unloaded || this._seq !== restoreSeq) return;
+            this._transparent = transparent;
           } catch (error) {
+            if (this._unloaded || this._seq !== restoreSeq) return;
             this._transparentPath = "";
             this._transparent = "";
           }
@@ -87,17 +99,19 @@ Page({
         if (draft.resultPath && this._transparent) {
           const seq = ++this._seq;
           this._mattingBusy = true;
-          this.setData({ processing: true, status: "正在恢复水印预览", colorReady: false });
+          this.setData({ processing: true, phase: "proof", status: "正在恢复照片", colorReady: false });
           try {
             await files.call("getImageInfo", { src: draft.resultPath });
-            const previewPath = await brandPreview.create(this, draft.resultPath);
+            const { displayPath, previewPath } = await brandPreview.createPair(this, draft.resultPath);
             if (this._unloaded || seq !== this._seq) {
+              files.removeTemp(displayPath);
               files.removeTemp(previewPath);
               return;
             }
+            this._restoringDraft = "";
             this._brandedPreviewPath = previewPath;
             this._mattingBusy = false;
-            this.setData({ resultPath: draft.resultPath, previewPath, processing: false, status: "", colorReady: true });
+            this.setData({ resultPath: draft.resultPath, displayPath, previewPath, processing: false, status: "", colorReady: true });
             this._appliedColor = draft.bgColor || "#FFFFFF";
             await this.persistDraft();
             return;
@@ -106,8 +120,8 @@ Page({
             this._mattingBusy = false;
             this._failedColor = this.data.currentBgColor;
             this.setData({
-              resultPath: "", previewPath: "", processing: false, status: "",
-              colorReady: true, error: "水印预览恢复失败，请重试", errorRecovery: "retry",
+              resultPath: "", displayPath: "", previewPath: "", processing: false, status: "",
+              colorReady: true, error: "未能恢复预览，请重试", errorRecovery: "retry",
             });
             return;
           }
@@ -126,7 +140,7 @@ Page({
       }
       this.processTransparentImage();
     } catch (error) {
-      if (!this._unloaded)
+      if (!this._unloaded && (!draft || this._seq === restoreSeq))
         this.setData({
           error: "草稿文件不可用，请重新选择照片",
           errorRecovery: "reselect",
@@ -145,6 +159,7 @@ Page({
       });
   },
   onHide() {
+    if (this.data.comparing) this.setData({ comparing: false });
     if (!this.data.opening) this.persistDraft();
   },
   onUnload() {
@@ -197,8 +212,7 @@ Page({
     const sameDimensions =
       size.width === this.data.size.width && size.height === this.data.size.height;
     this._examSpec = examSpec;
-    this.setData({ specVisible: false, panel: "color" });
-    this.setData({ size });
+    this.setData({ specVisible: false, panel: "color", size }, () => this.updatePanelMotion());
     if (sameRules && sameDimensions) return;
     this.processTransparentImage();
   },
@@ -215,12 +229,15 @@ Page({
     this._brandedPreviewPath = "";
     this.setData({
       processing: true,
-      status: "正在识别人像与制作证件照",
+      comparing: false,
+      phase: "detect",
+      status: "正在识别人像轮廓",
       error: "",
       errorRecovery: "retry",
       resultPath: "",
       // A new source must never keep displaying the previous photo on failure.
       previewPath: "",
+      displayPath: "",
       colorReady: false,
     });
     try {
@@ -282,6 +299,8 @@ Page({
     this._failedColor = "";
     this.setData({
       processing: true,
+      comparing: false,
+      phase: "compose",
       currentBgColor: color,
       error: "",
       errorRecovery: "retry",
@@ -312,24 +331,49 @@ Page({
       }
       const previewSource = path;
       if (this._examSpec) {
-        const adapted = await prepareExam(this, path, this._examSpec, {
-          x: 50,
-          y: 50,
-        });
+        this.setData({ phase: "proof", status: "正在适配考试规格" });
+        const examSpec = this._examSpec;
+        let adapted;
+        try {
+          adapted = await brandPreview.withCanvas(this, () =>
+            prepareExam(this, previewSource, examSpec, { x: 50, y: 50 }),
+          );
+        } catch (error) {
+          files.removeTemp(previewSource);
+          throw error;
+        }
         path = adapted.path;
+        if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq) {
+          files.removeTemp(path);
+          files.removeTemp(previewSource);
+          return;
+        }
       }
-      const previewPath = await brandPreview.create(this, previewSource);
+      this.setData({ phase: "proof", status: "正在生成预览" });
+      let previews;
+      try {
+        previews = await brandPreview.createPair(this, previewSource, { displaySource: path });
+      } catch (error) {
+        files.removeTemp(path);
+        throw error;
+      } finally {
+        if (path !== previewSource) files.removeTemp(previewSource);
+      }
+      const { displayPath, previewPath } = previews;
       if (this._unloaded || seq !== this._colorSeq || sourceSeq !== this._seq) {
         files.removeTemp(path);
+        files.removeTemp(displayPath);
         files.removeTemp(previewPath);
         return;
       }
       this._activeTask = null;
       this._requestedColor = "";
       this._appliedColor = color;
+      this._restoringDraft = "";
       this._brandedPreviewPath = previewPath;
       this.setData({
         resultPath: path,
+        displayPath,
         previewPath,
         currentBgColor: color,
         processing: false,
@@ -380,6 +424,8 @@ Page({
     this.setData({
       currentBgColor: color,
       processing: true,
+      comparing: false,
+      phase: "compose",
       status: "正在合成背景",
       error: "",
     });
@@ -402,14 +448,34 @@ Page({
     this.setData({ custom: true });
     this.queueColor(color);
   },
-  compareStart() {
-    this.setData({ comparing: true });
-  },
-  compareEnd() {
-    this.setData({ comparing: false });
-  },
   toggleCompare() {
-    if (this.data.sourcePath) this.setData({ comparing: !this.data.comparing });
+    if (!this.data.sourcePath || !this.data.previewPath || this.data.processing || this.data.opening) return;
+    this.setData({ comparing: !this.data.comparing }, () => this.measureComparison());
+  },
+  onResize() {
+    this.updatePanelMotion();
+    this.measureComparison();
+  },
+  measureComparison() {
+    this._compareRect = null;
+    if (!this.data.comparing || !this.createSelectorQuery) return;
+    this.createSelectorQuery().select(".studio-artboard").boundingClientRect().exec((rects) => {
+      if (!this._unloaded && this.data.comparing && rects[0] && rects[0].width > 0)
+        this._compareRect = rects[0];
+    });
+  },
+  scrubComparison(e) {
+    if (!this._compareRect || e.touches.length !== 1) return;
+    const { left, width } = this._compareRect;
+    this.setComparison(100 * (e.touches[0].clientX - left) / width);
+  },
+  slideComparison(e) {
+    this.setComparison(Number(e.detail.value));
+  },
+  setComparison(value) {
+    if (!this.data.comparing || !Number.isFinite(value)) return;
+    const comparison = Math.max(0, Math.min(100, Math.round(value)));
+    if (comparison !== this.data.comparison) this.setData({ comparison });
   },
   cancelProcessing() {
     if (!this.data.processing) return;
@@ -432,6 +498,10 @@ Page({
       currentBgColor: color,
       custom: !["#FFFFFF", "#638cce", "#FF0000"].includes(color),
     });
+  },
+  keepLastEffect() {
+    if (!this.data.processing && !this.data.opening && this.data.resultPath && this._appliedColor)
+      return this.changeBackgroundColor(this._appliedColor);
   },
   retry() {
     if (this.data.processing) return;
@@ -488,8 +558,11 @@ Page({
       id: this._draftId,
       mode: "idphoto",
       toolId: this.data.toolId,
+      ...(this.data.exportAction === "layout" ? { exportAction: "layout" } : {}),
       sourcePath: this.data.sourcePath,
       resultPath: this.data.resultPath,
+      displayPath: this.data.displayPath,
+      displayPreviewVersion: this.data.displayPath ? brandPreview.DISPLAY_VERSION : 0,
       previewPath: this.data.previewPath,
       previewWatermarkVersion: this.data.previewPath &&
         this.data.previewPath === this._brandedPreviewPath &&
@@ -506,7 +579,7 @@ Page({
     };
   },
   async persistDraft() {
-    if (!this.data.sourcePath) return null;
+    if (!this.data.sourcePath || (this._restoringDraft && this._restoringDraft === this._draftId)) return null;
     const snapshot = this.snapshot();
     try {
       const saved = await drafts.save(snapshot);
@@ -521,6 +594,7 @@ Page({
         this.setData({
           sourcePath: saved.sourcePath,
           resultPath: saved.resultPath,
+          displayPath: saved.displayPath || "",
           previewPath: saved.previewPath,
         });
         if (this._transparentPath === snapshot.transparentPath)
@@ -533,6 +607,20 @@ Page({
         wx.showToast({ title: "草稿保存失败，请检查可用空间", icon: "none" });
       }
       return null;
+    }
+  },
+  async viewLarge() {
+    const { previewPath, displayPath, resultPath } = this.data;
+    if (!previewPath || !displayPath || previewPath !== this._brandedPreviewPath ||
+        previewPath === displayPath || previewPath === resultPath || this.data.processing ||
+        this.data.opening || this.data.comparing || this._viewingPhoto || this._unloaded) return;
+    this._viewingPhoto = true;
+    try {
+      await files.call("previewImage", { current: previewPath, urls: [previewPath] });
+    } catch (_) {
+      if (!this._unloaded) wx.showToast({ title: "大图打开失败，请重试", icon: "none" });
+    } finally {
+      this._viewingPhoto = false;
     }
   },
   async goExport() {

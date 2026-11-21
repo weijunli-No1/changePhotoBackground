@@ -1,6 +1,7 @@
 const files = require("../../utils/files");
 const api = require("../../utils/api");
 const drafts = require("../../utils/drafts");
+const DEFAULT_TEXT = "仅供报名使用";
 Page({
   onShareAppMessage() {
     return { title: "拾光小相｜为图片添加水印", path: "/pages/watermark/watermark" };
@@ -12,13 +13,16 @@ Page({
   data: {
     sourcePath: "",
     resultPath: "",
-    text: "仅供报名使用",
+    text: DEFAULT_TEXT,
+    previewText: DEFAULT_TEXT,
+    restoring: false,
     size: 48,
     opacity: 25,
     angle: 30,
     color: "#000000",
     space: 25,
     advanced: false,
+    settingsTab: "text",
     processing: false,
     opening: false,
     serviceReady: false,
@@ -31,7 +35,6 @@ Page({
     textStyle: "",
     spacingStyle: "",
     rowStyle: "",
-    accentColor: "#2358ee",
     templates: ["仅供报名使用", "仅供办理业务", "仅供复印使用"],
     rows: [0, 1, 2, 3, 4, 5, 6, 7, 8],
     columns: [0, 1, 2],
@@ -45,48 +48,42 @@ Page({
     this._unloaded = false;
     this._revision = 0;
     this.checkService();
-    this._themeChange = ({ theme }) => {
-      if (!this._unloaded)
-        this.setData({ accentColor: theme === "dark" ? "#91b4ff" : "#2358ee" });
-    };
-    if (wx.getAppBaseInfo) this._themeChange(wx.getAppBaseInfo());
-    if (wx.onThemeChange) wx.onThemeChange(this._themeChange);
     this._draftId = options.draft || drafts.createId();
     const draft = options.draft ? drafts.get(options.draft) : null;
     if (options.draft && (!draft || draft.mode !== "watermark")) {
       this.setData({ error: "草稿已失效，请重新选择照片" });
       return;
     }
-    if (draft) {
-      this.setData({
-        ...draft.toolState,
-        sourcePath: draft.sourcePath,
-        resultPath: draft.resultPath || "",
-        width: draft.width,
-        height: draft.height,
-      });
-      try {
-        await files.call("getImageInfo", { src: draft.sourcePath });
-      } catch (error) {
-        if (!this._unloaded)
-          this.setData({ sourcePath: "", resultPath: "", resultSize: "", error: "草稿原图不可用，请重新选图" });
-        return;
+    if (!draft) return;
+    const revision = this._revision;
+    const state = draft.toolState || {};
+    const text = typeof state.text === "string" ? state.text : DEFAULT_TEXT;
+    this.setData({
+      ...state, text, previewText: text.trim(), restoring: true,
+      sourcePath: draft.sourcePath, resultPath: "",
+      width: draft.width, height: draft.height,
+    });
+    try {
+      await files.call("getImageInfo", { src: draft.sourcePath });
+    } catch (_) {
+      if (!this._unloaded && this.data.sourcePath === draft.sourcePath)
+        this.setData({ restoring: false, sourcePath: "", width: 0, height: 0, resultPath: "", resultSize: "", error: "草稿原图不可用，请重新选图" }, () => this.updatePreview());
+      return;
+    }
+    if (this._unloaded || this.data.sourcePath !== draft.sourcePath) return;
+    try {
+      if (draft.resultPath && revision === this._revision) {
+        await files.call("getImageInfo", { src: draft.resultPath });
+        const bytes = await files.fileSize(draft.resultPath);
+        if (!this._unloaded && revision === this._revision)
+          this.setData({ resultPath: draft.resultPath, resultSize: files.formatBytes(bytes) });
       }
-      if (this._unloaded) return;
-      if (draft.resultPath) {
-        try {
-          await files.call("getImageInfo", { src: draft.resultPath });
-          const bytes = await files.fileSize(draft.resultPath);
-          if (!this._unloaded)
-            this.setData({
-              resultSize: files.formatBytes(bytes),
-            });
-        } catch (error) {
-          if (!this._unloaded)
-            this.setData({ resultPath: "", resultSize: "", error: "生成结果已失效，原图和样式已保留，请重新生成" });
-        }
-      }
-      this.updatePreview();
+    } catch (_) {
+      if (!this._unloaded && revision === this._revision)
+        this.setData({ error: "生成结果已失效，原图和样式已保留，请重新生成" });
+    } finally {
+      if (!this._unloaded && this.data.sourcePath === draft.sourcePath)
+        this.setData({ restoring: false }, () => this.updatePreview());
     }
   },
   onReady() {
@@ -113,21 +110,23 @@ Page({
     }
   },
   onResize() {
+    this._stageSize = null;
+    this._measureRequest = null;
     this.updatePreview();
   },
   onUnload() {
     this._unloaded = true;
     this._revision++;
     if (this._task && this._task.abort) this._task.abort();
-    if (wx.offThemeChange && this._themeChange)
-      wx.offThemeChange(this._themeChange);
   },
   invalidate(values) {
     if (this.data.processing || this.data.opening || this._unloaded) return;
     if (Object.keys(values).every((key) => this.data[key] === values[key])) return;
-    this.setData({ ...values, resultPath: "", resultSize: "", error: "" }, () =>
-      this.updatePreview(),
-    );
+    this._revision = (this._revision || 0) + 1;
+    const patch = { ...values, resultPath: "", resultSize: "", error: "" };
+    if (typeof values.text === "string") patch.previewText = values.text.trim();
+    if (values.sourcePath) patch.restoring = false;
+    this.setData(patch, () => this.updatePreview());
   },
   async choosePhoto() {
     if (this._unloaded || this.data.processing || this.data.opening || this._choosing) return;
@@ -201,30 +200,45 @@ Page({
     if (!this.data.processing && !this.data.opening)
       this.setData({ advanced: !this.data.advanced });
   },
+  setSettingsTab(e) {
+    const tab = e.currentTarget.dataset.tab;
+    if (!this.data.processing && !this.data.opening &&
+        ["text", "style"].includes(tab) && tab !== this.data.settingsTab)
+      this.setData({ settingsTab: tab });
+  },
   updatePreview() {
     if (
       !this._ready ||
       !this.createSelectorQuery ||
-      !this.data.width ||
       this._unloaded
     )
       return;
+    if (this._stageSize) return this.renderPreview(this._stageSize);
+    if (this._measureRequest) return;
+    const request = {};
+    this._measureRequest = request;
     this.createSelectorQuery()
       .select(".watermark-stage")
       .boundingClientRect()
       .exec((rects) => {
-        if (this._unloaded || !rects[0]) return;
-        const scale = Math.min(
-          (rects[0].width - 32) / this.data.width,
-          (rects[0].height - 24) / this.data.height,
-        );
-        this.setData({
-          previewStyle: `width:${this.data.width * scale}px;height:${this.data.height * scale}px;`,
-          textStyle: `font-size:${Math.max(5, this.data.size * scale)}px;color:${this.data.color};opacity:${this.data.opacity / 100};transform:rotate(${-this.data.angle}deg);`,
-          spacingStyle: `margin:0 ${this.data.space * scale}px;`,
-          rowStyle: `margin-bottom:${this.data.space * scale}px;`,
-        });
+        if (this._unloaded || this._measureRequest !== request) return;
+        this._measureRequest = null;
+        if (!rects[0] || rects[0].width <= 32 || rects[0].height <= 24) return;
+        this._stageSize = rects[0];
+        this.renderPreview(this._stageSize);
       });
+  },
+  renderPreview(stage) {
+    // The sample represents a portrait at typical export resolution.
+    const width = this.data.width || 1000;
+    const height = this.data.height || 1400;
+    const scale = Math.min((stage.width - 32) / width, (stage.height - 24) / height);
+    this.setData({
+      previewStyle: `width:${width * scale}px;height:${height * scale}px;`,
+      textStyle: `font-size:${Math.max(5, this.data.size * scale)}px;color:${this.data.color};opacity:${this.data.opacity / 100};transform:rotate(${-this.data.angle}deg);`,
+      spacingStyle: `margin:0 ${this.data.space * scale}px;`,
+      rowStyle: `margin-bottom:${this.data.space * scale}px;`,
+    });
   },
   cancel() {
     if (!this.data.processing) return;
@@ -241,6 +255,7 @@ Page({
     if (
       this._unloaded ||
       this._choosing ||
+      this.data.restoring ||
       this.data.processing ||
       this.data.opening ||
       !this.data.sourcePath
@@ -312,6 +327,7 @@ Page({
     if (
       this._unloaded ||
       this._choosing ||
+      this.data.restoring ||
       this.data.processing ||
       this.data.opening ||
       !this.data.resultPath

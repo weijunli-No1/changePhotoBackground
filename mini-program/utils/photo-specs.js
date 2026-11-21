@@ -269,11 +269,14 @@ function getSpec(id) {
   return presets.find((item) => item.id === id);
 }
 function findSpecs(query = "", category = "all") {
-  const tokens = String(query)
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
+  const keyword = String(query).trim().toLowerCase();
+  const pixels = keyword.match(/^(\d{2,4})\s*[×x*]\s*(\d{2,4})(?:\s*(?:px|像素))?$/);
+  if (pixels) {
+    const matches = presets.filter(item => (category === "all" || category === item.category) &&
+      item.width === Number(pixels[1]) && item.height === Number(pixels[2]));
+    return matches.sort((a, b) => Number(b.category === "common") - Number(a.category === "common"));
+  }
+  const tokens = keyword.split(/\s+/).filter(Boolean);
   return presets.filter(
     (item) =>
       (category === "all" || item.category === category) &&

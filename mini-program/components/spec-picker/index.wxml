@@ -1,6 +1,6 @@
 <view
   wx:if="{{rendered}}"
-  class="spec-overlay {{motionFallback ? 'motion-fallback' : ''}} {{motionOpen ? 'is-open' : ''}}"
+  class="spec-overlay theme-{{themeId}} {{motionFallback ? 'motion-fallback' : ''}} {{motionOpen ? 'is-open' : ''}}"
   style="bottom:{{keyboardHeight}}px"
 >
   <view class="spec-scrim" bindtap="close"></view>
@@ -13,6 +13,7 @@
     aria-label="{{title}}"
   >
     <view class="spec-head">
+      <view class="head-grip" aria-hidden="{{true}}"></view>
       <text>{{title}}</text>
       <view
         class="spec-close"
@@ -29,7 +30,7 @@
       <view wx:if="{{description}}" class="spec-description"
         >{{description}}</view
       >
-      <view
+      <view wx:if="{{!startCustom}}"
         class="spec-options"
         aria-role="radiogroup"
         aria-label="常用照片规格"
@@ -46,6 +47,7 @@
           bindtap="select"
           hover-class="pressed"
         >
+          <view class="option-sample"><size-sample theme-id="{{themeId}}" photo-width="{{item.width}}" photo-height="{{item.height}}" edge="{{56}}" /></view>
           <view class="option-copy"
             ><view class="spec-name">{{item.name}}</view
             ><view class="spec-note"
@@ -54,14 +56,24 @@
           >
           <t-icon
             name="{{selectedIndex === index ? 'check-circle-filled' : 'circle'}}"
-            size="36rpx"
+            size="28rpx"
           />
         </view>
       </view>
     </block>
-    <view id="custom-fields" class="custom-fields">
+    <view wx:if="{{!customExpanded}}" class="custom-disclosure" bindtap="expandCustom"
+      aria-role="button" aria-expanded="{{false}}" hover-class="pressed">
+      <text>自定义尺寸</text><t-icon name="chevron-down" size="32rpx" />
+    </view>
+    <view wx:else id="custom-fields" class="custom-fields">
+      <view wx:if="{{!keyboardHeight}}" class="custom-preview" aria-hidden="{{true}}">
+        <view class="preview-ratio"><size-sample theme-id="{{themeId}}" photo-width="{{width}}" photo-height="{{height}}" reference="{{0}}" edge="{{88}}" /></view>
+        <view class="preview-copy"><view class="preview-title">输出比例</view>
+          <view class="preview-value">{{width || '—'}} × {{height || '—'}} px</view>
+        </view>
+      </view>
       <view class="custom-heading"
-        ><text class="custom-label">自定义像素尺寸</text
+        ><text class="custom-label">{{startCustom ? '宽与高' : '自定义尺寸'}}</text
         ><text class="custom-hint">100—3000 px</text></view
       >
       <view class="custom-row">
@@ -71,12 +83,12 @@
             adjust-position="{{false}}"
             bindkeyboardheightchange="keyboardChange"
             bindfocus="focusCustom"
-            bindblur="inputBlur"
             type="number"
             aria-label="宽度，100到3000像素"
             aria-invalid="{{invalidWidth}}"
             value="{{width}}"
             bindinput="inputWidth"
+            bindconfirm="nextField"
             maxlength="4"
             confirm-type="next"
           /><text class="dimension-unit">px</text></view
@@ -94,6 +106,8 @@
             aria-invalid="{{invalidHeight}}"
             value="{{height}}"
             bindinput="inputHeight"
+            focus="{{heightFocused}}"
+            bindconfirm="confirm"
             maxlength="4"
             confirm-type="done"
           /><text class="dimension-unit">px</text></view
@@ -103,7 +117,7 @@
         >{{error}}</view
       >
     </view>
-    <view wx:if="{{showCatalog && !keyboardHeight}}" class="spec-catalog-link" bindtap="browse" aria-role="button">查看考试与全部规格<t-icon name="chevron-right" size="28rpx" /></view>
+    <view wx:if="{{showCatalog && !keyboardHeight}}" class="spec-catalog-link" bindtap="browse" aria-role="button">全部规格<t-icon name="chevron-right" size="28rpx" /></view>
       </view>
     </scroll-view>
     <view class="spec-footer">

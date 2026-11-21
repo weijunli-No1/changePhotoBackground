@@ -2,6 +2,7 @@ const app = getApp();
 const api = require("../../utils/api");
 const membership = require("../../utils/membership");
 const { call } = require("../../utils/files");
+const AGREEMENT_PROMPT = "请先阅读并勾选同意《会员服务说明》";
 Page({
   onShareAppMessage() {
     return { title: "拾光小相｜永久会员", path: "/pages/member/member" };
@@ -28,19 +29,26 @@ Page({
       this.setData({ unavailable: false });
       if (!Number.isInteger(state.priceFen) || state.priceFen <= 0 || typeof state.purchaseEnabled !== "boolean")
         throw Error("会员信息暂不可用，请重试查询");
+      const pendingOrder = Boolean(membership.getPending(app.globalData.openid));
+      const keepNotice = preserveError && state.isLifetimeMember === this.data.isMember && pendingOrder === this.data.pendingOrder;
+      const orderNotice = state.orderMessage || (state.pendingOrderStatus === "REVIEW" ? "自动查询已暂停，请联系客服核实订单，请勿重复付款" : "");
       this.setData({
         statusKnown: true,
         isMember: state.isLifetimeMember,
         price: (state.priceFen / 100).toFixed(2),
         purchaseEnabled: state.purchaseEnabled,
-        pendingOrder: Boolean(membership.getPending(app.globalData.openid)),
+        pendingOrder,
         supportError: membership.paymentSupport(state),
-        notice: state.orderMessage || (state.pendingOrderStatus === "REVIEW" ? "自动查询已暂停，请联系客服核实订单，请勿重复付款" : ""),
+        notice: orderNotice || (keepNotice ? this.data.notice : ""),
       });
     } catch (e) { if (!this._unloaded) this.setData({ statusKnown: false, purchaseEnabled: false, error: e.message || "暂时无法查询会员，请重试" }); }
     finally { this._checking = false; if (!this._unloaded) this.setData({ checking: false }); }
   },
-  toggleAgreement() { if (!this.data.busy) this.setData({ agreed: !this.data.agreed }); },
+  toggleAgreement() {
+    if (this.data.busy) return;
+    const agreed = !this.data.agreed;
+    this.setData({ agreed, ...(agreed && this.data.error === AGREEMENT_PROMPT ? { error: "" } : {}) });
+  },
   toggleTerms() { this.setData({ termsExpanded: !this.data.termsExpanded, termsAnchor: "" }); },
   showTerms() {
     this.setData({ termsExpanded: true, termsAnchor: "" }, () => this.setData({ termsAnchor: "member-terms" }));
@@ -56,7 +64,7 @@ Page({
     if (!this.data.statusKnown) return this.reload();
     if (this.data.pendingOrder) return this.reload();
     if (!this.data.purchaseEnabled || this.data.supportError) return;
-    if (!this.data.agreed) { this.setData({ error: "请先阅读并勾选同意《会员服务说明》" }); return; }
+    if (!this.data.agreed) { this.setData({ error: AGREEMENT_PROMPT }); return; }
     this._purchasing = true;
     this.setData({ busy: true, error: "", notice: "" });
     let id = "";
@@ -115,6 +123,13 @@ Page({
       }
     }
   },
-  restore() { return this.reload(); },
+  async restore() {
+    if (this._checking || this._unloaded || this.data.busy) return;
+    await this.reload();
+    if (this._unloaded || !this.data.statusKnown || this.data.notice) return;
+    const notice = this.data.isMember ? "永久会员权益已同步" :
+      this.data.pendingOrder ? "订单仍待确认，可稍后查询" : "当前微信账号未查询到已购权益";
+    this.setData({ notice });
+  },
   backHome() { wx.switchTab({ url: "/pages/index/index" }); },
 });

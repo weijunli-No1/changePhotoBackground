@@ -195,3 +195,22 @@ test('没有有效抠图时调色不会进入永久处理中，待合成颜色�
   assert.equal(page.data.processing,true);
   clearTimeout(page._colorTimer);
 });
+
+test('云端关联只保留同一成品的本地低清封面，改图后解除，换封面会清理旧文件', async () => {
+  const { drafts, disk } = draftStore();
+  disk.set('tmp-cover', 'LOW');
+  const first = await drafts.save({ id: 'dcover', mode: 'idphoto', displayPath: 'tmp-cover',
+    displayPreviewVersion: 1, sourcePath: 'tmp-source', resultPath: 'tmp-result' });
+  assert.equal(disk.get(first.displayPath), 'LOW');
+  await drafts.linkCloudCover(first.id, first.resultPath, 'owner', 7);
+  await drafts.linkCloudCover(first.id, first.resultPath, 'owner', 7);
+  await drafts.linkCloudCover(first.id, 'wrong-result', 'owner', 8);
+  assert.deepEqual(Array.from(drafts.get(first.id).cloudCover.ids), ['7']);
+  assert.equal((await drafts.save(first)).cloudCover.owner, 'owner');
+  disk.set('new-result', 'NEW');
+  const edited = await drafts.save({ ...first, resultPath: 'new-result', displayPath: 'new-result' });
+  assert.equal(edited.cloudCover, undefined);
+  assert.equal(edited.displayPath, '');
+  assert.equal(edited.displayPreviewVersion, 0);
+  assert.equal(disk.has(first.displayPath), false);
+});

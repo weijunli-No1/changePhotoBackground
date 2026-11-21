@@ -19,7 +19,11 @@ function load(file, overrides = {}) {
     ...overrides,
     require: (name) =>
       name.endsWith("/membership") ? require("./helpers/membership-stub.cjs") : name.endsWith("/brand-preview")
-        ? { create: async (_page, source) => "BRANDED:" + source }
+        ? {
+          displayPreview: async (_page, source) => "SMALL:" + source, create: async (_page, source) => "BRANDED:" + source,
+          createPair: async (_page, source) => ({ displayPath: "SMALL:" + source, previewPath: "BRANDED:" + source }),
+          VERSION: 2, DISPLAY_VERSION: 1,
+        }
         : (overrides.require || createRequire(filename))(name),
   });
   if (!definition) return module.exports;
@@ -371,7 +375,7 @@ test("考试照片重建品牌水印并走保存配额；额度不足不写相�
   await p._previewReady;
   assert.equal(p.data.local, false);
   assert.equal(p.data.allowLayout, false);
-  p.previewImage();
+  await p.previewImage();
   assert.equal(previews[0].current, "BRANDED:CLEAN.jpg");
   p.requestSave = async () => {
     requests++;
@@ -385,14 +389,14 @@ test("考试照片重建品牌水印并走保存配额；额度不足不写相�
   await p.saveImage("single");
   assert.equal(albums.length, 0);
   assert.equal(ads, 1);
-  assert.equal(p.data.previewPath, "BRANDED:CLEAN.jpg");
+  assert.equal(p.data.previewPath, "SMALL:CLEAN.jpg");
   denied = false;
   await p.saveImage("single");
   assert.deepEqual(albums, ["CLEAN.jpg"]);
   await p.saveImage("single");
   assert.equal(requests, 3);
   assert.equal(albums.length, 2);
-  assert.equal(p.data.previewPath, "BRANDED:CLEAN.jpg");
+  assert.equal(p.data.previewPath, "SMALL:CLEAN.jpg");
 });
 
 test("品牌水印绘制到导出的位图中，不依赖页面覆盖文字", async () => {

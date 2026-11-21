@@ -37,7 +37,7 @@ function pageFixture(file, app, deps = {}, wx = {}) {
     wx,
     require: (name) => {
       if (name.endsWith("/membership")) return require("./helpers/membership-stub.cjs");
-        if (name.endsWith('/brand-preview')) return { create: async (_page, source) => 'BRANDED:' + source };
+        if (name.endsWith('/brand-preview')) return { displayPreview: async (_page, source) => 'SMALL:' + source, create: async (_page, source) => 'BRANDED:' + source };
       if (name.endsWith("/skyline-motion"))
         return require("../mini-program/utils/skyline-motion");
       const key = name.split("/").pop();

@@ -16,8 +16,8 @@
   background: transparent;
   border: 0;
   padding: 0;
-  margin: 48rpx auto;
-  width: 220rpx;
+  margin: 0 0 32rpx;
+  width: 100%;
   color: var(--sg-brand);
   font-weight: 400;
 }
@@ -27,10 +27,10 @@
 }
 .account-avatar {
   display: block;
-  width: 152rpx;
-  height: 152rpx;
+  width: 104rpx;
+  height: 104rpx;
   border-radius: 50%;
-  margin: 0 auto;
+  margin: 0;
 }
 .avatar-placeholder {
   background: var(--sg-soft);
@@ -82,11 +82,16 @@
 .page-wrap { height: 100vh; }
 .footer-actions .primary { width: 100%; max-width: none; margin: 0; }
 .account-body .avatar-picker {
-  width: 220rpx;
+  width: 100%;
   max-width: none;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
 }
 .account-avatar { flex-shrink: 0; }
-.avatar-action { width: 100%; flex-shrink: 0; white-space: nowrap; }
+.avatar-action { margin-left: auto; font-weight: 600; }
+
+.account-card { margin-top: 28rpx; padding: 28rpx; background: var(--sg-surface); border: 1rpx solid var(--sg-line); border-radius: var(--sg-radius-card); }
+.account-body .avatar-picker { padding-bottom: 24rpx; border-bottom: 1rpx solid var(--sg-line); border-radius: 0; }
+.avatar-placeholder { background: var(--sg-brand-soft); }
+.account-privacy { margin-top: 20rpx; }

@@ -209,7 +209,7 @@ function editPage({
           refresh: async () => ({ isLifetimeMember: false, adFree: false }),
           canShowAds: () => true, open() {},
         };
-        if (name.endsWith('/brand-preview')) return { create: async (_page, source) => 'BRANDED:' + source };
+        if (name.endsWith('/brand-preview')) return { displayPreview: async (_page, source) => 'SMALL:' + source, create: async (_page, source) => 'BRANDED:' + source };
         if (name === '../../utils/api')
           return {
             request: (route, options = {}) =>

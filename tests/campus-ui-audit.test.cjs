@@ -137,7 +137,7 @@ test("缓存的隐藏导航栏不覆盖当前页状态栏，主题切换使用�
   listeners.forEach((callback) => callback({ theme: "dark" }));
   assert.equal(colors.length, 1);
   assert.equal(colors[0].frontColor, "#ffffff");
-  assert.equal(colors[0].backgroundColor, "#121212");
+  assert.equal(colors[0].backgroundColor, require("../mini-program/theme.json").dark.navBgColor.toLowerCase());
 });
 
 test("本地图标保留TDesign字形和单位，颜色变化不丢失选中标记", () => {
@@ -291,4 +291,38 @@ test('会员状态已同步但保存额度失败时，点击重试仍会重新�
   assert.equal(requests, 2);
   assert.equal(page.data.quotaKnown, true);
   assert.equal(page.data.remaining, 2);
+});
+
+test("旧额度响应不会抹去同账号已同步的会员权益", async () => {
+  const filename = "pages/profile/profile.js";
+  const actual = createRequire(path.resolve(__dirname, "../mini-program", filename));
+  const app = { globalData: { openid: "returning-user", sessionToken: "current-session" } };
+  const { page } = load(filename, {
+    getApp: () => app,
+    require: name => name.endsWith("/api")
+      ? { request: async () => ({ saveCount: 1, adViewCount: 0 }), unwrap: data => data }
+      : actual(name),
+  });
+  page.syncUsageOwner();
+  page.setData({ memberKnown: true, isLifetimeMember: true });
+  await page.fetchUsage();
+  assert.equal(page.data.memberKnown, true);
+  assert.equal(page.data.isLifetimeMember, true);
+  assert.equal(page.data.unlimited, true);
+  assert.equal(page.data.remaining, 4);
+  app.globalData.openid = "new-user";
+  await page.fetchUsage();
+  assert.equal(page.data.memberKnown, false);
+  assert.equal(page.data.isLifetimeMember, false);
+});
+
+test("三个底栏入口由整块微信 navigator 切页，页面声明决定图标和文字的选中颜色", () => {
+  const root = path.resolve(__dirname, "../mini-program");
+  const bar = fs.readFileSync(path.join(root, "templates/studio-tabs.wxml"), "utf8");
+  assert.match(bar, /<navigator[^>]+open-type="switchTab"[^>]+url="\/pages\/{{item.id}}\/{{item.id}}"/);
+  for (const id of ["index", "history", "profile"]) {
+    const markup = fs.readFileSync(path.join(root, "pages", id, id + ".wxml"), "utf8");
+    assert.ok(markup.includes("current: '" + id + "'"));
+    assert.ok(bar.includes("id:'" + id + "'"));
+  }
 });

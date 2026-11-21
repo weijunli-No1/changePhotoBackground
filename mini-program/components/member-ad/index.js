@@ -32,7 +32,13 @@ Component({
       const allowed = this._visible && membership.canShowAds() && Boolean(this.data.unitId);
       this.setData({ allowed, ...(!allowed ? { loaded: false } : {}) });
     },
-    loaded() { this.setData({ loaded: true, failed: false }); },
-    failed() { this.setData({ loaded: false, failed: true }); },
+    loaded() {
+      if (!this._alive || !this._visible || !this.data.allowed) return;
+      this.setData({ loaded: true, failed: false }, () => this.triggerEvent("layoutchange"));
+    },
+    failed() {
+      if (!this._alive || !this._visible || !this.data.allowed) return;
+      this.setData({ loaded: false, failed: true }, () => this.triggerEvent("layoutchange"));
+    },
   },
 });

@@ -15,20 +15,19 @@ Page({
     mode: "smart",
     selectOnly: false,
     expanded: false,
+    requirementsTarget: "",
     copyingSource: false,
   },
   onLoad(options = {}) {
     this._unloaded = false;
     this._selectOnly = options.select === "1";
     this._toolId = options.tool === "background" ? "background" : "idphoto";
+    const spec = specs.getSpec(options.id);
     this.setData({
       selectOnly: this._selectOnly,
-      spec: specs.getSpec(options.id) || null,
-      mode:
-        specs.getSpec(options.id) && specs.getSpec(options.id).category === "common"
-          ? "smart"
-          : "original",
-      error: specs.getSpec(options.id) ? "" : "规格不存在，请返回重新选择",
+      spec: spec || null,
+      mode: spec && spec.category === "common" ? "smart" : "original",
+      error: spec ? "" : "规格不存在，请返回重新选择",
     });
   },
   onUnload() {
@@ -49,7 +48,22 @@ Page({
     }
   },
   toggleRequirements() {
-    this.setData({ expanded: !this.data.expanded });
+    const expanded = !this.data.expanded;
+    this.setData({ expanded, requirementsTarget: "" }, () => {
+      if (expanded && this.data.expanded && !this._unloaded)
+        this.setData({ requirementsTarget: "requirement-source" });
+    });
+  },
+  returnToSpecs() {
+    if (this._openingSpecs || this._unloaded) return;
+    this._openingSpecs = true;
+    wx.redirectTo({
+      url: "/pages/specs/specs",
+      complete: () => { this._openingSpecs = false; },
+      fail: () => {
+        if (!this._unloaded) this.setData({ error: "规格目录未能打开，请重试" });
+      },
+    });
   },
   setMode(e) {
     const mode = e.currentTarget.dataset.mode;

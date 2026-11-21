@@ -5,7 +5,8 @@
   "usingComponents": {
     "navigation-bar": "/components/navigation-bar/index",
     "t-icon": "/components/local-icon/index",
-    "spec-picker": "/components/spec-picker/index"
+    "spec-picker": "/components/spec-picker/index",
+    "size-sample": "/components/spec-picker/size-sample"
   },
   "enableShareAppMessage": true,
   "enableShareTimeline": true

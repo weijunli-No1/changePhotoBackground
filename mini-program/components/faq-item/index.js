@@ -1,6 +1,7 @@
 const { createMotion } = require("../../utils/skyline-motion");
 Component({
-  properties: { title: String, answer: String, expanded: Boolean },
+  properties: {
+    themeId: String, title: String, answer: String, expanded: Boolean },
   data: { motionReady: false },
   observers: {
     expanded() {

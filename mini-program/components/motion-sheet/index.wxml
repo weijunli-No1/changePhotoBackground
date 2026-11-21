@@ -1,8 +1,8 @@
 <view
   wx:if="{{rendered}}"
-  class="motion-overlay {{fallback && motionOpen ? 'motion-fallback-open' : ''}}"
+  class="motion-overlay theme-{{themeId}} {{fallback ? 'motion-fallback' : ''}} {{fallback && motionOpen ? 'motion-fallback-open' : ''}}"
 >
-  <view class="motion-scrim" bindtap="dismiss"></view>
+  <view class="motion-scrim" bindtap="dismiss" catchtouchmove="stop"></view>
   <view
     class="motion-panel"
     catchtap="stop"

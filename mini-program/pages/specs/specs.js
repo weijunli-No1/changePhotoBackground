@@ -1,6 +1,9 @@
 const specs = require("../../utils/photo-specs");
 const files = require("../../utils/files");
 const { createMotion } = require("../../utils/skyline-motion");
+function queryText(value = "") {
+  try { return decodeURIComponent(value); } catch (_) { return String(value); }
+}
 Page({
   onShareAppMessage() {
     return { title: "拾光小相｜查找证件照规格", path: "/pages/specs/specs" };
@@ -20,6 +23,7 @@ Page({
     selectOnly: false,
     groups: [],
     count: specs.presets.length,
+    showSelection: true,
     detail: null,
     choosing: false,
     error: "",
@@ -31,7 +35,11 @@ Page({
     this._unloaded = false;
     this._selectOnly = options.select === "1";
     this._toolId = options.tool === "background" ? "background" : "idphoto";
-    this.setData({ selectOnly: this._selectOnly });
+    this.setData({
+      selectOnly: this._selectOnly,
+      query: queryText(options.query).slice(0, 60),
+      category: options.category === "exam" ? "exam" : "all",
+    });
     if (options.width && options.height) {
       try {
         const size = specs.validateSize(options.width, options.height);
@@ -41,7 +49,7 @@ Page({
         this.setData({
           selectedSize: {
             ...size,
-            name: options.name || (preset && preset.name) || "自定义",
+            name: queryText(options.name) || (preset && preset.name) || "自定义",
             ...(specs.getSpec(options.spec) ? { specId: options.spec } : {}),
           },
         });
@@ -92,11 +100,26 @@ Page({
     if (popular && common.length > 2)
       groups.push({ id: "more-common", name: "更多常用尺寸", items: common.slice(2) });
     this.setData({
-      groups,
+      groups: groups.map((group) => ({
+        ...group,
+        collapsible: popular && group.id !== "popular" && group.id !== "common",
+        expanded: Boolean(this._expandedGroups && this._expandedGroups[group.id]),
+      })),
       count: matches.length,
+      showSelection: common.length > 0 && (!this.data.query.trim() ||
+        common.some(item => item.width === this.data.selectedSize.width && item.height === this.data.selectedSize.height)),
       error: "",
       scrollTop: this.data.scrollTop ? 0 : 1,
     });
+  },
+  toggleGroup(e) {
+    const id = e.currentTarget.dataset.id;
+    const index = this.data.groups.findIndex((group) => group.id === id && group.collapsible);
+    if (index < 0) return;
+    const expanded = !this.data.groups[index].expanded;
+    if (!this._expandedGroups) this._expandedGroups = {};
+    this._expandedGroups[id] = expanded;
+    this.setData({ [`groups[${index}].expanded`]: expanded });
   },
   search(e) {
     this.setData({ query: e.detail.value });
@@ -124,6 +147,7 @@ Page({
     if (!spec || spec.category !== "common") return;
     this.setData({
       selectedSize: { name: spec.name, width: spec.width, height: spec.height },
+      showSelection: true,
       error: "",
     });
   },
@@ -171,7 +195,7 @@ Page({
       this.setData({ error: error.message });
       return;
     }
-    this.setData({ specVisible: false, selectedSize: size });
+    this.setData({ specVisible: false, selectedSize: size, showSelection: true });
     if (this._selectOnly) {
       this._returningSelection = true;
       this.getOpenerEventChannel().emit("selected", { size });

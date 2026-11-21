@@ -1,22 +1,16 @@
-<import src="../../templates/campus.wxml" />
-<view class="page-wrap library-page">
+<view class="page-wrap theme-{{studioTheme.id}} library-page">
   <navigation-bar title="全部工具" show-back="{{true}}" />
-  <view class="campus-banner"
-    ><view class="campus-banner-title"
-      >照片小事，都在这里<template is="campus-spark" /></view
-    ><template is="campus-track"
-  /></view>
   <view class="library-header">
     <view class="catalog-search"
-      ><t-icon name="search" size="40rpx" /><input
+      ><t-icon name="search" size="36rpx" /><input
         value="{{query}}"
         focus="{{searchFocused}}"
         bindinput="search"
         bindblur="searchBlur"
-        placeholder="搜索工具名称或用途"
+        placeholder-class="search-placeholder" placeholder="搜索工具、考试或尺寸"
         confirm-type="search"
         maxlength="50"
-        aria-label="搜索工具名称或用途" /><view
+        aria-label="搜索工具、考试或尺寸" /><view
         wx:if="{{query}}"
         class="search-clear"
         bindtap="clearSearch"
@@ -24,8 +18,13 @@
         aria-role="button"
         ><t-icon name="close-circle-filled" size="32rpx" /></view
     ></view>
-    <scroll-view class="catalog-tabs" scroll-x show-scrollbar="{{false}}"
-      ><view
+    <view wx:if="{{!query && category === 'all'}}" class="quick-queries" aria-label="快捷搜索">
+      <view wx:for="{{quickQueries}}" wx:key="*this" class="query-chip" bindtap="quickSearch"
+        data-query="{{item}}" hover-class="pressed" aria-role="button" aria-label="{{'搜索' + item}}">
+        <view class="chip-face"><t-icon name="search" size="23rpx" /><text>{{item}}</text></view>
+      </view>
+    </view>
+    <view
         class="category-row {{motionTabsReady ? 'motion-tabs' : ''}}"
         aria-role="tablist"
         ><view class="catalog-indicator"></view
@@ -45,17 +44,32 @@
           aria-role="tab"
           aria-selected="{{category === item.id}}"
           >{{item.name}}</view
-        ></view
-      ></scroll-view
-    >
+        ></view>
   </view>
   <scroll-view class="page-scroll" scroll-y scroll-top="{{scrollTop}}" show-scrollbar="{{false}}">
     <view class="catalog-body">
       <view wx:if="{{entryError}}" class="error-inline catalog-error" aria-role="alert"
         >{{entryError}}</view
       >
+      <view wx:if="{{specMatchCount}}" class="catalog-group">
+        <view class="catalog-heading">
+          <text>相关照片规格</text>
+          <view wx:if="{{specMatchCount > matchingSpecs.length}}" class="spec-more"
+            bindtap="openMatchingSpec" aria-role="button" hover-class="pressed">查看 {{specMatchCount}} 项<t-icon name="chevron-right" size="24rpx" /></view>
+        </view>
+        <view class="matched-spec" wx:for="{{matchingSpecs}}" wx:key="id" data-id="{{item.id}}"
+          bindtap="openMatchingSpec" hover-class="pressed" aria-role="button"
+          aria-label="{{item.name + '，' + item.dimensionLabel}}">
+          <view class="catalog-copy">
+            <view class="catalog-name">{{item.name}}</view>
+            <view class="catalog-description">{{item.dimensionLabel}}</view>
+          </view>
+          <t-icon name="chevron-right" size="32rpx" />
+        </view>
+      </view>
       <view wx:for="{{groups}}" wx:for-item="group" wx:key="id" class="catalog-group"
-        ><view class="catalog-heading">{{group.name}}</view>
+        ><view class="catalog-heading"><text>{{group.name}}</text></view>
+        <view class="tool-list">
         <view
           wx:for="{{group.tools}}"
           wx:key="id"
@@ -66,32 +80,36 @@
           aria-role="button"
           aria-label="{{item.name + '，' + item.description}}"
         >
-          <view class="catalog-icon tone-{{item.tone}}"
-            ><tool-glyph name="{{item.icon}}" size="{{50}}"
+          <view wx:if="{{item.id === 'idphoto'}}" class="catalog-icon portrait-icon">
+            <image src="/assets/images/sample-male-apricot.jpg" mode="aspectFill" />
+          </view>
+          <view wx:else class="catalog-icon tone-{{item.tone}}"
+            ><tool-glyph name="{{item.icon}}" size="{{42}}"
           /></view>
           <view class="catalog-copy"
             ><view class="catalog-name">{{item.name}}</view
-            ><view class="catalog-description">{{item.description}}</view></view
+            ></view
           ><view wx:if="{{item.local && item.id !== 'exam'}}" class="catalog-local"
             >本机处理</view
           ><t-icon name="chevron-right" size="32rpx" color="var(--sg-muted)" />
         </view>
+        </view>
       </view>
-      <view wx:if="{{!groups.length}}" class="catalog-empty"
+      <view wx:if="{{!groups.length && !specMatchCount}}" class="catalog-empty"
         ><t-icon name="search" size="64rpx" /><view class="empty-title"
-          >没有找到相关工具</view
-        ><view class="empty-desc">试试“压缩”“旋转”或其他用途关键词。</view
-        ><view class="secondary" bindtap="resetSearch" aria-role="button"
+          >{{outsideCategory ? "当前分类没有匹配项" : "没有找到相关工具或规格"}}</view
+        ><view wx:if="{{outsideCategory}}" class="secondary" bindtap="searchAllCategories" aria-role="button">在全部分类搜索</view
+        ><view wx:else class="secondary" bindtap="resetSearch" aria-role="button"
           >查看全部工具</view
         ></view
       >
       <member-ad placement="library" />
     </view>
   </scroll-view>
-  <spec-picker
+  <spec-picker theme-id="{{studioTheme.id}}"
     visible="{{specVisible}}"
     title="{{specTitle}}"
-    description="照片将上传至云端，请选择清晰的正面照。"
+    description="照片将上传云端制作。"
     current-width="{{size.width}}"
     current-height="{{size.height}}"
     bind:select="selectSpec"

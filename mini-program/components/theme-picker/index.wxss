@@ -1,0 +1,9 @@
+@import "../../styles/tokens.wxss";
+.picker { padding: 22rpx 24rpx; background: var(--sg-surface); border: 1rpx solid var(--sg-line); border-radius: var(--sg-radius-card); color: var(--sg-text); }
+.picker-title { font-size: var(--sg-font-label); font-weight: 600; margin-bottom: 12rpx; }
+.choices { display: flex; justify-content: space-between; }
+.choice { flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: center; background: var(--sg-soft); color: var(--sg-muted); font-size: var(--sg-font-note); border: 2rpx solid transparent; border-radius: var(--sg-radius-control); }
+.choice + .choice { margin-left: 8rpx; }
+.chosen { border-color: var(--sg-brand); background: var(--sg-brand-soft); color: var(--sg-text); font-weight: 600; }
+.chip { width: 30rpx; height: 30rpx; margin-right: 6rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #17223c; }
+.press { opacity: .72; }

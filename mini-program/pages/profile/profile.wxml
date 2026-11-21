@@ -1,10 +1,9 @@
-<import src="../../templates/campus.wxml" />
-<view class="page-wrap profile-page">
-  <navigation-bar title="拾光小相" brand="{{true}}" inverse="{{true}}" />
+<import src="../../templates/studio-tabs.wxml" />
+<view class="page-wrap theme-{{studioTheme.id}} profile-page">
+  <navigation-bar title="我的" />
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
     <view class="page-content profile-content">
-      <view class="profile-intro"
-        ><template is="campus-track" />
+      <view class="profile-intro">
         <view
           class="profile-avatar"
           bindtap="{{hasLogin ? 'editProfile' : 'onLogin'}}"
@@ -19,16 +18,16 @@
             binderror="avatarError" /><t-icon wx:else name="user" size="56rpx"
         /></view>
         <view class="profile-identity"
-          ><view class="profile-name">{{hasLogin ? nickname : '欢迎使用拾光小相'}}</view
+          ><view class="profile-name">{{hasLogin ? nickname : '我的照相馆'}}</view
           ><view
             wx:if="{{hasLogin}}"
             class="profile-edit"
             bindtap="editProfile"
             hover-class="pressed"
             aria-role="button"
-            >编辑头像昵称<t-icon name="chevron-right" size="28rpx" /></view
+            >编辑资料<t-icon name="chevron-right" size="28rpx" /></view
           ><block wx:else
-            ><view class="profile-desc">先试用，保存时再登录。</view
+            ><view class="profile-desc">登录可同步云端作品。</view
             ><view
               class="profile-login"
               bindtap="onLogin"
@@ -46,6 +45,21 @@
       <view wx:if="{{error}}" class="error-inline profile-error" aria-role="alert"
         >{{error}}</view
       >
+      <view class="profile-section">我的照片</view>
+      <view class="profile-albums">
+        <view class="album-entry" data-tab="drafts" bindtap="openWorks" hover-class="pressed" aria-role="button">
+          <view class="album-icon"><t-icon name="edit" size="37rpx" /></view>
+          <view class="album-copy"><view class="album-name">本地草稿</view>
+            <view class="album-caption">{{draftCount ? draftCount + ' 份可续编' : '保存在本机'}}</view></view>
+          <t-icon name="chevron-right" size="25rpx" />
+        </view>
+        <view class="album-entry" data-tab="cloud" bindtap="openWorks" hover-class="pressed" aria-role="button">
+          <view class="album-icon cloud"><t-icon name="cloud" size="37rpx" /></view>
+          <view class="album-copy"><view class="album-name">云端作品</view>
+            <view class="album-caption">{{hasLogin ? '查看证件照' : '登录后可看'}}</view></view>
+          <t-icon name="chevron-right" size="25rpx" />
+        </view>
+      </view>
       <view
         wx:if="{{memberAvailable === true}}"
         class="member-card"
@@ -53,18 +67,13 @@
         hover-class="pressed"
         aria-role="button"
       >
-        <image
-          class="member-crown"
-          src="/assets/icons/crown-campus.png"
-          mode="aspectFit"
-          aria-hidden="{{true}}"
-        /><view class="member-copy"
+        <image class="member-crown" src="/assets/images/member-emblem.png" mode="aspectFit" aria-hidden="{{true}}" /><view class="member-copy"
           ><view class="member-title"
             >{{!memberKnown ? (memberLoading ? '正在同步会员权益' : '会员权益暂未同步') : isLifetimeMember ? '永久会员 · 已开通'
             : '拾光永久会员'}}</view
           >
           <view class="member-desc"
-            >{{!memberKnown ? '会员状态以当前微信账号为准' : isLifetimeMember ? '无限保存 · 全站免广告' : '一次开通，无限保存，免广告'}}</view
+            >{{!memberKnown ? '点开查看权益' : isLifetimeMember ? '无限保存 · 免广告' : '无限保存 · 免广告'}}</view
           ></view
         >
         <view class="member-link"
@@ -103,6 +112,8 @@
           >{{usageBusy ? '查询中…' : '重新查询'}}</view
         ></view
       >
+      <view class="profile-theme"><theme-picker id="studio-theme-picker" /></view>
+      <view class="profile-section">服务与设置</view>
       <view class="profile-menu">
         <view wx:if="{{memberAvailable !== true}}" class="menu-row" bindtap="openMembership" hover-class="pressed" aria-role="button">
           <t-icon name="user-vip" size="36rpx" /><text class="menu-text">永久会员</text>
@@ -110,16 +121,7 @@
           <t-icon name="chevron-right" size="28rpx" />
         </view>
         <view
-          class="menu-row"
-          bindtap="openDrafts"
-          hover-class="pressed"
-          aria-role="button"
-          ><t-icon name="file" size="36rpx" /><text class="menu-text">我的本地草稿</text
-          ><text class="menu-value">{{draftCount}}份</text
-          ><t-icon name="chevron-right" size="28rpx"
-        /></view>
-        <view
-          class="menu-row"
+          class="menu-row support-entry"
           bindtap="openSupport"
           hover-class="pressed"
           aria-role="button"
@@ -127,7 +129,7 @@
           ><t-icon name="chevron-right" size="28rpx"
         /></view>
         <view
-          class="menu-row"
+          class="menu-row privacy-entry"
           bindtap="navToPrivacy"
           hover-class="pressed"
           aria-role="button"
@@ -136,7 +138,7 @@
           ><t-icon name="chevron-right" size="28rpx"
         /></view>
         <view
-          class="menu-row"
+          class="menu-row agreement-entry"
           bindtap="navToAgreement"
           hover-class="pressed"
           aria-role="button"
@@ -158,4 +160,5 @@
       >
     </view>
   </scroll-view>
+  <template is="studio-tabs" data="{{current: 'profile'}}" />
 </view>

@@ -1,6 +1,6 @@
 <view style="height:{{navHeight}}px;"></view
 ><view
-  class="nav-container {{inverse ? 'nav-inverse' : ''}}"
+  class="nav-container theme-{{studioTheme.id}} {{inverse ? 'nav-inverse' : ''}}"
   style="height:{{navHeight}}px;{{bgColor ? 'background:' + bgColor + ';' : ''}}{{titleColor ? 'color:' + titleColor + ';' : ''}}"
   ><view style="height:{{statusBarHeight}}px;"></view
   ><view class="nav-content" style="height:{{contentHeight}}px;"

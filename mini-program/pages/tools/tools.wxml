@@ -1,18 +1,22 @@
-<view class="page-wrap tool-page">
+<view class="page-wrap theme-{{studioTheme.id}} tool-page">
   <navigation-bar
     title="{{mode === 'compress' ? '图片压缩' : '裁剪旋转'}}"
     show-back="{{true}}"
   />
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}"
     ><view class="local-body">
-      <view wx:if="{{!sourcePath}}" class="tool-intro">
-        <view class="tool-title">{{mode === 'compress' ? '照片轻一点，分享更方便' : '调整构图，留下刚好的画面'}}</view>
-        <view class="tool-description">{{mode === 'compress' ? '选择照片后调整清晰度和尺寸，预览实际文件大小。' : '选择照片后调整比例、旋转方向和裁剪位置。'}}</view>
+      <view class="tool-heading">
+        <view class="tool-heading-text">{{sourcePath ? '照片预览' : '效果示例'}}</view>
+        <view wx:if="{{sourcePath}}" class="change-photo" bindtap="choosePhoto" hover-class="pressed"
+          aria-role="button" aria-disabled="{{processing || opening || adjusting}}">
+          <t-icon name="refresh" size="28rpx"/><text>换照片</text>
+        </view>
+        <text wx:else class="stage-meta">本机处理</text>
       </view>
       <view
-        class="local-preview tool-stage"
+        class="local-preview tool-stage {{mode === 'crop' ? 'crop-stage' : ''}}"
         bindtap="{{!sourcePath ? 'choosePhoto' : ''}}"
-        aria-role="{{sourcePath ? 'img' : 'button'}}"
+        aria-role="{{sourcePath ? 'group' : 'button'}}"
         aria-label="{{sourcePath ? '照片预览' : '选择照片，在本机处理'}}"
       >
         <canvas
@@ -28,7 +32,7 @@
           class="local-image"
         /><view
           wx:if="{{sourcePath && mode === 'crop' && cropPreviewReady}}"
-          class="crop-frame"
+          class="crop-frame {{adjusting ? 'moving' : ''}}"
           style="{{cropFrameStyle}}"
           ><image
             class="crop-source"
@@ -39,51 +43,80 @@
             ><view class="crop-guide-v first"></view
             ><view class="crop-guide-v second"></view
             ><view class="crop-guide-h first"></view
-            ><view class="crop-guide-h second"></view></view></view
-        ><view wx:if="{{!sourcePath}}" class="upload-local tool-empty"
-          ><t-icon name="image-add" size="72rpx" /><text>选择一张照片</text
-          ><text class="tool-description">照片在本机处理，保留原图</text></view
-        ><view wx:if="{{processing}}" class="tool-processing"
-          ><view class="loading-spinner"></view><text>正在处理…</text></view
+            ><view class="crop-guide-h second"></view></view>
+          <view wx:if="{{(canMoveX || canMoveY) && !processing && !opening}}"
+            class="crop-touch" bindtouchstart="startCropDrag" catchtouchmove="moveCropDrag"
+            bindtouchend="endCropDrag" bindtouchcancel="cancelCropDrag" aria-hidden="true"></view></view
+        ><view wx:if="{{!sourcePath}}" class="sample-stage" aria-hidden="true">
+          <view wx:if="{{mode === 'crop'}}" class="sample-print crop-sample"
+            style="width:{{(ratio || 0.7143) * 260}}rpx;">
+            <image src="/assets/images/sample-female-smile.jpg" mode="aspectFill"/>
+            <view class="crop-guide">
+              <view class="crop-guide-v first"></view><view class="crop-guide-v second"></view>
+              <view class="crop-guide-h first"></view><view class="crop-guide-h second"></view>
+            </view>
+          </view>
+          <block wx:else>
+            <view class="sample-print compress-original"><image src="/assets/images/sample-male-apricot.jpg" mode="aspectFill"/></view>
+            <view class="sample-arrow"><t-icon name="arrow-right" size="38rpx"/></view>
+            <view class="sample-print compress-output"><image src="/assets/images/sample-male-apricot.jpg" mode="aspectFill"/></view>
+          </block>
+        </view><view wx:if="{{processing}}" class="tool-processing"
+          ><view class="loading-spinner"></view><text>{{mode === 'compress' ? '正在计算输出体积…' : '正在生成裁剪照片…'}}</text></view
         ></view
       >
-      <view wx:if="{{sourcePath}}" class="file-summary"
+      <view wx:if="{{sourcePath && mode === 'compress'}}" class="compression-summary">
+        <view class="compression-head">
+          <text>文件体积</text>
+          <text class="compression-delta" wx:if="{{resultPath && sizeChange}}">{{sizeChange}}</text>
+        </view>
+        <view class="size-line">
+          <text>原图</text>
+          <view class="size-track"><view class="size-bar" style="width:{{sourceBar}}%;"></view></view>
+          <text class="byte-value">{{sourceSize}}</text>
+        </view>
+        <view class="size-line">
+          <text>输出</text>
+          <view class="size-track"><view class="size-bar output" style="width:{{resultPath ? resultBar : 0}}%;"></view></view>
+          <text class="byte-value">{{resultPath ? resultSize : '—'}}</text>
+        </view>
+        <text wx:if="{{resultPath}}" class="output-dimensions">{{width}} × {{height}} px · JPEG</text>
+      </view>
+      <view wx:elif="{{sourcePath}}" class="file-summary"
         ><text>原图 {{sourceSize}}</text
         ><text
           >{{resultPath ? resultSize + ' · ' + width + ' × ' + height + ' px' :
           ''}}</text
         ></view
       >
-      <view wx:if="{{sourcePath}}" class="local-settings">
+      <view class="local-settings">
         <block wx:if="{{mode === 'compress'}}"
-          ><view class="setting-title">压缩方式</view
+          ><view class="setting-title">画质</view
           ><view class="choice-row"
             ><view
               wx:for="{{qualityOptions}}"
               wx:key="value"
               class="choice {{quality === item.value ? 'active' : ''}}"
-              data-quality="{{item.value}}"
+              data-quality="{{item.value}}" hover-class="pressed"
               aria-checked="{{quality === item.value}}"
               aria-disabled="{{processing || opening || adjusting}}"
               bindtap="setQuality"
               aria-role="radio"
               >{{item.label}}</view
             ></view
-          ><view class="setting-title">最长边像素</view
+          ><view class="setting-title">最长边</view
           ><view class="choice-row"
             ><view
               wx:for="{{edges}}"
               wx:key="*this"
               class="choice {{maxEdge === item ? 'active' : ''}}"
-              data-edge="{{item}}"
+              data-edge="{{item}}" hover-class="pressed"
               aria-checked="{{maxEdge === item}}"
               aria-disabled="{{processing || opening || adjusting}}"
               bindtap="setEdge"
               aria-role="radio"
               >{{item}} px</view
             ></view
-          ><view class="setting-hint"
-            >输出为 JPEG。不同原图的体积变化不同，请以实际结果为准。</view
           ></block
         >
         <block wx:else
@@ -93,18 +126,18 @@
               wx:for="{{ratios}}"
               wx:key="name"
               class="ratio-choice {{ratio === item.value ? 'active' : ''}}"
-              data-index="{{index}}"
+              data-index="{{index}}" hover-class="pressed"
               aria-checked="{{ratio === item.value}}"
               aria-disabled="{{processing || opening || adjusting}}"
               bindtap="setRatio"
               aria-role="radio"
               >{{item.name}}</view
             ></view
-          ><view class="rotate-row"
+          ><view wx:if="{{sourcePath}}" class="rotate-row"
             ><view class="secondary" bindtap="rotate" aria-role="button" aria-disabled="{{processing || opening || adjusting}}" hover-class="pressed"
-              ><t-icon name="rotate" size="34rpx" /><text>旋转90°</text></view
+              ><t-icon name="rotate" size="34rpx" /><text>旋转 90°</text></view
             ><view class="secondary" bindtap="reset" aria-role="button" aria-disabled="{{processing || opening || adjusting}}" hover-class="pressed"
-              >还原</view
+              ><t-icon name="rollback" size="32rpx"/><text>还原</text></view
             ></view
           ><block wx:if="{{ratio}}"
             ><block wx:if="{{canMoveX}}"
@@ -116,7 +149,7 @@
                 min="0"
                 max="100"
                 value="{{positionX}}"
-                activeColor="{{accentColor}}"
+                activeColor="{{studioAccent || '#4f55ce'}}"
                 bindchanging="previewPositionX"
                 bindtouchcancel="cancelPosition"
                 bindchange="positionX" /></block
@@ -129,26 +162,20 @@
                 min="0"
                 max="100"
                 value="{{positionY}}"
-                activeColor="{{accentColor}}"
+                activeColor="{{studioAccent || '#4f55ce'}}"
                 bindchanging="previewPositionY"
                 bindtouchcancel="cancelPosition"
                 bindchange="positionY" /></block></block
           ><view class="setting-hint"
-            >保留原图，裁剪输出为 PNG，最长边不超过4096 px。</view
+            >{{canMoveX || canMoveY ? '拖动照片微调构图' : 'PNG · 最长边 4096 px'}}</view
           ></block
         >
-        <view class="local-links"
-          ><view class="link" bindtap="choosePhoto" aria-role="button" aria-disabled="{{processing || opening || adjusting}}"
-            >重新选择</view
-          ><view
-            wx:if="{{!returnToEditor}}"
-            class="link"
-            bindtap="makeIdPhoto"
-            aria-role="button"
-            aria-disabled="{{processing || opening || adjusting || !resultPath}}"
-            >用于制作证件照</view
-          ></view
-        >
+        <view wx:if="{{sourcePath && !returnToEditor}}" class="local-links">
+          <view class="link" bindtap="makeIdPhoto" aria-role="button" hover-class="pressed"
+            aria-disabled="{{processing || opening || adjusting || !resultPath}}">
+            <text>用此图制作证件照</text><t-icon name="chevron-right" size="26rpx"/>
+          </view>
+        </view>
       </view>
     </view></scroll-view
   >
@@ -175,7 +202,7 @@
       hover-class="pressed"
       aria-role="button"
       >{{opening ? '正在准备…' : adjusting ? '松手生成照片' : processing ?
-      '正在处理…' : !sourcePath ? '选择照片' : returnToEditor ? '应用到证件照' : '预览并保存'}}</view
+      '正在处理…' : !sourcePath ? '选择自己的照片' : returnToEditor ? '应用到证件照' : '预览并保存'}}</view
     ></view
   >
 </view>

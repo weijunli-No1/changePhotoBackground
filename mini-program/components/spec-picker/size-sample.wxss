@@ -1,0 +1,35 @@
+@import "../../styles/tokens.wxss";
+.sample {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.paper {
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--sg-brand);
+  border-radius: 2rpx;
+  background: var(--sg-brand-soft);
+  transition: width 180ms ease-out, height 180ms ease-out;
+}
+.with-photo {
+  overflow: hidden;
+  border: 0;
+  background: #fff;
+  box-shadow: 0 0 0 5rpx #fff, 0 6rpx 12rpx rgba(36, 45, 31, .16);
+}
+.photo {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .paper { transition: none; }
+}
+.guide-head, .guide-shoulders, .guide-center, .guide-eye { position: absolute; }
+.guide-center { width: 1rpx; top: 0; bottom: 0; left: 50%; background-color: var(--sg-line); }
+.guide-eye { height: 1rpx; top: 35%; left: 0; right: 0; background-color: var(--sg-line); }
+.guide-head { width: 37%; height: 35%; top: 21%; left: 31.5%; border-radius: 50%; background: var(--sg-brand); opacity: .35; }
+.guide-shoulders { width: 74%; height: 60%; top: 60%; left: 13%; border-radius: 50%; background: var(--sg-brand); opacity: .35; }

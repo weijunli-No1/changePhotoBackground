@@ -3,12 +3,12 @@ const PRIVACY_CONTENT = `欢迎使用拾光小相。以下说明照片的处理�
 1. 照片处理
 制作证件照、更换底色与六寸排版需要把照片发送到服务端，调用图像处理服务生成结果。上传的照片用于提供当前处理服务，并进行内容安全检查。
 
-图片压缩、裁剪旋转和考试照片原图尺寸适配在小程序本地完成。证件照和考试照片预览合成“拾光小相”水印；点击正常保存后，按免费次数和激励视频规则校验额度，成品上传云端并写入作品记录，再保存无水印照片到相册。照片加水印工具在你点击生成时，把照片和自选水印文字发送到服务端合成，其结果保存在本机，不自动写入云端作品列表。
+图片压缩、裁剪旋转和考试照片原图尺寸适配在小程序本地完成。证件照和考试照在页面内以小尺寸展示，点开大图带有“拾光小相”水印。点击正常保存后，按免费次数和激励视频规则校验额度，成品上传云端并写入作品记录，再保存无水印照片到相册。照片加水印工具在你点击生成时，把照片和自选水印文字发送到服务端合成，其结果保存在本机，不自动写入云端作品列表。
 
 2. 草稿与云端记录
 编辑中的图片可以保存为这台设备上的本地草稿。你可在作品页删除，或在“作品—本地草稿”清理全部草稿。此操作不影响云端记录和手机相册。
 
-保存电子证件照时，成品会上传到受访问保护的对象存储，并保存在你的云端作品列表中。云端列表、放大查看和导出成功后均显示烧录水印的预览图。使用保存按钮获取无水印成品时，需要登录并由服务端校验保存次数；云端再次下载同样需要校验。相册写入失败可重试原次保存，成功后再次主动保存会重新使用保存次数。云端记录会定期清理，请及时把重要照片保存到手机。作品页的删除操作移除对应的列表记录。
+保存电子证件照时，成品会上传到受访问保护的对象存储，并保存在你的云端作品列表中。云端列表优先显示本机缩略图，没有时显示作品封面。点开放大的是带水印的预览图。使用保存按钮获取无水印成品时，需要登录并由服务端校验保存次数；云端再次下载同样需要校验。相册写入失败可重试原次保存，成功后再次主动保存会重新使用保存次数。云端记录会定期清理，请及时把重要照片保存到手机。作品页的删除操作移除对应的列表记录。
 
 3. 微信登录与广告
 当你保存证件照或主动登录时，小程序通过微信登录建立身份，用于关联云端作品和每日使用次数，无需另外填写账号密码。该过程不会获取你的头像昵称。小程序使用激励视频广告，你可自主选择是否观看，完整观看后增加保存机会。
@@ -28,11 +28,34 @@ const AGREEMENT_CONTENT = `欢迎使用拾光小相。
 
 3. 图片压缩与裁剪旋转会生成新文件，原图不会被主动覆盖。请自行保管原始照片。
 
-4. 每天提供5次免费无水印证件照或考试照片保存机会。完整观看一次激励视频可增加一次，当天完整观看达到5次后可不限次数保存。实际可用额度由服务端确认。预览、放大查看和长按保存均含小程序水印，使用正常保存入口获取无水印成品；导出和云端再次主动保存都需校验并使用保存次数，相册写入失败可重试原次授权。本地压缩和裁剪工具不占用证件照保存次数。
+4. 每天提供5次免费无水印证件照或考试照片保存机会。完整观看一次激励视频可增加一次，当天完整观看达到5次后可不限次数保存。实际可用额度由服务端确认。相纸打样和页面缩略图可免费查看。点开放大的照片带有水印，点击保存按钮获取无水印成品。导出和云端再次主动保存都需校验并使用保存次数，相册写入失败可重试原次授权。本地压缩和裁剪工具不占用证件照保存次数。
 
 5. 本地草稿仅保留在当前设备，清理后无法恢复。云端作品也会定期清理，不应作为唯一照片备份。
 
 6. 网络异常、相册授权或设备能力可能影响处理和保存。遇到问题可保留草稿后重试，或通过“我的—帮助与客服”反馈。`;
+const agreementTitles = [
+  '上传照片', '规格与审核', '原图保留', '保存次数', '草稿与备份', '遇到问题',
+];
+function sectionsFor(content, privacy) {
+  const sections = [];
+  const blocks = content.split(/\n\n/);
+  const introduction = blocks.shift();
+  for (const block of blocks) {
+    const match = /^(\d+)\. ([^\n]+)(?:\n([\s\S]*))?$/.exec(block);
+    if (match) {
+      sections.push({
+        id: 'section-' + match[1],
+        number: match[1],
+        title: privacy ? match[2] : agreementTitles[Number(match[1]) - 1],
+        paragraphs: privacy ? (match[3] ? [match[3]] : []) : [match[2]],
+      });
+    } else if (sections.length) {
+      sections[sections.length - 1].paragraphs.push(block);
+    }
+  }
+  return { introduction, sections };
+}
+
 Page({
   onShareAppMessage() {
     return { title: "拾光小相｜使用须知与隐私政策", path: "/pages/document/document" + "?" + ("type=" + (this.data.title === "用户须知" ? "agreement" : "privacy")) };
@@ -41,12 +64,20 @@ Page({
     return { title: "拾光小相｜使用须知与隐私政策", query: "type=" + (this.data.title === "用户须知" ? "agreement" : "privacy") };
   },
 
-  data: { title: '', content: '' },
+  data: { title: '', introduction: '', sections: [], contentsOpen: false, anchor: '' },
+  toggleContents() {
+    this.setData({ contentsOpen: !this.data.contentsOpen });
+  },
+  goToSection(event) {
+    const anchor = event.currentTarget.dataset.anchor;
+    if (!this.data.sections.some(section => section.id === anchor)) return;
+    this.setData({ contentsOpen: false, anchor: '' }, () => this.setData({ anchor }));
+  },
   onLoad(options) {
     const privacy = options.type !== 'agreement';
     this.setData({
       title: privacy ? '隐私安全政策' : '用户须知',
-      content: privacy ? PRIVACY_CONTENT : AGREEMENT_CONTENT,
+      ...sectionsFor(privacy ? PRIVACY_CONTENT : AGREEMENT_CONTENT, privacy),
     });
   },
 });

@@ -1,153 +1,113 @@
-<import src="../../templates/campus.wxml" />
-<view class="page-wrap export-page">
-  <navigation-bar title="预览与保存" show-back="{{true}}" />
+<view class="page-wrap theme-{{studioTheme.id}} export-page">
+  <navigation-bar title="{{demo ? '相纸打样' : '预览与保存'}}" show-back="{{true}}" />
   <canvas wx:if="{{needsCanvas}}" type="2d" id="toolCanvas" class="brand-canvas"></canvas>
-  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
-    <view class="export-body"
-      ><view wx:if="{{!unavailable && !saved}}" class="export-heading"
-        ><text>这一张，准备好啦</text><template is="campus-spark"
-      /></view>
-      <view class="export-preview"
-        ><image
-          wx:if="{{previewPath}}"
-          src="{{previewPath}}"
-          mode="aspectFit"
-          class="export-photo {{allowLayout && !(saved && action === 'layout') ? 'portrait-preview' : ''}}"
-          show-menu-by-longpress="{{true}}"
-          binderror="previewError"
-          bindtap="previewImage"
-        /><view wx:if="{{previewPreparing}}" class="muted">正在准备预览…</view
-        ><view wx:if="{{unavailable || previewFailed}}" class="muted"
-          >{{unavailable ? '照片文件暂不可用' : '预览加载失败，可重新加载'}}</view
-        ></view
-      >
-      <view class="export-spec"
-        >{{saved && action === 'layout' ? '六寸排版 · ' : ''}}{{sizeName}}{{allowLayout ? ' · ' + colorName : ''}}</view
-      >
-      <view wx:if="{{actualWidth}}" class="export-dimensions"
-        >实际图片 {{actualWidth}} × {{actualHeight}} px</view
-      >
-      <view wx:if="{{previewCaption}}" class="export-note">{{previewCaption}}</view>
-      <block wx:if="{{allowLayout && !saved}}">
-        <view class="format-title">选择保存格式</view>
-        <view class="export-options" aria-role="radiogroup">
-          <view
-            class="export-option {{action === 'single' ? 'selected' : ''}}"
-            data-action="single"
-            aria-role="radio"
-            aria-checked="{{action === 'single'}}"
-            aria-disabled="{{busy}}"
-            aria-label="电子照片，单张高清照片"
-            bindtap="selectAction"
-            hover-class="pressed"
-            ><image src="{{previewPath}}" class="single-thumb" mode="aspectFit" /><view
-              class="format-copy"
-              ><view class="format-name">电子照片</view
-              ><view class="format-note">单张高清照片</view></view
-            ><t-icon
-              name="{{action === 'single' ? 'check-circle-filled' : 'circle'}}"
-              size="38rpx"
-              color="{{action === 'single' ? 'var(--sg-brand)' : 'var(--sg-muted)'}}"
-          /></view>
-          <view
-            class="export-option {{action === 'layout' ? 'selected' : ''}}"
-            data-action="layout"
-            aria-role="radio"
-            aria-checked="{{action === 'layout'}}"
-            aria-disabled="{{busy}}"
-            aria-label="六寸排版，适合打印，自动排版"
-            bindtap="selectAction"
-            hover-class="pressed"
-            ><view class="layout-thumb"
-              ><image
-                wx:for="{{layoutSlots}}"
-                wx:key="*this"
-                src="{{previewPath}}"
-                mode="aspectFill" /></view
-            ><view class="format-copy"
-              ><view class="format-name">六寸排版</view
-              ><view class="format-note">适合打印，自动排版</view></view
-            ><t-icon
-              name="{{action === 'layout' ? 'check-circle-filled' : 'circle'}}"
-              size="38rpx"
-              color="{{action === 'layout' ? 'var(--sg-brand)' : 'var(--sg-muted)'}}"
-          /></view>
+  <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}" scroll-into-view="{{scrollTarget}}">
+    <view id="exportPreviewTop" class="export-body">
+      <view class="export-heading">
+        <text>{{unavailable ? '照片暂不可用' : saved ? '已保存到相册' : demo ? '六寸相纸' : allowLayout ? '选择出片格式' : sizeName || '照片预览'}}</text>
+        <view wx:if="{{demo}}" class="sample-tag">样片</view>
+        <t-icon wx:if="{{saved}}" name="check-circle-filled" size="38rpx" color="var(--sg-green-ink)" />
+      </view>
+      <view wx:if="{{allowLayout && !demo}}" class="export-options" aria-role="radiogroup" aria-label="出片格式">
+        <view class="export-option {{action === 'single' ? 'selected' : ''}}" data-action="single" aria-role="radio"
+          aria-checked="{{action === 'single'}}" aria-disabled="{{busy || (previewPreparing && saved)}}"
+          bindtap="selectAction" hover-class="pressed"><t-icon name="image" size="34rpx" /><text>电子单张</text></view>
+        <view id="format-layout" class="export-option {{action === 'layout' ? 'selected' : ''}} {{!layoutSlots.length ? 'option-unavailable' : ''}}" data-action="layout" aria-role="radio"
+          aria-checked="{{action === 'layout'}}" aria-disabled="{{busy || (previewPreparing && saved) || !layoutSlots.length}}"
+          bindtap="selectAction" hover-class="pressed"><t-icon name="print" size="34rpx" /><text>六寸相纸</text></view>
+      </view>
+
+      <view class="export-preview {{action === 'layout' ? 'print-preview' : 'single-preview'}}">
+        <block wx:if="{{action === 'layout' && !unavailable && !previewFailed}}">
+          <view class="print-desk desk-{{studioTheme.id || 'sky'}}">
+            <view class="printer-assembly printer-{{studioTheme.id || 'sky'}}">
+              <view class="print-machine">
+                <image wx:if="{{failedPrinter !== (studioTheme.printer || '/assets/printers/sky-matte.png')}}" class="machine-body" src="{{studioTheme.printer || '/assets/printers/sky-matte.png'}}" data-printer="{{studioTheme.printer || '/assets/printers/sky-matte.png'}}" mode="scaleToFill" bindload="machineLoaded" binderror="machineError" aria-hidden="{{true}}" />
+                <view wx:else class="backup-machine" aria-hidden="{{true}}"><view class="backup-lamp"></view><view class="backup-slot"></view></view>
+              </view>
+              <view class="paper-tray">
+                <view wx:if="{{previewPath && !saved}}" class="proof-paper" style="top: {{paperReveal * 2.82 - 294}}rpx; opacity: {{paperReveal > 0 ? 1 : 0}};"
+                  bindtap="previewImage" aria-role="button" aria-label="{{'查看六寸相纸大图，' + layoutSlots.length + ' 张' + sizeName + '照片'}}">
+                  <image wx:for="{{layoutSlots}}" wx:key="*this" class="proof-cell" style="{{item}}" src="{{previewPath}}"
+                    mode="aspectFit" show-menu-by-longpress="{{false}}" aria-hidden="{{true}}" data-path="{{previewPath}}" data-version="{{proofVersion}}"
+                    data-index="{{index}}" bindload="proofLoaded" binderror="previewError" />
+                </view>
+                <image wx:elif="{{previewPath && saved}}" class="printed-paper {{printReady ? 'paper-delivered' : ''}}"
+                  style="top: {{paperReveal * 2.82 - 294}}rpx; opacity: {{paperReveal > 0 ? 1 : 0}};" src="{{previewPath}}" mode="aspectFit" show-menu-by-longpress="{{false}}"
+                  data-path="{{previewPath}}" data-version="{{proofVersion}}" bindload="printLoaded" binderror="previewError"
+                  bindtap="previewImage" aria-role="button" aria-label="放大查看已保存的六寸排版" />
+              </view>
+            </view>
+          </view>
+          <view class="print-caption">
+            <view class="caption-copy">
+              <view class="caption-title">{{sizeName}} · {{layoutSlots.length}} 张</view>
+              <view class="caption-note" aria-role="status"><view class="status-lamp {{paperMoving ? 'lamp-working' : ''}}"></view>
+                <text>{{printPhase === 'album' ? '正在写入相册' : printPhase === 'rendering' ? '正在生成排版' : paperMoving ? '滚轮送纸中' : !printReady ? '正在装入相纸' : saved ? '已保存六寸排版' : '六寸相纸 · 打样完成'}}</text></view>
+            </view>
+            <view class="sound-control" bindtap="togglePrintSound" hover-class="pressed" aria-role="switch"
+              aria-checked="{{printSound}}" aria-label="打印声" >
+              <t-icon name="{{printSound ? 'sound' : 'sound-mute'}}" size="28rpx" /><text>{{printSound ? '有声' : '静音'}}</text>
+            </view>
+            <view wx:if="{{!busy}}" class="replay {{!printReady || paperMoving ? 'replay-pending' : ''}}" aria-role="button"
+              aria-disabled="{{!printReady || paperMoving}}" hover-class="pressed" bindtap="replayPaper">
+              <t-icon name="refresh" size="27rpx" /><text>重播出纸</text>
+            </view>
+          </view>
+        </block>
+        <image wx:elif="{{previewPath && !previewFailed}}" class="export-photo {{allowLayout ? 'portrait-preview' : ''}}"
+          src="{{previewPath}}" mode="aspectFit" show-menu-by-longpress="{{false}}" data-path="{{previewPath}}"
+          binderror="previewError" bindtap="previewImage" aria-role="button" aria-label="放大查看照片" />
+        <view wx:elif="{{previewPreparing}}" class="stage-message" aria-role="status"><view class="loading-spinner"></view>正在准备预览…</view>
+        <view wx:else class="stage-message"><t-icon name="image-error" size="46rpx" />
+          <text>{{unavailable ? '请返回编辑，重新生成照片' : '预览加载失败，请重新加载'}}</text>
+          <view wx:if="{{demo}}" class="retry-sample" bindtap="retryPreview" aria-role="button">重新加载样片</view>
         </view>
-        <view wx:if="{{action === 'layout'}}" class="export-note"
-          >上图为单张预览，保存时生成实际六寸排版图。</view
-        >
+      </view>
+      <view wx:if="{{zoomPreparing || zoomError}}" class="export-note" aria-role="status">{{zoomPreparing ? '正在准备大图…' : zoomError}}</view>
+      <view wx:if="{{action === 'layout' && !unavailable}}" class="printer-themes"><theme-picker id="studio-theme-picker" bind:change="printerChanged" /></view>
+      <view wx:if="{{action === 'single' && !unavailable}}" class="photo-meta">
+        <view class="meta-item"><text class="meta-label">照片规格</text><text>{{sizeName}}</text></view>
+        <view wx:if="{{allowLayout}}" class="meta-item"><text class="meta-label">底色</text><text>{{colorName}}</text></view>
+        <view wx:if="{{actualWidth}}" class="meta-item"><text class="meta-label">像素尺寸</text><text>{{actualWidth}} × {{actualHeight}}</text></view>
+      </view>
+      <view wx:if="{{action === 'layout' && !unavailable}}" class="photo-meta">
+        <view class="meta-item"><text class="meta-label">冲印尺寸</text><text>152 × 102 mm</text></view>
+        <view class="meta-item"><text class="meta-label">相纸像素</text><text>{{saved && actualWidth ? actualWidth : 1795}} × {{saved && actualHeight ? actualHeight : 1205}}</text></view>
+      </view>
+      <view wx:if="{{allowLayout && !demo && !layoutSlots.length}}" class="export-note">当前规格超出六寸相纸可用范围，请保存电子单张。</view>
+      <block wx:if="{{!unavailable && !demo}}">
+        <view wx:if="{{!local && !saved}}" class="paper-info">
+          <t-icon name="{{action === 'layout' ? 'print' : 'image'}}" size="30rpx" />
+          <text>{{action === 'layout' ? '轻点相纸可查看带水印的大图，保存后可用于冲印。' : '轻点照片可查看带水印的大图，保存到相册后获得无水印照片。'}}</text>
+        </view>
+        <view wx:if="{{saved && !local}}" class="saved-detail">{{action === 'layout' ? '相册里的图片可用于六寸冲印。' : ''}}再次保存会使用保存次数。</view>
+        <view wx:if="{{previewCaption}}" class="export-note">{{previewCaption}}</view>
+        <view wx:if="{{outputNote}}" class="export-note">{{outputNote}}</view>
+        <view wx:elif="{{local && !saved}}" class="usage-note">本地处理 · 免费保存</view>
+        <view wx:if="{{!local}}" class="usage-note" bindtap="retryMembership" aria-role="{{memberAvailable !== false && !quotaKnown ? 'button' : 'text'}}">
+          {{isLifetimeMember ? '永久会员 · 无限保存' : quotaKnown ? (unlimited ? '今日可不限次数保存' : '今日还可保存 ' + remaining + ' 次') : memberAvailable === false ? '每日可免费保存五次' : memberLoading ? '正在查询保存次数…' : '保存额度尚未同步，点击重试'}}
+        </view>
       </block>
-      <block wx:if="{{!local}}"
-        ><view wx:if="{{outputNote}}" class="export-note">{{outputNote}}</view
-        ><view class="preview-watermark-note"
-          >预览与长按保存含“拾光小相”水印；下方保存按钮可获取无水印照片。</view
-        ><view class="usage-note" bindtap="retryMembership" aria-role="{{memberAvailable !== false && !quotaKnown ? 'button' : 'text'}}"
-          >{{isLifetimeMember ? '永久会员 · 无限保存 · 免广告' : quotaKnown ? (unlimited ? '今天可不限次数保存' : '今日剩余 ' + remaining + ' 次保存机会') : memberAvailable === false ? '每日5次免费保存，超出后可观看视频增加次数' : memberLoading ? '正在查询保存额度…' : '保存额度暂未同步，点此重试'}}</view
-        >
-      </block>
-      <view wx:elif="{{local && !saved}}" class="export-note local-note"
-        >{{outputNote || '本地处理的照片直接保存，不占用证件照次数。'}}</view
-      >
-      <view wx:if="{{saved}}" class="success-note" aria-role="status"
-        ><view class="success-icon"
-          ><t-icon name="check-circle-filled" size="64rpx" /></view
-        ><view
-          ><view class="saved-title">已保存到手机相册</view
-          ><view class="saved-detail">{{local ? '这一张，元气满满' : '当前仍为水印预览，再次保存会使用保存次数'}}</view></view
-        ></view
-      >
     </view>
   </scroll-view>
   <view class="footer-actions">
     <view wx:if="{{error}}" class="error-inline save-error" aria-role="alert">{{error}}</view>
-    <view
-      class="primary {{busy || previewPreparing || (!previewPath && !unavailable && !previewFailed) ? 'disabled' : ''}}"
-      aria-disabled="{{busy || previewPreparing || (!previewPath && !unavailable && !previewFailed)}}"
-      bindtap="primaryAction"
-      hover-class="pressed"
-      aria-role="button"
-      ><view wx:if="{{busy}}" class="loading-spinner"></view
-      ><text
-        >{{busy ? (savingStage || '正在保存…') : unavailable ? '返回编辑' :
-        previewPreparing ? '正在准备预览…' : previewFailed ? '重新加载预览' : saved ?
-        '返回首页' : action === 'layout' ? '保存六寸排版' : '保存到手机相册'}}</text
-      ></view
-    >
-    <view
-      wx:if="{{!busy && !unavailable && !previewFailed}}"
-      class="return-edit"
-      bindtap="returnToEdit"
-      aria-role="button"
-      hover-class="pressed"
-      >返回编辑</view
-    >
-    <view
-      wx:if="{{saved && !busy}}"
-      class="save-again"
-      bindtap="saveCurrent"
-      aria-role="button"
-      hover-class="pressed"
-      >再次保存到相册</view
-    >
+    <view class="primary {{busy || choosing || previewPreparing || (!previewPath && !unavailable && !previewFailed) ? 'disabled' : ''}}"
+      aria-disabled="{{busy || choosing || previewPreparing || (!previewPath && !unavailable && !previewFailed)}}"
+      bindtap="primaryAction" hover-class="pressed" aria-role="button">
+      <view wx:if="{{busy || choosing}}" class="loading-spinner"></view>
+      <text>{{demo ? (choosing ? '正在打开照片…' : '用自己的照片制作') : busy ? (savingStage || '正在保存…') : unavailable ? '返回编辑' : previewPreparing ? '正在准备预览…' : previewFailed ? '重新加载预览' : saved ? '返回首页' : error ? '重新保存' : action === 'layout' ? '保存六寸相纸到相册' : '保存照片到相册'}}</text>
+    </view>
+    <view wx:if="{{!busy && !unavailable && !demo}}" class="secondary-actions">
+      <view class="return-edit" bindtap="returnToEdit" aria-role="button" hover-class="pressed">返回编辑</view>
+      <view wx:if="{{saved && !previewFailed && !previewPreparing}}" class="save-again" bindtap="saveCurrent" aria-role="button" hover-class="pressed">再次保存到相册</view>
+    </view>
   </view>
-  <view
-    wx:if="{{previewFailed && !busy}}"
-    class="save-again"
-    bindtap="returnToEdit"
-    aria-role="button"
-    >返回编辑</view
-  >
-  <motion-sheet
-    id="quotaSheet"
-    visible="{{quotaVisible}}"
-    label="今日免费次数已用完"
-    bind:confirm="confirmAd"
-    bind:dismiss="cancelAd"
-    ><view class="sheet-handle"></view><view class="quota-title">今日免费次数已用完</view
-    ><view class="quota-desc">完整观看视频，增加一次保存机会</view
-    ><view wx:if="{{memberAvailable === true}}" class="member-save-link" bindtap="openMembership" aria-role="button"
-      >开通永久会员，免广告无限保存</view
-    >
-    <text slot="confirm">看视频，继续保存</text></motion-sheet
-  >
+  <motion-sheet theme-id="{{studioTheme.id}}" id="quotaSheet" visible="{{quotaVisible}}" label="今日免费次数已用完" bind:confirm="confirmAd" bind:dismiss="cancelAd">
+    <view class="sheet-handle"></view><view class="quota-title">今日免费次数已用完</view>
+    <view class="quota-desc">完整观看视频，增加一次保存机会</view>
+    <view wx:if="{{memberAvailable === true}}" class="member-save-link" bindtap="openMembership" aria-role="button">开通永久会员，免广告无限保存</view>
+    <text slot="confirm">看视频，继续保存</text>
+  </motion-sheet>
 </view>

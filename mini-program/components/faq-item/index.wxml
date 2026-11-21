@@ -1,4 +1,4 @@
-<view class="faq-item"
+<view class="faq-item theme-{{themeId}}"
   ><view
     class="faq-question"
     bindtap="toggle"

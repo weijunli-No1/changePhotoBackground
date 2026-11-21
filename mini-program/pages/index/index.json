@@ -5,7 +5,6 @@
   "usingComponents": {
     "navigation-bar": "/components/navigation-bar/index",
     "t-icon": "/components/local-icon/index",
-    "spec-picker": "/components/spec-picker/index",
     "tool-glyph": "/components/tool-glyph/index",
     "member-ad": "/components/member-ad/index"
   },

@@ -1,13 +1,10 @@
-<view class="page-wrap">
+<view class="page-wrap theme-{{studioTheme.id}}">
   <navigation-bar title="帮助与客服" show-back="{{true}}" />
   <scroll-view class="page-scroll" scroll-y show-scrollbar="{{false}}">
     <view class="support-body">
-      <view class="support-title">哪里需要帮助？</view>
-      <view class="support-intro"
-        >先看看常见问题，也可以直接联系微信客服。</view
-      >
-      <view class="faq-heading">常见问题</view>
-      <faq-item
+      <view class="support-title">常见问题</view>
+      <view class="faq-list">
+      <faq-item class="faq-entry" theme-id="{{studioTheme.id}}"
         wx:for="{{faqs}}"
         wx:key="id"
         title="{{item.title}}"
@@ -16,8 +13,10 @@
         data-id="{{item.id}}"
         bind:toggle="toggleFaq"
       />
+      </view>
+      <view class="feedback-heading">向客服反馈</view>
       <view class="feedback-note"
-        >联系时请描述操作步骤、出现的提示和手机型号，方便定位问题。</view
+        >附上设备信息，方便排查。</view
       >
       <button
         class="device-copy"
@@ -49,8 +48,5 @@
     >
       联系微信客服
     </button>
-    <view class="contact-note"
-      >将打开微信客服会话，回复以实际接待情况为准。</view
-    >
   </view>
 </view>

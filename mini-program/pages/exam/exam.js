@@ -17,14 +17,15 @@ Page({
     sourcePath: "",
     resultPath: "",
     previewPath: "",
+    displayPath: "",
     resultSize: "",
     processing: false,
+    proofing: false,
     opening: false,
     error: "",
     positionX: 50,
     positionY: 50,
     adjusting: false,
-    accentColor: "#2358ee",
     resultWidth: 0,
     resultHeight: 0,
     cropReady: false,
@@ -38,12 +39,6 @@ Page({
     this._unloaded = false;
     this._revision = 0;
     this._brandedPreviewPath = "";
-    this._themeChange = ({ theme }) => {
-      if (!this._unloaded)
-        this.setData({ accentColor: theme === "dark" ? "#91b4ff" : "#2358ee" });
-    };
-    if (wx.getAppBaseInfo) this._themeChange(wx.getAppBaseInfo());
-    if (wx.onThemeChange) wx.onThemeChange(this._themeChange);
     const draft = options.draft ? drafts.get(options.draft) : null;
     this._draftId = draft ? draft.id : drafts.createId();
     const spec = specs.getSpec(draft ? draft.specId : options.spec);
@@ -78,12 +73,16 @@ Page({
       this._unloaded
     )
       return;
+    const source = this._sourceInfo;
+    const request = {};
+    this._frameRequest = request;
     this.createSelectorQuery()
       .select(".exam-preview")
       .boundingClientRect()
       .exec((rects) => {
-        if (!rects[0] || this._unloaded) return;
-        const { width, height } = this._sourceInfo;
+        if (this._unloaded || this._frameRequest !== request || this._sourceInfo !== source ||
+            !rects[0] || rects[0].width <= 24 || rects[0].height <= 24) return;
+        const { width, height } = source;
         const rect = cropRect(
           width,
           height,
@@ -114,8 +113,6 @@ Page({
   onUnload() {
     this._unloaded = true;
     this._revision++;
-    if (wx.offThemeChange && this._themeChange)
-      wx.offThemeChange(this._themeChange);
   },
   async choosePhoto() {
     if (
@@ -136,12 +133,16 @@ Page({
       if (this._unloaded) return;
       const photo = media.tempFiles && media.tempFiles[0];
       if (!photo || !photo.tempFilePath) throw Error("未能读取照片");
+      if (this.data.sourcePath)
+        await files.call("getImageInfo", { src: photo.tempFilePath });
+      if (this._unloaded) return;
       this._draftId = drafts.createId();
       this._sourceInfo = null;
       this.setData({
         sourcePath: photo.tempFilePath,
         resultPath: "",
         previewPath: "",
+        displayPath: "",
         positionX: 50,
         positionY: 50,
         cropReady: false,
@@ -195,14 +196,14 @@ Page({
     if (this.data.processing || this.data.opening) return;
     const axis = e.currentTarget.dataset.axis;
     if (!["X", "Y"].includes(axis)) return;
+    const value = Math.max(0, Math.min(100, Number(e.detail.value) || 0));
+    if (value === this.data["position" + axis]) return;
     this.setData({
-      ["position" + axis]: Math.max(
-        0,
-        Math.min(100, Number(e.detail.value) || 0),
-      ),
+      ["position" + axis]: value,
       adjusting: true,
       resultPath: "",
       previewPath: "",
+      displayPath: "",
       error: "",
     });
     this.setData({ positionStyle: this.positionStyle() });
@@ -210,6 +211,7 @@ Page({
   moveEnd(e) {
     if (this.data.processing || this.data.opening) return;
     this.move(e);
+    if (!this.data.adjusting) return;
     this.setData({ adjusting: false });
     return this.process();
   },
@@ -232,8 +234,10 @@ Page({
     this._brandedPreviewPath = "";
     this.setData({
       processing: true,
+      proofing: false,
       resultPath: "",
       previewPath: "",
+      displayPath: "",
       resultSize: "",
       error: "",
     });
@@ -246,17 +250,23 @@ Page({
         files.removeTemp(result.path);
         return;
       }
-      const previewPath = await brandPreview.create(
-        this,
-        this.data.sourcePath,
-        {
+      this.setData({ proofing: true });
+      let previews;
+      try {
+        previews = await brandPreview.createPair(this, this.data.sourcePath, {
+          displaySource: result.path,
           ratio: this.data.spec.width / this.data.spec.height,
           x: this.data.positionX,
           y: this.data.positionY,
-        },
-      );
+        });
+      } catch (error) {
+        files.removeTemp(result.path);
+        throw error;
+      }
+      const { displayPath, previewPath } = previews;
       if (this._unloaded || revision !== this._revision) {
         files.removeTemp(result.path);
+        files.removeTemp(displayPath);
         files.removeTemp(previewPath);
         return;
       }
@@ -268,6 +278,7 @@ Page({
       this._brandedPreviewPath = previewPath;
       this.setData({
         resultPath: result.path,
+        displayPath,
         previewPath,
         resultSize: files.formatBytes(result.bytes),
         resultWidth: result.width,
@@ -279,12 +290,27 @@ Page({
         this.setData({ error: error.message || "照片适配失败，请重试" });
     } finally {
       if (!this._unloaded && revision === this._revision)
-        this.setData({ processing: false });
+        this.setData({ processing: false, proofing: false });
+    }
+  },
+  async viewLarge() {
+    const { previewPath, displayPath, resultPath } = this.data;
+    if (!previewPath || !displayPath || previewPath !== this._brandedPreviewPath ||
+        previewPath === displayPath || previewPath === resultPath || this.data.processing ||
+        this.data.opening || this.data.adjusting || this._viewingPhoto || this._unloaded) return;
+    this._viewingPhoto = true;
+    try {
+      await files.call("previewImage", { current: previewPath, urls: [previewPath] });
+    } catch (_) {
+      if (!this._unloaded) wx.showToast({ title: "大图打开失败，请重试", icon: "none" });
+    } finally {
+      this._viewingPhoto = false;
     }
   },
   async goExport() {
     if (
       this._unloaded ||
+      this._choosing ||
       this.data.opening ||
       this.data.processing ||
       this.data.adjusting ||
@@ -300,6 +326,8 @@ Page({
         specId: this.data.spec.id,
         sourcePath: this.data.sourcePath,
         resultPath: this.data.resultPath,
+        displayPath: this.data.displayPath,
+        displayPreviewVersion: this.data.displayPath ? brandPreview.DISPLAY_VERSION : 0,
         previewPath: this.data.previewPath,
         previewWatermarkVersion: this.data.previewPath &&
           this.data.previewPath === this._brandedPreviewPath &&
@@ -322,6 +350,7 @@ Page({
       this.setData({
         sourcePath: saved.sourcePath,
         resultPath: saved.resultPath,
+        displayPath: saved.displayPath || "",
         previewPath: saved.previewPath,
       });
       getApp().globalData.exportSession = saved;

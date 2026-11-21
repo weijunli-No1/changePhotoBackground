@@ -1,5 +1,5 @@
 // 展示与入口共用的工具注册表；新功能需要有真实页面，不能用占位条目上线。
-const { VERSION: PREVIEW_WATERMARK_VERSION } = require("./brand-preview");
+const { DISPLAY_VERSION } = require("./brand-preview");
 const categories = [
   { id: "portrait", name: "证件照" },
   { id: "image", name: "图片编辑" },
@@ -65,7 +65,7 @@ const tools = [
     icon: "education",
     tone: "orange",
     local: true,
-    entry: { type: "page", url: "/pages/specs/specs" },
+    entry: { type: "page", url: "/pages/specs/specs?category=exam" },
     resumePage: "/pages/exam/exam",
     mode: "exam",
   },
@@ -174,9 +174,12 @@ function draftUrl(draft) {
 function presentDraft(draft, now = Date.now()) {
   const tool = draftTool(draft);
   const protectedPhoto = draft.requiresQuota === true || ["idphoto", "exam"].includes(draft.mode);
-  const trustedPreview = Boolean(draft.previewPath) &&
-    draft.previewWatermarkVersion === PREVIEW_WATERMARK_VERSION &&
-    draft.previewPath !== draft.resultPath;
+  const trustedDisplay = Boolean(DISPLAY_VERSION && draft.displayPath) &&
+    draft.displayPreviewVersion === DISPLAY_VERSION &&
+    ![draft.previewPath, draft.resultPath, draft.sourcePath, draft.transparentPath].includes(draft.displayPath);
+  const displayPath = protectedPhoto
+    ? trustedDisplay ? draft.displayPath : ""
+    : draft.displayPath || draft.previewPath || draft.resultPath || draft.sourcePath || "";
   let updatedLabel = "保存在当前设备";
   if (Number.isFinite(draft.updatedAt) && draft.updatedAt > 0) {
     const elapsed = Math.max(0, now - draft.updatedAt);
@@ -188,11 +191,12 @@ function presentDraft(draft, now = Date.now()) {
     }
   }
   return {
-    ...draft,
-    displayPath: protectedPhoto
-      ? trustedPreview ? draft.previewPath : ""
-      : draft.previewPath || draft.resultPath || draft.sourcePath,
-    thumbnailMissing: protectedPhoto && !trustedPreview,
+    id: draft.id,
+    mode: draft.mode,
+    toolId: draft.toolId,
+    sizeName: draft.sizeName || "",
+    displayPath,
+    thumbnailMissing: !displayPath,
     title: tool ? tool.draftName || `${tool.name}草稿` : "本地作品草稿",
     updatedLabel,
   };

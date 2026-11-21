@@ -3,7 +3,9 @@ const OPEN_DURATION = 260;
 const CLOSE_DURATION = 180;
 Component({
   properties: {
+    themeId: String,
     visible: Boolean,
+    startCustom: Boolean,
     description: String,
     currentWidth: Number,
     currentHeight: Number,
@@ -16,6 +18,7 @@ Component({
     closing: false,
     motionOpen: false,
     motionFallback: false,
+    customExpanded: false,
     selectedIndex: 0,
     selectedName: "一寸",
     width: "295",
@@ -24,6 +27,7 @@ Component({
     invalidWidth: false,
     invalidHeight: false,
     keyboardHeight: 0,
+    heightFocused: false,
     availableHeight: 640,
     bodyHeight: 320,
     customScrollTarget: "",
@@ -39,7 +43,7 @@ Component({
         this.hideSheet();
       }
     },
-    "description, showCatalog, error, keyboardHeight, availableHeight, compactLayout"() {
+    "description, showCatalog, error, keyboardHeight, availableHeight, compactLayout, customExpanded"() {
       if (wx.nextTick) wx.nextTick(() => this.updateBodyHeight());
       else this.updateBodyHeight();
     },
@@ -52,7 +56,8 @@ Component({
         ? wx.getWindowInfo()
         : wx.getSystemInfoSync();
       this._windowHeight = info.windowHeight;
-      this._topInset = (info.statusBarHeight || 20) + 48;
+      this._statusInset = info.statusBarHeight || 20;
+      this._topInset = this._statusInset + 48;
       this._safeBottom = info.safeArea
         ? Math.max(0, (info.screenHeight || info.windowHeight) - info.safeArea.bottom)
         : 0;
@@ -94,14 +99,16 @@ Component({
         (size) => size.width === width && size.height === height,
       );
       this.setData({
-        selectedIndex: index,
-        selectedName: index >= 0 ? sizes[index].name : "自定义",
+        selectedIndex: this.data.startCustom ? -1 : index,
+        selectedName: !this.data.startCustom && index >= 0 ? sizes[index].name : "自定义",
+        customExpanded: this.data.startCustom || index < 0,
         width: String(width),
         height: String(height),
         error: "",
         invalidWidth: false,
         invalidHeight: false,
         customScrollTarget: "",
+        heightFocused: false,
       });
     },
     openSheet() {
@@ -210,10 +217,11 @@ Component({
     keyboardChange(e) {
       if (this.data.closing) return;
       const height = Math.max(0, Number(e.detail.height) || 0);
-      const availableHeight = Math.max(
-        200,
-        (this._windowHeight || 730) - (this._topInset || 68) - height,
-      );
+      const visible = (this._windowHeight || 730) - height;
+      const availableHeight = Math.max(0, Math.min(
+        visible - (this._statusInset || 20),
+        Math.max(200, visible - (this._topInset || 68)),
+      ));
       this.setData({
         keyboardHeight: height,
         availableHeight,
@@ -236,8 +244,15 @@ Component({
         this.setData({ customScrollTarget: target });
       });
     },
+    expandCustom() {
+      if (this.data.closing || this.data.customExpanded) return;
+      this.setData({ selectedIndex: -1, selectedName: "自定义", customExpanded: true }, () => this.revealCustom());
+    },
+    nextField() {
+      if (!this.data.closing) this.setData({ heightFocused: true });
+    },
     inputBlur() {
-      // 切换宽／高输入框也会 blur；只跟随键盘高度事件，避免弹层反复展开。
+      if (this.data.heightFocused) this.setData({ heightFocused: false });
     },
     dismissKeyboard() {
       if (wx.hideKeyboard) wx.hideKeyboard({ fail() {} });
@@ -280,6 +295,7 @@ Component({
       this.setData({
         selectedIndex: index,
         selectedName: size.name,
+        customExpanded: false,
         width: String(size.width),
         height: String(size.height),
         error: "",

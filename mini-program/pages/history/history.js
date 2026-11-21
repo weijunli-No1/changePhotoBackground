@@ -16,6 +16,7 @@ Page({
   data: {
     tab: "drafts",
     drafts: [],
+    managingDrafts: false,
     historyList: [],
     isLoading: false,
     hasLogin: false,
@@ -28,6 +29,7 @@ Page({
     this._motion = createMotion(this, wx);
     this.updateTabMotion();
   },
+  onResize() { this.updateTabMotion(); },
   updateTabMotion() {
     if (this._motion)
       this._motion.indicator(".segment", ".segment-item.active", ".works-indicator", {
@@ -35,7 +37,6 @@ Page({
       });
   },
   onShow() {
-    if (this.getTabBar && this.getTabBar()) this.getTabBar().init();
     this._unloaded = false;
     if (["drafts", "cloud"].includes(app.globalData.requestedWorksTab)) {
       this.setData({ tab: app.globalData.requestedWorksTab }, () =>
@@ -58,6 +59,7 @@ Page({
     }
     this.setData({
       hasLogin: Boolean(app.globalData.openid),
+      managingDrafts: false,
       drafts: drafts.list().map((item) => catalog.presentDraft(item)),
     });
     if (this.data.tab === "cloud") this.fetchHistoryList();
@@ -80,7 +82,7 @@ Page({
   selectTab(e) {
     const tab = e.currentTarget.dataset.tab;
     if (!["drafts", "cloud"].includes(tab) || tab === this.data.tab) return;
-    this.setData({ tab, error: "" }, () => {
+    this.setData({ tab, error: "", managingDrafts: false }, () => {
       this.updateTabMotion();
       if (this._motion) this._motion.fade(".works-panel");
     });
@@ -89,6 +91,10 @@ Page({
       this.setData({
         drafts: drafts.list().map((item) => catalog.presentDraft(item)),
       });
+  },
+  toggleManageDrafts() {
+    if (this.data.tab === "drafts" && this.data.drafts.length)
+      this.setData({ managingDrafts: !this.data.managingDrafts });
   },
   async login() {
     if (this.data.loggingIn) return;
@@ -104,6 +110,18 @@ Page({
     } finally {
       if (!this._unloaded) this.setData({ loggingIn: false });
     }
+  },
+  localCloudCovers(owner) {
+    const covers = new Map();
+    let local;
+    try { local = drafts.list(); } catch (_) { return covers; }
+    for (const draft of local) {
+      const link = draft.cloudCover;
+      if (!link || link.owner !== owner || !Array.isArray(link.ids)) continue;
+      const { displayPath } = catalog.presentDraft(draft);
+      if (displayPath) for (const id of link.ids) covers.set(String(id), displayPath);
+    }
+    return covers;
   },
   async fetchHistoryList(force = false) {
     if (!app.globalData.openid || (this.data.isLoading && !force)) return;
@@ -128,15 +146,19 @@ Page({
       const list = api.unwrap(
         await api.request("/api/history/list", { data: { openid: owner } }),
       );
-      if (!this._unloaded && seq === this._historySeq && app.globalData.openid === owner)
+      if (!this._unloaded && seq === this._historySeq && app.globalData.openid === owner) {
+        const covers = this.localCloudCovers(owner);
         this.setData({
           historyList: (list || []).map((item) => ({
             id: item.id,
             previewUrl: item.previewUrl || "",
+            coverPath: covers.get(String(item.id)) || "",
+            coverColor: /^#[0-9a-f]{6}$/i.test(item.bgColor) ? item.bgColor : "",
             createTime: item.createTime || "",
             timeStr: (item.createTime || "").replace("T", " ").slice(0, 16),
           })),
         });
+      }
     } catch (error) {
       if (!this._unloaded && seq === this._historySeq && app.globalData.openid === owner)
         this.setData({
@@ -151,7 +173,7 @@ Page({
     return this.fetchHistoryList();
   },
   resume(e) {
-    if (this._openingDraft || this._unloaded) return;
+    if (this._openingDraft || this._unloaded || this.data.managingDrafts) return;
     const item = drafts.get(e.currentTarget.dataset.id);
     if (!item) {
       this.setData({ error: "草稿已不存在，请刷新作品列表", drafts: drafts.list().map((draft) => catalog.presentDraft(draft)) });
@@ -182,7 +204,7 @@ Page({
       if (!res.confirm || this._unloaded) return;
       await drafts.clear();
       if (!this._unloaded) {
-        this.setData({ drafts: [] });
+        this.setData({ drafts: [], managingDrafts: false });
         wx.showToast({ title: "本地草稿已清理", icon: "success" });
       }
     } catch (error) {
@@ -204,10 +226,13 @@ Page({
       });
       if (res.confirm && !this._unloaded) {
         await drafts.remove(id);
-        if (!this._unloaded)
+        if (!this._unloaded) {
+          const remaining = drafts.list().map((item) => catalog.presentDraft(item));
           this.setData({
-            drafts: drafts.list().map((item) => catalog.presentDraft(item)),
+            drafts: remaining,
+            managingDrafts: remaining.length > 0 && this.data.managingDrafts,
           });
+        }
       }
     } catch (error) {
       if (!this._unloaded) this.setData({ error: "草稿未能删除，请重试" });
@@ -216,14 +241,22 @@ Page({
     }
   },
   previewImage(e) {
-    if (this._unloaded || app.globalData.openid !== this._historyOwner) return;
-    const item = this.data.historyList.find((value) => String(value.id) === String(e.currentTarget.dataset.id));
-    if (item && item.previewUrl && !item.previewMissing)
-      wx.previewImage({ urls: [item.previewUrl], current: item.previewUrl });
+    const owner = app.globalData.openid;
+    if (this._unloaded || !owner || owner !== this._historyOwner) return;
+    const available = this.data.historyList.filter((item) => item.previewUrl && !item.previewMissing);
+    const current = available.find((item) => String(item.id) === String(e.currentTarget.dataset.id));
+    if (current) wx.previewImage({
+      urls: available.map((item) => item.previewUrl),
+      current: current.previewUrl,
+      fail: error => {
+        if (!this._unloaded && app.globalData.openid === owner && !/cancel/i.test(error.errMsg || ""))
+          this.setData({ error: "大图未能打开，请重试" });
+      },
+    });
   },
-  cloudImageError(e) {
+  cloudCoverError(e) {
     if (!this._unloaded)
-      this.updateCloudWork(e.currentTarget.dataset.id, { previewMissing: true });
+      this.updateCloudWork(e.currentTarget.dataset.id, { coverPath: "" });
   },
   updateCloudWork(id, values) {
     this.setData({

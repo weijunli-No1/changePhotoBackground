@@ -1,0 +1,10 @@
+<view class="sample theme-{{themeId}}" style="width:{{edge}}rpx;height:{{edge}}rpx" aria-hidden="{{true}}">
+  <view wx:if="{{paperWidth && paperHeight}}" class="paper {{portrait ? 'with-photo' : ''}}"
+    style="width:{{paperWidth}}rpx;height:{{paperHeight}}rpx">
+    <image wx:if="{{portrait}}" class="photo" src="{{portrait}}" mode="aspectFill" />
+    <block wx:elif="{{guides}}">
+      <view class="guide-center"></view><view class="guide-eye"></view>
+      <view class="guide-head"></view><view class="guide-shoulders"></view>
+    </block>
+  </view>
+</view>

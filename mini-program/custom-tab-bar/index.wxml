@@ -1,11 +1,1 @@
-<view wx:if="{{visible}}" class="tab-bar"
-  ><view
-    class="tab-item {{value === item.value ? 'active' : ''}}"
-    wx:for="{{list}}"
-    wx:key="value"
-    data-value="{{item.value}}"
-    bindtap="onChange"
-    hover-class="tab-pressed"
-    ><t-icon name="{{item.icon}}" size="44rpx" /><text>{{item.label}}</text></view
-  ></view
->
+<!-- Each tab page renders its navigation after the scroll-view so Skyline hit-tests it in the page layout. -->

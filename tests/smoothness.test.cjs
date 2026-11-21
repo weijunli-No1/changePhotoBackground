@@ -12,7 +12,15 @@ function load(
   const filename = path.resolve(__dirname, "../mini-program", file);
   const realRequire = createRequire(filename);
   app.globalData.sessionToken = 'fixture-token';
-  deps = { membership: require('./helpers/membership-stub.cjs'), 'brand-preview': { create: async (_page, source) => 'BRANDED:' + source }, ...deps };
+  deps = {
+    membership: require('./helpers/membership-stub.cjs'),
+    'brand-preview': {
+      displayPreview: async (_page, source) => 'SMALL:' + source,
+      create: async (_page, source) => 'BRANDED:' + source,
+      createPair: async (_page, source) => ({ displayPath: 'SMALL:' + source, previewPath: 'BRANDED:' + source }),
+    },
+    ...deps,
+  };
   let def;
   vm.runInNewContext(
     fs.readFileSync(filename, "utf8"),
@@ -55,6 +63,45 @@ function fakeWorklet() {
     Easing: { ease: "ease" },
   };
 }
+test("快速切换标签时迟到的测量不能将指示条移回上一次选择", () => {
+  const pending = [];
+  let style;
+  const host = {
+    createSelectorQuery: () => ({
+      select() { return this; },
+      boundingClientRect() { return this; },
+      exec(callback) { pending.push(callback); },
+    }),
+    setData() {},
+    applyAnimatedStyle(_selector, updater, _options, ready) {
+      style = updater;
+      ready(1);
+    },
+  };
+  const animation = motion.createMotion(host, { worklet: fakeWorklet() });
+  animation.indicator(".tabs", ".first", ".marker");
+  animation.indicator(".tabs", ".second", ".marker");
+  pending[1]([{ left: 0 }, { left: 100, width: 90 }]);
+  pending[0]([{ left: 0 }, { left: 0, width: 90 }]);
+  assert.equal(style().transform, "translateX(100px)");
+});
+test("窗口变宽后作品和工具分类下划线随选中项重新居中", () => {
+  for (const name of ["history", "library"]) {
+    const page = load("pages/" + name + "/" + name + ".js", { wx: { worklet: fakeWorklet() } });
+    let style, width = 320;
+    page.createSelectorQuery = () => ({
+      select() { return this; },
+      boundingClientRect() { return this; },
+      exec(callback) { callback([{ left: 0 }, { left: width / 2, width: width / 2 }]); },
+    });
+    page.applyAnimatedStyle = (_marker, read, _options, ready) => { style = read; ready(1); };
+    page.onReady();
+    assert.equal(style().transform, "translateX(224px)");
+    width = 600;
+    page.onResize();
+    assert.equal(style().transform, "translateX(434px)");
+  }
+});
 test("同账号返回个人页保留已知次数，刷新失败提示旧值，换账号立即清空并忽略迟到响应", async () => {
   const app = { globalData: { openid: "a" } };
   const pending = [];

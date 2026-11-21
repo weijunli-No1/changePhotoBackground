@@ -1,7 +1,8 @@
 const { createMotion } = require("../../utils/skyline-motion");
 Component({
   options: { multipleSlots: true },
-  properties: { visible: Boolean, label: String },
+  properties: {
+    themeId: String, visible: Boolean, label: String },
   data: { rendered: false, closing: false, fallback: false, motionOpen: false },
   observers: {
     visible(value) {

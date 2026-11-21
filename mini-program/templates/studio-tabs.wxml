@@ -1,0 +1,11 @@
+<template name="studio-tabs">
+  <view id="studio-tabs" class="studio-tabs" aria-role="tablist">
+    <navigator wx:for="{{[{id:'index', label:'首页', icon:'home'}, {id:'history', label:'作品', icon:'image'}, {id:'profile', label:'我的', icon:'user'}]}}"
+      wx:key="id" id="studio-tab-{{item.id}}" class="studio-tab {{current === item.id ? 'studio-tab-active' : ''}}"
+      open-type="switchTab" url="/pages/{{item.id}}/{{item.id}}" aria-role="tab"
+      aria-label="{{item.label}}" aria-selected="{{current === item.id}}" hover-class="pressed">
+      <view class="studio-tab-icon"><t-icon name="{{current === item.id ? item.icon + '-filled' : item.icon}}" size="22px"/></view>
+      <text class="studio-tab-label">{{item.label}}</text>
+    </navigator>
+  </view>
+</template>

@@ -5,7 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 function fixture(session = {}) {
-  const renders = [], previews = [], albums = [], writes = [], requests = [], adRecords = [];
+  const displays = [], renders = [], previews = [], albums = [], writes = [], requests = [], adRecords = [];
   let definition, failAlbum = false, failPreview = false, limit = false;
   const app = {
     globalData: { openid: "owner", sessionToken: "token-A", exportSession: {
@@ -22,7 +22,11 @@ function fixture(session = {}) {
       unwrap: (value) => { if (value.code !== 200) throw Error("保存次数不足"); return value.data; },
     },
     "rewarded-video": { createRewardedVideoPlayer: () => ({ dispose() {} }) },
-    "brand-preview": { create: async (_page, source) => {
+    "brand-preview": { displayPreview: async (_page, source) => {
+      displays.push(source);
+      if (failPreview) throw Error("缩图失败");
+      return `SMALL_${displays.length}.jpg`;
+    }, create: async (_page, source) => {
       renders.push(source);
       if (failPreview) throw Error("水印生成失败");
       return `WATERMARK_${renders.length}.jpg`;
@@ -59,7 +63,7 @@ function fixture(session = {}) {
   };
   page.onLoad();
   return {
-    page, app, renders, previews, albums, writes, requests, dependencies, adRecords,
+    page, app, renders, displays, previews, albums, writes, requests, dependencies, adRecords,
     watchAd: definition.watchAdForSave.bind(page),
     albumFails: (value) => { failAlbum = value; },
     previewFails: (value) => { failPreview = value; },
@@ -78,41 +82,43 @@ function assertProtectedData(env) {
 }
 
 for (const session of [{ mode: "idphoto" }, { mode: "exam" }, { mode: "other", requiresQuota: true }]) {
-  test(`${session.mode} 导出入口不信任旧预览，成功保存与大图始终只显示烧录水印`, async () => {
+  test(`${session.mode} 页内仅展示新生成的小图，点开大图才烧录水印，保存使用清晰原件`, async () => {
     const env = fixture(session);
-    env.page.previewImage();
+    await env.page.previewImage();
     assert.equal(env.previews.length, 0);
     await env.page._previewReady;
-    assert.deepEqual(env.renders, ["CLEAN_SINGLE"]);
-    env.page.previewImage();
+    assert.deepEqual(env.displays, ["CLEAN_SINGLE"]);
+    assert.deepEqual(env.renders, []);
+    assert.equal(env.page.data.previewPath, "SMALL_1.jpg");
+    await env.page.previewImage();
     await env.page.saveCurrent();
-    env.page.previewImage();
+    await env.page.previewImage();
     assert.equal(env.page._savedPath, "CLEAN_SINGLE");
     assert.deepEqual(env.albums, ["CLEAN_SINGLE"]);
+    assert.deepEqual(env.renders, ["CLEAN_SINGLE"]);
     assertProtectedData(env);
   });
 }
 
-test("排版成功与预览重试都重新烧录水印，水印生成失败时不会退回干净图", async () => {
+test("已保存相纸缩图或大图失败时可独立重试，禁止退回无水印成品", async () => {
   const env = fixture();
   await env.page._previewReady;
   await env.page.savePrintLayout();
-  env.page.previewImage();
-  assert.deepEqual(env.renders, ["CLEAN_SINGLE", "CLEAN_LAYOUT"]);
-  assert.equal(env.page.data.saved, true);
-  assert.equal(env.page.data.actualWidth, 1800);
-  env.page.previewError();
+  assert.deepEqual(env.displays, ["CLEAN_SINGLE", "CLEAN_LAYOUT"]);
   env.previewFails(true);
+  await env.page.previewImage();
+  assert.equal(env.previews.length, 0);
+  assert.equal(env.page.data.previewPath, "SMALL_2.jpg");
+  assert.match(env.page.data.zoomError,/大图/);
+  env.page.previewError();
   await env.page.primaryAction();
-  env.page.previewImage();
-  assert.equal(env.page.data.previewPath, "");
   assert.equal(env.page.data.previewFailed, true);
-  assert.equal(env.previews.length, 1);
+  assert.equal(env.page.data.previewPath, "");
   env.previewFails(false);
   await env.page.primaryAction();
-  env.page.previewImage();
+  await env.page.previewImage();
   assert.equal(env.page.data.previewFailed, false);
-  assert.deepEqual(env.renders, ["CLEAN_SINGLE", "CLEAN_LAYOUT", "CLEAN_LAYOUT", "CLEAN_LAYOUT"]);
+  assert.deepEqual(env.renders, ["CLEAN_LAYOUT","CLEAN_LAYOUT"]);
   assertProtectedData(env);
 });
 
@@ -139,24 +145,25 @@ for (const action of ["single", "layout"]) {
   });
 }
 
-test("本地压缩与裁剪仍可直接查看和重复保存，不进入额度或品牌水印流程", async () => {
+test("本地压缩与裁剪在页内展示缩图，点开大图带水印，免费保存自己的清晰原件", async () => {
   for (const mode of ["compress", "crop"]) {
     const env = fixture({ mode, previewPath: "" });
+    await env.page._previewReady;
     await env.page.saveCurrent();
     await env.page.saveCurrent();
-    env.page.previewImage();
-    assert.equal(env.renders.length, 0);
+    await env.page.previewImage();
+    assert.equal(env.renders.length, 1);
     assert.equal(env.requests.length, 0);
     assert.deepEqual(env.albums, ["CLEAN_SINGLE", "CLEAN_SINGLE"]);
-    assert.equal(env.previews[0].current, "CLEAN_SINGLE");
+    assert.equal(env.previews[0].current, "WATERMARK_1.jpg");
   }
 });
 
 test("导出模板所有照片与缩略图只绑定受保护的预览数据，不绑定逻辑保存路径", () => {
   const template = fs.readFileSync(path.resolve(__dirname, "../mini-program/pages/export/export.wxml"), "utf8");
-  assert.doesNotMatch(template, /savedPath|resultPath|_savedPath/);
+  assert.doesNotMatch(template, /savedPath|resultPath|_savedPath|show-menu-by-longpress="{{true}}"/);
   assert.deepEqual([...template.matchAll(/src="([^"]+)"/g)].map((match) => match[1]), [
-    "../../templates/campus.wxml", "{{previewPath}}", "{{previewPath}}", "{{previewPath}}",
+    "{{studioTheme.printer || '/assets/printers/sky-matte.png'}}", "{{previewPath}}", "{{previewPath}}", "{{previewPath}}",
   ]);
 });
 
@@ -249,4 +256,49 @@ test("同账号新登录会话不能复用相册失败前的旧额度授权", as
   await env.page.saveCurrent();
   assert.equal(env.requests.length, 2);
   assert.equal(env.page.data.saved, true);
+});
+
+test("无水印展示图总是独立降采样，大图保留文字水印，半成品生成失败即清理", async () => {
+  const sourceRect = { width: 144, height: 192 };
+  const renders = [], removed = [];
+  let marks = 0, failed = false;
+  const ctx = {
+    fillRect() {}, save() {}, restore() {}, translate() {}, rotate() {}, drawImage() {},
+    fillText() { marks++; if (failed) throw Error("水印绘制失败"); },
+  };
+  const canvas = {
+    width: 0, height: 0,
+    createImage() { return { set src(_s) { queueMicrotask(() => this.onload()); } }; },
+    getContext() { marks=0; return ctx; },
+    toDataURL() {
+      renders.push({ width:this.width, height:this.height, marks });
+      return "data:image/jpeg;base64,eA==";
+    },
+  };
+  const module = { exports: {} };
+  const filename=path.resolve(__dirname,"../mini-program/utils/brand-preview.js");
+  vm.runInNewContext(fs.readFileSync(filename,"utf8"), {
+    module, setTimeout, clearTimeout,
+    require(name) {
+      if (name === "./image-transform") return {
+        getCanvas: async () => canvas,
+        cropRect: require("../mini-program/utils/image-transform").cropRect,
+      };
+      return { call: async () => sourceRect, writeBase64: async () => "preview-"+renders.length,
+        removeTemp: (p) => removed.push(p) };
+    },
+  });
+  const page = {}, utils = module.exports;
+  const pair=await utils.createPair(page,"source");
+  assert.notEqual(pair.displayPath,pair.previewPath);
+  assert.deepEqual(renders[0],{width:93,height:124,marks:0});
+  assert.deepEqual([renders[1].width,renders[1].height],[144,192]);
+  assert.ok(renders[1].marks>0);
+  sourceRect.width=1795; sourceRect.height=1205;
+  await utils.displayPreview(page,"sheet");
+  assert.equal(renders[2].width,384);
+  assert.equal(renders[2].marks,0);
+  failed=true;
+  await assert.rejects(utils.createPair(page,"source"),/水印/);
+  assert.deepEqual(removed,["preview-4"]);
 });
